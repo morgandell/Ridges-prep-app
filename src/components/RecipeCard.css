@@ -63,3 +63,24 @@
   border-radius: 4px;
 }
 
+/* Meal type styling */
+.meal-breakfast {
+  border-left-color: #facc15;
+  background: #fffbea;
+}
+
+.meal-lunch {
+  border-left-color: #22c55e;
+  background: #f0fdf4;
+}
+
+.recipe-card meal-dinner {
+  border-left-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.meal-snack {
+  border-left-color: #ec4899;
+  background: #fdf2f8;
+}
+

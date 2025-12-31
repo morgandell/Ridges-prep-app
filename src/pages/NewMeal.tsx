@@ -17,6 +17,7 @@ export default function NewMeal() {
     cookTime: undefined,
     servings: undefined,
     tags: [],
+    mealTime: "dinner",
   });
 
   const [ingredientInput, setIngredientInput] = useState("");
@@ -49,6 +50,7 @@ export default function NewMeal() {
   }
 
   const handleInputChange = (field: keyof Meal, value: any) => {
+    console.log(value)
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -156,6 +158,7 @@ export default function NewMeal() {
         cookTime: formData.cookTime,
         servings: formData.servings,
         tags: formData.tags || [],
+        mealTime: formData.mealTime || "dinner",
       };
 
       const result = await window.electronAPI.saveMeal(meal);
@@ -228,6 +231,20 @@ export default function NewMeal() {
             rows={3}
           />
         </div>
+
+         <div className="meal-type-toggle">
+            {(["breakfast", "lunch", "dinner", "dessert"] as const).map(type => (
+              <button
+                type="button"
+                key={type}
+                className={formData.mealTime === type ? "active" : ""}
+                onClick={() => handleInputChange("mealTime", type)}
+              >
+                {type.charAt(0).toUpperCase() + type.slice(1)}
+              </button>
+            ))}
+          </div>
+
 
         {/* <div className="form-row">
           <div className="form-group">

@@ -6,16 +6,25 @@ import "./RecipeCard.css";
 interface RecipeCardProps {
   meal: Meal;
 }
+const mealTypeClassMap: Record<Meal["mealTime"], string> = {
+  breakfast: "meal-breakfast",
+  lunch: "meal-lunch",
+  dinner: "meal-dinner",
+  snack: "meal-dessert",
+};
 
 export default function RecipeCard({ meal }: RecipeCardProps) {
   const navigate = useNavigate();
+
+  const mealTypeClass =
+    meal.mealTime ? mealTypeClassMap[meal.mealTime] : "";
 
   const handleClick = () => {
     navigate(`/meals/${meal.id}`);
   };
 
   return (
-    <div className="recipe-card" onClick={handleClick}>
+    <div className={`recipe-card ${mealTypeClass}`} onClick={handleClick}>
       <div className="recipe-card-header">
         <h3>{meal.name}</h3>
         {meal.prepTime && (

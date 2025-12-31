@@ -8,6 +8,7 @@ export type Meal = {
   ingredients?: string[];
   instructions?: string[];
   tags?: string[];
+  mealTime: "breakfast" | "lunch" | "dinner" | "snack";
 };
 
 export const exampleMeals: Meal[] = [
@@ -34,7 +35,8 @@ export const exampleMeals: Meal[] = [
       "Sauté bell pepper until tender.",
       "Assemble bowls with rice, beans, chicken, and peppers."
     ],
-    tags: ["high-protein", "meal prep", "lunch"]
+    tags: ["high-protein", "meal prep", "lunch"],
+    mealTime: "lunch"
   },
   {
     id: "meal-2",
@@ -58,7 +60,8 @@ export const exampleMeals: Meal[] = [
       "Place salmon on baking sheet and season with garlic and lemon.",
       "Bake everything for 18–20 minutes."
     ],
-    tags: ["dinner", "healthy", "gluten-free"]
+    tags: ["dinner", "healthy", "gluten-free"],
+    mealTime: "dinner"
   },
   {
     id: "meal-3",
@@ -80,7 +83,8 @@ export const exampleMeals: Meal[] = [
       "Refrigerate overnight.",
       "Top with berries before eating."
     ],
-    tags: ["breakfast", "quick", "vegetarian"]
+    tags: ["breakfast", "quick", "vegetarian"],
+    mealTime: "breakfast"
   },
   {
     id: "meal-4",
@@ -102,7 +106,8 @@ export const exampleMeals: Meal[] = [
       "Layer turkey and lettuce.",
       "Top with mustard and second slice of bread."
     ],
-    tags: ["lunch", "quick", "no-cook"]
+    tags: ["lunch", "quick", "no-cook"],
+    mealTime: "lunch"
   },
   {
     id: "meal-5",
@@ -125,6 +130,7 @@ export const exampleMeals: Meal[] = [
       "Drain pasta and combine with sauce.",
       "Serve topped with parmesan."
     ],
-    tags: ["dinner", "comfort food", "vegetarian"]
+    tags: ["dinner", "comfort food", "vegetarian"],
+    mealTime: "dinner"
   }
 ];
