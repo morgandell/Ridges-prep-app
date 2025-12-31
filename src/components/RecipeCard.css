@@ -64,23 +64,24 @@
 }
 
 /* Meal type styling */
-.meal-breakfast {
-  border-left-color: #facc15;
+.recipe-card.breakfast {
+  border-left-color: 6px solid #facc15;
   background: #fffbea;
 }
 
-.meal-lunch {
-  border-left-color: #22c55e;
+.recipe-card.lunch {
+  border-left-color: 6px solid #22c55e;
   background: #f0fdf4;
 }
 
-.recipe-card meal-dinner {
-  border-left-color: #3b82f6;
-  background: #eff6ff;
+.recipe-card.dinner {
+  border-left-color: 6px solid #3b82f6;
+  /* border: 1px solid #e5e7eb; */
+  background: #dadbf5;
 }
 
-.meal-snack {
-  border-left-color: #ec4899;
+.recipe-card.snack {
+  border-left-color: 6px solid #ec4899;
   background: #fdf2f8;
 }
 

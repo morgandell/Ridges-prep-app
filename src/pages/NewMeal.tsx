@@ -17,7 +17,7 @@ export default function NewMeal() {
     cookTime: undefined,
     servings: undefined,
     tags: [],
-    mealTime: "dinner",
+    mealTime: "snack",
   });
 
   const [ingredientInput, setIngredientInput] = useState("");
@@ -132,6 +132,11 @@ export default function NewMeal() {
       errors.servings = 'Servings must be at least 1';
     }
 
+    // if (formData.mealTime !== undefined) {
+    //   errors.servings = 'Must choose meal time';
+    // }
+
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -140,7 +145,6 @@ export default function NewMeal() {
     e.preventDefault();
     setError(null);
     setValidationErrors({});
-    
     if (!validateForm()) {
       setError('Please fix the validation errors below');
       return;
@@ -160,7 +164,7 @@ export default function NewMeal() {
         tags: formData.tags || [],
         mealTime: formData.mealTime || "dinner",
       };
-
+      console.log(meal.mealTime)
       const result = await window.electronAPI.saveMeal(meal);
       if (result.success && result.meal) {
         navigate(`/meals/${result.meal.id}`);

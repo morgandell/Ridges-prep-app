@@ -128,44 +128,81 @@ ipcMain.handle('save-meal', async (event, meal) => {
       meal.tags = [];
     }
 
-    // Clean up the meal object - remove undefined values
-    const cleanMeal = {
-      id: meal.id || Date.now().toString(),
-      name: meal.name.trim(),
-      description: meal.description || '',
-      ingredients: meal.ingredients.filter(i => i && i.trim() !== ''),
-      instructions: meal.instructions.filter(i => i && i.trim() !== ''),
-      prepTime: meal.prepTime || undefined,
-      cookTime: meal.cookTime || undefined,
-      servings: meal.servings || undefined,
-      tags: meal.tags.filter(t => t && t.trim() !== ''),
-    };
+    // // Clean up the meal object - remove undefined values
+    // const cleanMeal = {
+    //   id: meal.id || Date.now().toString(),
+    //   name: meal.name.trim(),
+    //   description: meal.description || '',
+    //   ingredients: meal.ingredients.filter(i => i && i.trim() !== ''),
+    //   instructions: meal.instructions.filter(i => i && i.trim() !== ''),
+    //   prepTime: meal.prepTime || undefined,
+    //   cookTime: meal.cookTime || undefined,
+    //   servings: meal.servings || undefined,
+    //   tags: meal.tags.filter(t => t && t.trim() !== ''),
+    //   mealTime: meal.mealTime || 'dinner', // include mealTime (default if missing)
+    // };
 
-    await ensureMealsFile();
-    const data = await fs.readFile(mealsFilePath, 'utf-8');
-    let meals = [];
+    // await ensureMealsFile();
+    // const data = await fs.readFile(mealsFilePath, 'utf-8');
+    // let meals = [];
     
-    try {
-      meals = JSON.parse(data);
-      if (!Array.isArray(meals)) {
-        meals = [];
-      }
-    } catch (parseError) {
-      console.error('Error parsing meals file, resetting:', parseError);
-      meals = [];
-    }
+    // try {
+    //   meals = JSON.parse(data);
+    //   if (!Array.isArray(meals)) {
+    //     meals = [];
+    //   }
+    // } catch (parseError) {
+    //   console.error('Error parsing meals file, resetting:', parseError);
+    //   meals = [];
+    // }
     
-    // If meal has an id, update existing; otherwise, add new
-    if (cleanMeal.id && meals.some(m => m.id === cleanMeal.id)) {
-      const index = meals.findIndex(m => m.id === cleanMeal.id);
-      meals[index] = cleanMeal;
-    } else {
-      // Generate new ID if not provided
-      if (!cleanMeal.id) {
-        cleanMeal.id = Date.now().toString();
-      }
-      meals.push(cleanMeal);
-    }
+    // // If meal has an id, update existing; otherwise, add new
+    // if (cleanMeal.id && meals.some(m => m.id === cleanMeal.id)) {
+    //   const index = meals.findIndex(m => m.id === cleanMeal.id);
+    //   meals[index] = cleanMeal;
+    // } else {
+    //   // Generate new ID if not provided
+    //   if (!cleanMeal.id) {
+    //     cleanMeal.id = Date.now().toString();
+    //   }
+    //   meals.push(cleanMeal);
+    // }
+    // Clean up the meal object - remove undefined values and include mealTime
+const cleanMeal = {
+  id: meal.id || Date.now().toString(),
+  name: meal.name.trim(),
+  description: meal.description || '',
+  ingredients: (Array.isArray(meal.ingredients) ? meal.ingredients : []).filter(i => i && i.trim() !== ''),
+  instructions: (Array.isArray(meal.instructions) ? meal.instructions : []).filter(i => i && i.trim() !== ''),
+  prepTime: Number.isFinite(meal.prepTime) ? meal.prepTime : undefined,
+  cookTime: Number.isFinite(meal.cookTime) ? meal.cookTime : undefined,
+  servings: Number.isFinite(meal.servings) ? meal.servings : undefined,
+  tags: (Array.isArray(meal.tags) ? meal.tags : []).filter(t => t && t.trim() !== ''),
+  mealTime: meal.mealTime || 'dinner', // include mealTime (default if missing)
+};
+// Load existing meals from file
+await ensureMealsFile();
+const data = await fs.readFile(mealsFilePath, 'utf-8');
+let meals = [];
+try {
+  meals = JSON.parse(data);
+  if (!Array.isArray(meals)) meals = [];
+} catch (parseError) {
+  console.error('Error parsing meals file, resetting:', parseError);
+  meals = [];
+}
+
+// If meal has an id, update existing by merging (preserve other fields); otherwise, add new
+if (cleanMeal.id && meals.some(m => m.id === cleanMeal.id)) {
+  const index = meals.findIndex(m => m.id === cleanMeal.id);
+  meals[index] = { ...meals[index], ...cleanMeal };
+} else {
+  // Generate new ID if not provided
+  if (!cleanMeal.id) {
+    cleanMeal.id = Date.now().toString();
+  }
+  meals.push(cleanMeal);
+}
     
     // Write to file with error handling
     try {
