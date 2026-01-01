@@ -55,6 +55,13 @@
   display: flex;
 }
 
+.meal-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
 .meal-detail h1 {
   font-size: 2rem;
   margin-bottom: 1rem;

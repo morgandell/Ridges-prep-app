@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Meal } from "../types/meal";
+import { Ingredient, Meal } from "../types/meal";
 import "./NewMeal.css";
 
 export default function NewMeal() {
@@ -19,6 +19,16 @@ export default function NewMeal() {
     tags: [],
     mealTime: "dinner",
   });
+
+  const [showIngredientModal, setShowIngredientModal] = useState(false);
+
+  const [newIngredient, setNewIngredient] = useState<Ingredient>({
+    name: "",
+    quantity: null,
+    unit: "",
+    perServing: false,
+  });
+
 
   const [ingredientInput, setIngredientInput] = useState("");
   const [instructionInput, setInstructionInput] = useState("");
@@ -54,15 +64,15 @@ export default function NewMeal() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const addIngredient = () => {
-    if (ingredientInput.trim()) {
-      setFormData((prev) => ({
-        ...prev,
-        ingredients: [...(prev.ingredients || []), ingredientInput.trim()],
-      }));
-      setIngredientInput("");
-    }
-  };
+  // const addIngredient = () => {
+  //   if (ingredientInput.trim()) {
+  //     setFormData((prev) => ({
+  //       ...prev,
+  //       ingredients: [...(prev.ingredients || []), ingredientInput.trim()],
+  //     }));
+  //     setIngredientInput("");
+  //   }
+  // };
 
   const removeIngredient = (index: number) => {
     setFormData((prev) => ({
@@ -72,6 +82,7 @@ export default function NewMeal() {
   };
 
   const addInstruction = () => {
+    
     if (instructionInput.trim()) {
       setFormData((prev) => ({
         ...prev,
@@ -158,9 +169,6 @@ export default function NewMeal() {
         description: formData.description?.trim() || "",
         ingredients: formData.ingredients || [],
         instructions: formData.instructions || [],
-        prepTime: formData.prepTime,
-        cookTime: formData.cookTime,
-        servings: formData.servings,
         tags: formData.tags || [],
         mealTime: formData.mealTime || "dinner",
       };
@@ -332,7 +340,7 @@ export default function NewMeal() {
           </div>
         </div> */}
 
-        <div className="form-group">
+        {/* <div className="form-group">
           <label>Ingredients *</label>
           <div className="input-with-button">
             <input
@@ -393,7 +401,74 @@ export default function NewMeal() {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
+
+        <div className="form-group">
+            <label>Ingredients *</label>
+
+            <button
+              type="button"
+              className="add-ingredient-btn"
+              onClick={() => setShowIngredientModal(true)}
+            >
+              + Add Ingredient
+            </button>
+
+            {validationErrors.ingredients && (
+              <span className="field-error">{validationErrors.ingredients}</span>
+            )}
+
+            <div className="list-items">
+              {formData.ingredients?.map((ingredient, index) => (
+                <div key={index} className="list-item">
+                  <span>
+                    <span>
+                        {ingredient.quantity !== null && (
+                          <>
+                            {ingredient.quantity} {ingredient.unit}{" "}
+                          </>
+                        )}
+                        {ingredient.name}
+                        <em className="ingredient-scope">
+                          ({ingredient.perServing ? "per serving" : "whole recipe"})
+                        </em>
+                      </span>
+
+                    <em className="ingredient-scope">
+                      ({ingredient.perServing ? "per serving" : "whole recipe"})
+                    </em>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeIngredient(index)}
+                    className="remove-button"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {showIngredientModal && (
+              <IngredientModal
+                ingredient={newIngredient}
+                onChange={setNewIngredient}
+                onCancel={() => setShowIngredientModal(false)}
+                onAdd={() => {
+                  if (!newIngredient.name.trim()) return;
+
+                  setFormData(prev => ({
+                    ...prev,
+                    ingredients: [...(prev.ingredients || []), newIngredient],
+                  }));
+
+                  setNewIngredient({ name: "", quantity: null, unit: "", perServing: false });
+                  setShowIngredientModal(false);
+                }}
+              />
+            )}
+          </div>
+
 
         <div className="form-group">
           <label>Instructions *</label>
@@ -510,3 +585,112 @@ export default function NewMeal() {
   );
 }
 
+function IngredientModal({
+  ingredient,
+  onChange,
+  onCancel,
+  onAdd,
+}: {
+  ingredient: {
+    name: string;
+    quantity: number | null;
+    unit: string;
+    perServing: boolean;
+  };
+  onChange: (value: any) => void;
+  onCancel: () => void;
+  onAdd: () => void;
+}) {
+  return (
+    <div className="modal-backdrop">
+      <div className="ingredient-modal">
+        <h3>Add Ingredient</h3>
+
+        <label>
+          Name
+          <input
+            type="text"
+            value={ingredient.name}
+            onChange={e =>
+              onChange({ ...ingredient, name: e.target.value })
+            }
+            placeholder="e.g. Tortilla"
+          />
+        </label>
+
+        <label>
+          Quantity
+          <input
+            type="number"
+            min="0"
+            step="any"
+            value={ingredient.quantity ?? ""}
+            onChange={e =>
+              onChange({
+                ...ingredient,
+                quantity: e.target.value
+                  ? Number(e.target.value)
+                  : null,
+              })
+            }
+            placeholder="e.g. 2"
+          />
+        </label>
+
+        <label>
+          Unit
+          <select
+            value={ingredient.unit}
+            onChange={e =>
+              onChange({ ...ingredient, unit: e.target.value })
+            }
+          >
+            <option value="">—</option>
+            <option value="g">g</option>
+            <option value="kg">kg</option>
+            <option value="ml">mL</option>
+            <option value="l">L</option>
+            <option value="cup">cup</option>
+            <option value="tbsp">tbsp</option>
+            <option value="tsp">tsp</option>
+            <option value="pcs">pieces</option>
+          </select>
+        </label>
+
+
+        <div className="ingredient-scope-toggle">
+          <label>
+            <input
+              type="radio"
+              checked={!ingredient.perServing}
+              onChange={() =>
+                onChange({ ...ingredient, perServing: false })
+              }
+            />
+            Whole recipe
+          </label>
+
+          <label>
+            <input
+              type="radio"
+              checked={ingredient.perServing}
+              onChange={() =>
+                onChange({ ...ingredient, perServing: true })
+              }
+            />
+            Per serving
+          </label>
+        </div>
+
+        <div className="modal-actions">
+          <button type="button" onClick={onCancel}>
+            Cancel
+          </button>
+          <button type="button" onClick={onAdd} className="primary">
+            Add
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

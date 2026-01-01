@@ -172,11 +172,20 @@ const cleanMeal = {
   id: meal.id || Date.now().toString(),
   name: meal.name.trim(),
   description: meal.description || '',
-  ingredients: (Array.isArray(meal.ingredients) ? meal.ingredients : []).filter(i => i && i.trim() !== ''),
+  ingredients: (Array.isArray(meal.ingredients) ? meal.ingredients : [])
+    .filter(
+      i =>
+        i &&
+        typeof i === "object" &&
+        i.name &&
+        i.name.trim() !== ""
+    )
+    .map(i => ({
+      ...i,
+      name: i.name.trim(),
+      unit: i.unit?.trim()
+    })),
   instructions: (Array.isArray(meal.instructions) ? meal.instructions : []).filter(i => i && i.trim() !== ''),
-  prepTime: Number.isFinite(meal.prepTime) ? meal.prepTime : undefined,
-  cookTime: Number.isFinite(meal.cookTime) ? meal.cookTime : undefined,
-  servings: Number.isFinite(meal.servings) ? meal.servings : undefined,
   tags: (Array.isArray(meal.tags) ? meal.tags : []).filter(t => t && t.trim() !== ''),
   mealTime: meal.mealTime || 'dinner', // include mealTime (default if missing)
 };

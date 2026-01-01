@@ -83,8 +83,10 @@ export default function MealDetail() {
           </button>
         </div>
       </div>
-
-      <h1>{meal.name}</h1>
+      <div className="meal-header">
+        <h1>{meal.name}</h1>
+        <h2>{meal.mealTime}</h2>
+      </div>
       
       <div className="meal-meta">
         {meal.prepTime && (
@@ -106,15 +108,28 @@ export default function MealDetail() {
       )}
 
       {meal.ingredients && meal.ingredients.length > 0 && (
-        <div className="meal-section">
-          <h2>Ingredients</h2>
-          <ul className="ingredients-list">
-            {meal.ingredients.map((ingredient, index) => (
-              <li key={index}>{ingredient}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+          <div className="meal-section">
+            <h2>Ingredients</h2>
+            <ul className="ingredients-list">
+              {meal.ingredients.map((ingredient, index) => (
+                <li key={index}>
+                  {ingredient.quantity !== null && (
+                    <>
+                      {ingredient.quantity}
+                      {ingredient.unit && ` ${ingredient.unit}`}{" "}
+                    </>
+                  )}
+                  {ingredient.name}
+                  <span className="ingredient-scope">
+                    {" "}
+                    ({ingredient.perServing ? "per serving" : "whole recipe"})
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
 
       {meal.instructions && meal.instructions.length > 0 && (
         <div className="meal-section">
