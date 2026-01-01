@@ -8,6 +8,8 @@ export default function Meals() {
   const navigate = useNavigate();
   const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterMealTime, setFilterMealTime] = useState<Meal["mealTime"] | "all">("all");
+
 
   useEffect(() => {
     loadMeals();
@@ -24,6 +26,18 @@ export default function Meals() {
     }
   }
 
+  const displayedMeals = meals
+  .filter(meal =>
+    filterMealTime === "all" ? true : meal.mealTime === filterMealTime
+  )
+  .sort((a, b) => {
+    return (
+      (MEAL_TIME_ORDER[a.mealTime] ?? 99) -
+      (MEAL_TIME_ORDER[b.mealTime] ?? 99)
+    );
+  });
+
+
   return (
     <div className="meals-page">
       <div className="meals-header">
@@ -32,6 +46,20 @@ export default function Meals() {
           + New Meal
         </button>
       </div>
+
+    <div className="meal-filters">
+    {["all", "breakfast", "lunch", "dinner", "snack", "dessert"].map(type => (
+        <button
+        key={type}
+        className={filterMealTime === type ? "active" : ""}
+        onClick={() => setFilterMealTime(type as any)}
+        >
+        {type === "all"
+            ? "All"
+            : type.charAt(0).toUpperCase() + type.slice(1)}
+        </button>
+    ))}
+    </div>
 
       {loading ? (
         <div className="meals-loading">Loading meals...</div>
@@ -44,11 +72,20 @@ export default function Meals() {
         </div>
       ) : (
         <div className="meals-grid">
-          {meals.map((meal) => (
+          {displayedMeals.map(meal => (
             <RecipeCard key={meal.id} meal={meal} />
-          ))}
+            ))}
+
         </div>
       )}
     </div>
   );
 }
+
+const MEAL_TIME_ORDER: Record<Meal["mealTime"], number> = {
+  breakfast: 1,
+  lunch: 2,
+  dinner: 3,
+  snack: 4,
+  dessert: 5,
+};

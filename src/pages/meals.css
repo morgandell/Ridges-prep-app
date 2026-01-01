@@ -48,3 +48,23 @@
   margin-bottom: 1.5rem;
 }
 
+.meal-filters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.meal-filters button {
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.meal-filters button.active {
+  background: #111827;
+  color: white;
+  border-color: #111827;
+}
