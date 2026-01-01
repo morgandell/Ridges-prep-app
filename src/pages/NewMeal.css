@@ -208,3 +208,33 @@
   display: block;
 }
 
+.meal-type-toggle {
+  display: inline-flex;
+  background: #f1f1f1;
+  padding: 4px;
+  border-radius: 999px;
+  gap: 4px;
+}
+
+.meal-type-btn {
+  border: none;
+  background: transparent;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.2s ease;
+}
+
+.meal-type-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.meal-type-btn.active {
+  background: #4f46e5; /* pick your theme color */
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+

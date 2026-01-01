@@ -11,7 +11,8 @@ const mealTypeClassMap: Record<Meal['mealTime'], string> = {
   breakfast: "meal-breakfast",
   lunch: "meal-lunch",
   dinner: "meal-dinner",
-  snack: "meal-dessert",
+  snack: "meal-snack",
+  dessert: "meal-dessert",
 };
 
 export default function RecipeCard({ meal }: RecipeCardProps) {

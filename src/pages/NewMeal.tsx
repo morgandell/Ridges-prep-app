@@ -17,7 +17,7 @@ export default function NewMeal() {
     cookTime: undefined,
     servings: undefined,
     tags: [],
-    mealTime: "snack",
+    mealTime: "dinner",
   });
 
   const [ingredientInput, setIngredientInput] = useState("");
@@ -237,17 +237,22 @@ export default function NewMeal() {
         </div>
 
          <div className="meal-type-toggle">
-            {(["breakfast", "lunch", "dinner", "dessert"] as const).map(type => (
+            {(["breakfast", "lunch", "dinner", "snack", "dessert"] as const).map(type => (
               <button
                 type="button"
                 key={type}
-                className={formData.mealTime === type ? "active" : ""}
+                className={`meal-type-btn ${
+                  formData.mealTime === type ? "active" : ""
+                }`}
                 onClick={() => handleInputChange("mealTime", type)}
               >
-                {type.charAt(0).toUpperCase() + type.slice(1)}
+                {type === "snack"
+                  ? "Snack"
+                  : type.charAt(0).toUpperCase() + type.slice(1)}
               </button>
             ))}
           </div>
+
 
 
         {/* <div className="form-row">
