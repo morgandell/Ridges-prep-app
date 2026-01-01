@@ -5,7 +5,7 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
-  /* border: 1px solid #e5e7eb; */
+  border: 1px solid #e5e7eb;
 }
 
 .recipe-card:hover {
@@ -65,29 +65,26 @@
 
 /* Meal type styling */
 .recipe-card.breakfast {
-  border-left-color: 6px solid #cc15fa;
-  background: #fffbea;
+  border-left: 6px solid #cc15fa;
+  /* background: #fffbea; */
 }
 
 .recipe-card.lunch {
-  border-left-color: 6px solid #22c55e;
-  background: #f0fdf4;
+  border-left: 6px solid #22c55e;
+  /* background: #f0fdf4; */
 }
 
 .recipe-card.dinner {
-  border-left-color: 6px solid #3b82f6;
-  /* border: 1px solid #e5e7eb; */
-  background: #dadbf5;
+  border-left: 6px solid #3b82f6;
+  /* background: #dadbf5; */
 }
 
 .recipe-card.snack {
-  border-left-color: 6px solid #dab65b;
-  background: #fdf2f8;
+  border-left: 6px solid #dab65b;
+  /* background: #fdf2f8; */
 }
 
 .recipe-card.dessert {
-  border-left-color: 6px solid #7a1917;
-  background: #fdf2f8;
+  border-left: 6px solid #7a1917;
+  /* background: #fdf2f8; */
 }
-
-
