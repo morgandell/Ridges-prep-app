@@ -1,11 +1,11 @@
 .recipe-card {
-  background: white;
+  background: var(--color-card);
   border-radius: 8px;
   padding: 1.5rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-card);
 }
 
 .recipe-card:hover {
@@ -23,29 +23,21 @@
 .recipe-card-header h3 {
   margin: 0;
   font-size: 1.25rem;
-  color: #1f2937;
-}
-
-.recipe-time {
-  font-size: 0.875rem;
-  color: #6b7280;
-  background: #f3f4f6;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  color: var(--color-textOnCard);
 }
 
 .recipe-description {
-  color: #4b5563;
+  color: var(--color-textOnCard);
   margin: 0.5rem 0;
   line-height: 1.5;
 }
 
 .recipe-ingredients-preview {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--color-textOnCard);
   margin-top: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-grayBorder);
 }
 
 .recipe-tags {
@@ -57,34 +49,34 @@
 
 .recipe-tag {
   font-size: 0.75rem;
-  background: #e0e7ff;
-  color: #4338ca;
+  background: var(--color-tagBackground);
+  color: var(--color-tagText);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
 }
 
 /* Meal type styling */
 .recipe-card.breakfast {
-  border-left: 6px solid #cc15fa;
+  border-left: 8px solid var(--color-breakfast);
   /* background: #fffbea; */
 }
 
 .recipe-card.lunch {
-  border-left: 6px solid #22c55e;
+  border-left: 8px solid var(--color-lunch);
   /* background: #f0fdf4; */
 }
 
 .recipe-card.dinner {
-  border-left: 6px solid #3b82f6;
+  border-left: 8px solid var(--color-dinner);
   /* background: #dadbf5; */
 }
 
 .recipe-card.snack {
-  border-left: 6px solid #dab65b;
+  border-left: 8px solid var(--color-snack);
   /* background: #fdf2f8; */
 }
 
 .recipe-card.dessert {
-  border-left: 6px solid #7a1917;
+  border-left: 8px solid var(--color-dessert);
   /* background: #fdf2f8; */
 }

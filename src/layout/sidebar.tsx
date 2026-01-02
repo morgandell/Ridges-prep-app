@@ -7,10 +7,11 @@ export default function Sidebar() {
       <h2 className="logo">Resources</h2>
 
         <NavLink to="/" end>Dashboard</NavLink>
-        <NavLink to="/meals">Meals</NavLink>
         <NavLink to="/routes">Routes</NavLink>
         <NavLink to="/gear">Gear</NavLink>
         <NavLink to="/sundays">Sundays</NavLink>
+        <NavLink to="/meals">Meals</NavLink>
+        <NavLink to="/menu">Menu</NavLink>
     </nav>
   );
 }

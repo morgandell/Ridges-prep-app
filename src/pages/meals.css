@@ -11,13 +11,13 @@
 
 .meals-header h1 {
   margin: 0;
-  color: #1f2937;
+  color: var(--color-textOnBackground);
 }
 
 .new-meal-button {
   padding: 0.75rem 1.5rem;
-  background: #3b82f6;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
   border: none;
   border-radius: 6px;
   font-size: 1rem;
@@ -27,7 +27,7 @@
 }
 
 .new-meal-button:hover {
-  background: #2563eb;
+  background: var(--color-primaryHover);
 }
 
 .meals-grid {
@@ -40,7 +40,7 @@
 .meals-empty {
   text-align: center;
   padding: 4rem 2rem;
-  color: #6b7280;
+  color: var(--color-textOnBackground);
 }
 
 .meals-empty p {
@@ -57,14 +57,18 @@
 .meal-filters button {
   padding: 0.4rem 0.75rem;
   border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: white;
+  border: 1px solid var(--color-secondary);
+  background: var(--color-secondary);
   cursor: pointer;
   font-size: 0.875rem;
 }
 
+.meal-filters button:hover {
+  background: var(--color-primaryHover);
+}
+
 .meal-filters button.active {
-  background: #111827;
-  color: white;
-  border-color: #111827;
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
+  border-color: var(--color-grayBorder);
 }

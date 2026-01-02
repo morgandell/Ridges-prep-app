@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Ingredient, Meal } from "../types/meal";
 import "./NewMeal.css";
+import { PRESET_TAGS } from "../constants/tags"; // adjust path as needed
+
 
 export default function NewMeal() {
   const navigate = useNavigate();
@@ -26,7 +28,7 @@ export default function NewMeal() {
     name: "",
     quantity: null,
     unit: "",
-    perServing: false,
+    perServing: true,
   });
 
 
@@ -534,39 +536,71 @@ export default function NewMeal() {
         </div>
 
         <div className="form-group">
-          <label>Tags</label>
-          <div className="input-with-button">
-            <input
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addTag();
-                }
-              }}
-              placeholder="Add a tag"
-            />
-            <button type="button" onClick={addTag}>
-              Add
-            </button>
-          </div>
-          <div className="list-items">
-            {formData.tags?.map((tag, index) => (
-              <div key={index} className="list-item tag-item">
-                <span>{tag}</span>
+            <label>Tags</label>
+
+            {/* Preset tags */}
+            <div className="preset-tags">
+              {PRESET_TAGS.map(tag => (
                 <button
+                  key={tag}
                   type="button"
-                  onClick={() => removeTag(index)}
-                  className="remove-button"
+                  className={`preset-tag-btn ${formData.tags?.includes(tag) ? "selected" : ""}`}
+                  onClick={() => {
+                    if (!formData.tags?.includes(tag)) {
+                      setFormData(prev => ({
+                        ...prev,
+                        tags: [...(prev.tags || []), tag],
+                      }));
+                    } else {
+                      // allow deselect
+                      setFormData(prev => ({
+                        ...prev,
+                        tags: prev.tags?.filter(t => t !== tag),
+                      }));
+                    }
+                  }}
                 >
-                  ×
+                  {tag}
                 </button>
-              </div>
-            ))}
+              ))}
+            </div>
+
+            {/* Custom tag input */}
+            <div className="input-with-button">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addTag();
+                  }
+                }}
+                placeholder="Add a custom tag"
+              />
+              <button type="button" onClick={addTag}>
+                Add
+              </button>
+            </div>
+
+            {/* Show current tags */}
+            <div className="list-items">
+              {formData.tags?.map((tag, index) => (
+                <div key={index} className="list-item tag-item">
+                  <span>{tag}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeTag(index)}
+                    className="remove-button"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+
 
         <div className="form-actions">
           <button
@@ -644,6 +678,7 @@ function IngredientModal({
             onChange={e =>
               onChange({ ...ingredient, unit: e.target.value })
             }
+            className="unit-select"
           >
             <option value="">—</option>
             <option value="g">g</option>
@@ -662,28 +697,28 @@ function IngredientModal({
           <label>
             <input
               type="radio"
-              checked={!ingredient.perServing}
-              onChange={() =>
-                onChange({ ...ingredient, perServing: false })
-              }
-            />
-            Whole recipe
-          </label>
-
-          <label>
-            <input
-              type="radio"
-              checked={ingredient.perServing}
+              checked={ingredient.perServing === true}
               onChange={() =>
                 onChange({ ...ingredient, perServing: true })
               }
             />
             Per serving
           </label>
+
+          <label>
+            <input
+              type="radio"
+              checked={ingredient.perServing === false}
+              onChange={() =>
+                onChange({ ...ingredient, perServing: false })
+              }
+            />
+            Whole recipe
+          </label>
         </div>
 
         <div className="modal-actions">
-          <button type="button" onClick={onCancel}>
+          <button type="button" onClick={onCancel} className="cancel">
             Cancel
           </button>
           <button type="button" onClick={onAdd} className="primary">

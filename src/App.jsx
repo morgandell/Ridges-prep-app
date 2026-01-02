@@ -8,6 +8,7 @@ import NewMeal from "./pages/NewMeal";
 import RoutesPage from "./pages/routes";   // renamed to RoutesPage
 import Gear from "./pages/gear";
 import Sundays from "./pages/sundays";
+import Menu from "./pages/menu";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/routes" element={<RoutesPage />} />
           <Route path="/gear" element={<Gear />} />
           <Route path="/sundays" element={<Sundays />} />
+          <Route path ="/menu" element={<Menu />} />
         </Route>
       </Routes>
     </HashRouter>

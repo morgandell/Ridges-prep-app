@@ -24,31 +24,31 @@
 }
 
 .back-button {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--color-backgroundLight);
+  color: var(--color-grayText);
 }
 
 .back-button:hover {
-  background: #e5e7eb;
+  background: var(--color-secondaryHover);
 }
 
 .edit-button {
-  background: #3b82f6;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
   margin-right: 0.5rem;
 }
 
 .edit-button:hover {
-  background: #2563eb;
+  background: var(--color-primaryHover);
 }
 
 .delete-button {
-  background: #ef4444;
-  color: white;
+  background: var(--color-delete);
+  color: var(--color-textOnDelete);
 }
 
 .delete-button:hover {
-  background: #dc2626;
+  background: var(--color-deleteHover);
 }
 
 .meal-actions {
@@ -65,14 +65,14 @@
 .meal-detail h1 {
   font-size: 2rem;
   margin-bottom: 1rem;
-  color: #1f2937;
+  color: var(--color-textOnBackground);
 }
 
 .meal-meta {
   display: flex;
   gap: 1.5rem;
   margin-bottom: 2rem;
-  color: #6b7280;
+  color: var(--color-textOnBackground);
   font-size: 0.875rem;
 }
 
@@ -83,14 +83,14 @@
 .meal-section h2 {
   font-size: 1.5rem;
   margin-bottom: 1rem;
-  color: #374151;
-  border-bottom: 2px solid #e5e7eb;
+  color: var(--color-textOnBackground);
+  border-bottom: 2px solid var(--color-secondary);
   padding-bottom: 0.5rem;
 }
 
 .meal-section p {
   line-height: 1.6;
-  color: #4b5563;
+  color: var(--color-textOnBackground);
 }
 
 .ingredients-list,
@@ -101,21 +101,21 @@
 
 .ingredients-list li {
   padding: 0.5rem 0;
-  border-bottom: 1px solid #f3f4f6;
-  color: #4b5563;
+  border-bottom: 1px solid var(--color-secondary);
+  color: var(--color-textOnBackground);
 }
 
 .ingredients-list li:before {
   content: "• ";
-  color: #3b82f6;
+  color: var(--color-primary);
   font-weight: bold;
   margin-right: 0.5rem;
 }
 
 .instructions-list li {
   padding: 0.75rem 0;
-  border-bottom: 1px solid #f3f4f6;
-  color: #4b5563;
+  border-bottom: 1px solid var(--color-secondary);
+  color: var(--color-textOnBackground);
   counter-increment: step-counter;
   padding-left: 2rem;
   position: relative;
@@ -130,8 +130,8 @@
   position: absolute;
   left: 0;
   top: 0.75rem;
-  background: #3b82f6;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
   width: 1.5rem;
   height: 1.5rem;
   border-radius: 50%;
@@ -150,8 +150,8 @@
 
 .meal-tag {
   font-size: 0.875rem;
-  background: #e0e7ff;
-  color: #4338ca;
+  background: var(--color-tagBackground);
+  color: var(--color-tagText);
   padding: 0.5rem 1rem;
   border-radius: 6px;
 }
