@@ -18,3 +18,4 @@ export interface Meal {
   mealTime: "breakfast" | "lunch" | "dinner" | "snack" | "dessert";
 }
 
+
