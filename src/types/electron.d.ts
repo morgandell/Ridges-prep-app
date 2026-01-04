@@ -5,6 +5,11 @@ export interface ElectronAPI {
   getMeal: (id: string) => Promise<{ success: boolean; meal?: Meal; error?: string }>;
   saveMeal: (meal: Meal) => Promise<{ success: boolean; meal?: Meal; error?: string }>;
   deleteMeal: (id: string) => Promise<{ success: boolean; error?: string }>;
+
+   // Weekly menu 
+  getMenu: () => Promise<Menu>;
+  saveMenu: (menu: Menu) => Promise<{ success: boolean; error?: string }>;
+
 }
 
 declare global {

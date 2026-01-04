@@ -1,0 +1,64 @@
+.menu-cell.drag-over {
+  outline: 2px dashed var(--primary);
+  background: var(--secondaryHover);
+}
+
+.menu-page {
+  display: flex;
+  gap: 2rem;
+  flex-direction: row;
+  justify-content: space-around;
+}
+
+.menu-cell {
+  min-width: 140px;
+  height: 70px;
+  border: 1px dashed #ccc;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.menu-cell.filled {
+  background: #f4f6fa;
+  border-style: solid;
+  cursor: grab;
+}
+
+.menu-cell.empty {
+  color: #999;
+}
+
+.menu-cell-content {
+  pointer-events: none;
+  font-weight: 500;
+}
+
+.draggable-meal {
+  cursor: grab;
+  padding: 8px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  background: #eef2ff;
+}
+
+.trash-drop-zone {
+  border: 2px dashed #c0392b;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.recipe-card[draggable="true"] {
+  cursor: grab;
+}
+
+.recipe-card:active {
+  cursor: grabbing;
+  opacity: 0.7;
+}
+
+.menu-cell.hovered {
+  border: 2px dashed #3b82f6;
+  background-color: #eff6ff;
+}

@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('node:path');
-const fs = require('fs').promises;
+const fs = require("fs");
+const fsPromises = fs.promises;
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -17,10 +18,12 @@ const createWindow = () => {
     },
   });
 
+  mainWindow.setMenu(null);
   mainWindow.maximize(); // fills screen but keeps window controls
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 };
+
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -52,10 +55,10 @@ const mealsFilePath = path.join(app.getPath('userData'), 'meals.json');
 // Ensure meals file exists
 async function ensureMealsFile() {
   try {
-    await fs.access(mealsFilePath);
+    await fsPromises.access(mealsFilePath);
   } catch {
     // File doesn't exist, create it with empty array
-    await fs.writeFile(mealsFilePath, JSON.stringify([], null, 2));
+    await fsPromises.writeFile(mealsFilePath, JSON.stringify([], null, 2));
   }
 }
 
@@ -68,7 +71,7 @@ app.whenReady().then(() => {
 ipcMain.handle('get-meals', async () => {
   try {
     await ensureMealsFile();
-    const data = await fs.readFile(mealsFilePath, 'utf-8');
+    const data = await fsPromises.readFile(mealsFilePath, 'utf-8');
     const meals = JSON.parse(data);
     return Array.isArray(meals) ? meals : [];
   } catch (error) {
@@ -84,7 +87,7 @@ ipcMain.handle('get-meal', async (event, id) => {
     }
     
     await ensureMealsFile();
-    const data = await fs.readFile(mealsFilePath, 'utf-8');
+    const data = await fsPromises.readFile(mealsFilePath, 'utf-8');
     const meals = JSON.parse(data);
     
     if (!Array.isArray(meals)) {
@@ -126,46 +129,7 @@ ipcMain.handle('save-meal', async (event, meal) => {
       meal.tags = [];
     }
 
-    // // Clean up the meal object - remove undefined values
-    // const cleanMeal = {
-    //   id: meal.id || Date.now().toString(),
-    //   name: meal.name.trim(),
-    //   description: meal.description || '',
-    //   ingredients: meal.ingredients.filter(i => i && i.trim() !== ''),
-    //   instructions: meal.instructions.filter(i => i && i.trim() !== ''),
-    //   prepTime: meal.prepTime || undefined,
-    //   cookTime: meal.cookTime || undefined,
-    //   servings: meal.servings || undefined,
-    //   tags: meal.tags.filter(t => t && t.trim() !== ''),
-    //   mealTime: meal.mealTime || 'dinner', // include mealTime (default if missing)
-    // };
-
-    // await ensureMealsFile();
-    // const data = await fs.readFile(mealsFilePath, 'utf-8');
-    // let meals = [];
     
-    // try {
-    //   meals = JSON.parse(data);
-    //   if (!Array.isArray(meals)) {
-    //     meals = [];
-    //   }
-    // } catch (parseError) {
-    //   console.error('Error parsing meals file, resetting:', parseError);
-    //   meals = [];
-    // }
-    
-    // // If meal has an id, update existing; otherwise, add new
-    // if (cleanMeal.id && meals.some(m => m.id === cleanMeal.id)) {
-    //   const index = meals.findIndex(m => m.id === cleanMeal.id);
-    //   meals[index] = cleanMeal;
-    // } else {
-    //   // Generate new ID if not provided
-    //   if (!cleanMeal.id) {
-    //     cleanMeal.id = Date.now().toString();
-    //   }
-    //   meals.push(cleanMeal);
-    // }
-    // Clean up the meal object - remove undefined values and include mealTime
 const cleanMeal = {
   id: meal.id || Date.now().toString(),
   name: meal.name.trim(),
@@ -189,7 +153,7 @@ const cleanMeal = {
 };
 // Load existing meals from file
 await ensureMealsFile();
-const data = await fs.readFile(mealsFilePath, 'utf-8');
+const data = await fsPromises.readFile(mealsFilePath, 'utf-8');
 let meals = [];
 try {
   meals = JSON.parse(data);
@@ -213,7 +177,7 @@ if (cleanMeal.id && meals.some(m => m.id === cleanMeal.id)) {
     
     // Write to file with error handling
     try {
-      await fs.writeFile(mealsFilePath, JSON.stringify(meals, null, 2), 'utf-8');
+      await fsPromises.writeFile(mealsFilePath, JSON.stringify(meals, null, 2), 'utf-8');
       return { success: true, meal: cleanMeal };
     } catch (writeError) {
       console.error('Error writing meals file:', writeError);
@@ -234,10 +198,10 @@ if (cleanMeal.id && meals.some(m => m.id === cleanMeal.id)) {
 ipcMain.handle('delete-meal', async (event, id) => {
   try {
     await ensureMealsFile();
-    const data = await fs.readFile(mealsFilePath, 'utf-8');
+    const data = await fsPromises.readFile(mealsFilePath, 'utf-8');
     const meals = JSON.parse(data);
     const filtered = meals.filter(m => m.id !== id);
-    await fs.writeFile(mealsFilePath, JSON.stringify(filtered, null, 2));
+    await fsPromises.writeFile(mealsFilePath, JSON.stringify(filtered, null, 2));
     return { success: true };
   } catch (error) {
     console.error('Error deleting meal:', error);
@@ -247,3 +211,57 @@ ipcMain.handle('delete-meal', async (event, id) => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
+
+const MENU_PATH = path.join(app.getPath("userData"), "menu.json");
+
+function createEmptyMenu() {
+  return {
+    days: {
+      sunday: {},
+      monday: {},
+      tuesday: {},
+      wednesday: {},
+      thursday: {},
+      friday: {},
+    },
+  };
+}
+
+function readMenu() {
+  try {
+    if (!fs.existsSync(MENU_PATH)) {
+      return { week: [] };
+    }
+    return JSON.parse(fs.readFileSync(MENU_PATH, "utf-8"));
+  } catch (err) {
+    console.error("Failed to read menu:", err);
+    return { week: [] };
+  }
+}
+
+function writeMenu(menu) {
+  fs.writeFileSync(MENU_PATH, JSON.stringify(menu, null, 2));
+}
+
+
+ipcMain.handle("save-menu", async (_event, menu) => {
+  try {
+    writeMenu(menu);
+    return { success: true };
+  } catch (err) {
+    console.error("Failed to save menu:", err);
+    return { success: false, error: "Failed to save menu" };
+  }
+});
+ipcMain.handle("get-menu", async () => {
+  const menuPath = path.join(app.getPath("userData"), "menu.json");
+
+  if (!fs.existsSync(menuPath)) {
+    const emptyMenu = createEmptyMenu();
+    fs.writeFileSync(menuPath, JSON.stringify(emptyMenu, null, 2));
+    return emptyMenu;
+  }
+
+  return JSON.parse(fs.readFileSync(menuPath, "utf-8"));
+});
+

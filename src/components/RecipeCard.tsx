@@ -5,6 +5,8 @@ import "./RecipeCard.css";
 
 interface RecipeCardProps {
   meal: Meal;
+  draggable?: boolean;
+  onDragStart?: (e: React.DragEvent, mealId: string) => void;
 }
 
 const mealTypeClassMap: Record<Meal['mealTime'], string> = {
@@ -15,19 +17,33 @@ const mealTypeClassMap: Record<Meal['mealTime'], string> = {
   dessert: "meal-dessert",
 };
 
-export default function RecipeCard({ meal }: RecipeCardProps) {
+export default function RecipeCard({ 
+  meal,
+  draggable = false,
+  onDragStart,
+}: RecipeCardProps) {
+
   const navigate = useNavigate();
+  const [isDragging, setIsDragging] = React.useState(false);
 
   const mealTypeClass =
     meal.mealTime ? mealTypeClassMap[meal.mealTime] : "";
 
   const handleClick = () => {
+     if (isDragging) return;
     console.log(meal.mealTime)
     navigate(`/meals/${meal.id}`);
   };
 
   return (
-    <div className={`recipe-card ${meal.mealTime}`} onClick={handleClick}>
+    <div className={`recipe-card ${meal.mealTime}`}
+    draggable={draggable}
+      onDragStart={(e) => {
+        setIsDragging(true);
+        onDragStart?.(e, meal.id);
+      }}
+      onDragEnd={() => setIsDragging(false)}
+      onClick={handleClick}>
       <div className="recipe-card-header">
         <h3>{meal.name}</h3>
             {meal.mealTime}
