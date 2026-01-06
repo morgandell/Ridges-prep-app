@@ -29,7 +29,8 @@ export default function WeeklyMenuPage() {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [menu, setMenu] = useState<Menu | null>(null);
   const [dragOverCell, setDragOverCell] = useState<{ day: DayOfWeek; slot: MealSlot } | null>(null);
-
+  const [filterMealTime, setFilterMealTime] = useState<Meal["mealTime"] | "all">("all");
+  
   useEffect(() => {
     loadData();
   }, []);
@@ -126,6 +127,16 @@ export default function WeeklyMenuPage() {
     return JSON.parse(raw) as DragData;
     }
 
+    const filteredMeals = meals
+    .filter(meal =>
+        filterMealTime === "all"
+        ? true
+        : meal.mealTime === filterMealTime
+    )
+    .sort((a, b) =>
+        (MEAL_TIME_ORDER[a.mealTime] ?? 99) -
+        (MEAL_TIME_ORDER[b.mealTime] ?? 99)
+    );
 
 
   if (!menu) return null;
@@ -147,9 +158,22 @@ export default function WeeklyMenuPage() {
         <div className="menu-page">
             <div className="recipe-list">
                     <h3>Meals</h3>
+                    <div className="meal-filters">
+                        {["all", "breakfast", "lunch", "dinner", "snack", "dessert"].map(type => (
+                            <button
+                            key={type}
+                            className={filterMealTime === type ? "active" : ""}
+                            onClick={() => setFilterMealTime(type as any)}
+                            >
+                            {type === "all"
+                                ? "All"
+                                : type.toUpperCase()}
+                            </button>
+                        ))}
+                        </div>
 
                     <div className="recipe-list-scroll">
-                    {meals.map((meal) => (
+                    {filteredMeals.map((meal) => (
                         <RecipeCard
                             key={meal.id}
                             meal = {meal}
@@ -238,10 +262,19 @@ export default function WeeklyMenuPage() {
                                 return prev;
                                 }
 
-                                updated.days[day][slot] = data.mealId;
+                                // If target slot is filled and we're dragging from a cell, switch the meals
+                                const targetMealId = updated.days[day]?.[slot];
+                                if (targetMealId && data.type === "cell") {
+                                    // Switch: put target meal in source slot, dragged meal in target slot
+                                    updated.days[data.day][data.slot] = targetMealId;
+                                    updated.days[day][slot] = data.mealId;
+                                } else {
+                                    // Normal drop: just set the target slot
+                                    updated.days[day][slot] = data.mealId;
 
-                                if (data.type === "cell") {
-                                updated.days[data.day][data.slot] = undefined;
+                                    if (data.type === "cell") {
+                                        updated.days[data.day][data.slot] = undefined;
+                                    }
                                 }
 
                                 // Auto-save after updating menu
@@ -297,3 +330,11 @@ export default function WeeklyMenuPage() {
     );
 
 }
+
+const MEAL_TIME_ORDER: Record<Meal["mealTime"], number> = {
+  breakfast: 1,
+  lunch: 2,
+  dinner: 3,
+  snack: 4,
+  dessert: 5,
+};

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut } = require('electron');
 const path = require('node:path');
 const fs = require("fs");
 const fsPromises = fs.promises;
@@ -22,6 +22,10 @@ const createWindow = () => {
   mainWindow.maximize(); // fills screen but keeps window controls
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+
+  globalShortcut.register("Control+Shift+I", () => {
+    mainWindow.webContents.toggleDevTools();
+  });
 };
 
 
@@ -213,6 +217,7 @@ ipcMain.handle('delete-meal', async (event, id) => {
 // code. You can also put them in separate files and import them here.
 
 const MENU_PATH = path.join(app.getPath("userData"), "menu.json");
+const WEEK_STATS_PATH = path.join(app.getPath("userData"), "weekStats.json");
 
 function createEmptyMenu() {
   return {
@@ -264,4 +269,58 @@ ipcMain.handle("get-menu", async () => {
 
   return JSON.parse(fs.readFileSync(menuPath, "utf-8"));
 });
+
+function readWeekStats() {
+  try {
+    if (!fs.existsSync(WEEK_STATS_PATH)) {
+      return [];
+    }
+    const raw = fs.readFileSync(WEEK_STATS_PATH, "utf-8");
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.error("Failed to read weekStats:", err);
+    return [];
+  }
+}
+
+function writeWeekStats(weeks) {
+  fs.writeFileSync(
+    WEEK_STATS_PATH,
+    JSON.stringify(weeks, null, 2),
+    "utf-8"
+  );
+}
+
+ipcMain.handle("get-week-stats", async () => {
+  try {
+    const weeks = readWeekStats();
+    return { success: true, weeks };
+  } catch (err) {
+    console.error("Failed to get week stats:", err);
+    return { success: false, error: "Failed to read week stats" };
+  }
+});
+
+ipcMain.handle("save-week-stats", async (_event, week) => {
+  try {
+    if (!week) {
+      return { success: false, error: "No week data provided" };
+    }
+
+    const weeks = readWeekStats();
+    const idx = weeks.findIndex(w => w.id === week.id);
+    if (idx >= 0) {
+      weeks[idx] = { ...weeks[idx], ...week };
+    } else {
+      weeks.push(week);
+    }
+    writeWeekStats(weeks);
+    return { success: true };
+  } catch (err) {
+    console.error("Failed to save week stats:", err);
+    return { success: false, error: "Failed to save week stats" };
+  }
+});
+
 

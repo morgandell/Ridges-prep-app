@@ -1,4 +1,5 @@
 import { Meal } from "./meal";
+import { WeekStats } from "./weekStats";
 
 export interface ElectronAPI {
   getMeals: () => Promise<Meal[]>;
@@ -9,6 +10,10 @@ export interface ElectronAPI {
    // Weekly menu 
   getMenu: () => Promise<Menu>;
   saveMenu: (menu: Menu) => Promise<{ success: boolean; error?: string }>;
+
+  // Week stats
+  getWeekStats: () => Promise<{ success: boolean; weeks?: WeekStats[]; error?: string }>;
+  saveWeekStats: (week: WeekStats) => Promise<{ success: boolean; error?: string }>;
 
 }
 

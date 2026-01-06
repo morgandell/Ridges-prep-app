@@ -12,6 +12,7 @@ export default function Sidebar() {
         <NavLink to="/sundays">Sundays</NavLink>
         <NavLink to="/meals">Meals</NavLink>
         <NavLink to="/menu">Menu</NavLink>
+        <NavLink to="/weeks">Weeks</NavLink>
     </nav>
   );
 }

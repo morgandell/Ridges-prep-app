@@ -1,0 +1,107 @@
+.week-detail {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.week-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.week-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.back-button,
+.edit-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.back-button {
+  background: var(--color-secondary);
+  color: var(--color-textOnSecondary);
+}
+
+.back-button:hover {
+  background: var(--color-secondaryHover);
+}
+
+.edit-button {
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
+}
+
+.edit-button:hover {
+  background: var(--color-primaryHover);
+}
+
+.week-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.week-header h1 {
+  margin: 0;
+  color: var(--color-textOnBackground);
+}
+
+.week-age-chip {
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: var(--color-secondary);
+  color: var(--color-textOnSecondary);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.week-meta {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--color-textOnBackground);
+  font-weight: 500;
+}
+
+.week-section {
+  margin-bottom: 1.5rem;
+}
+
+.week-section h2 {
+  margin-bottom: 0.75rem;
+  color: var(--color-textOnBackground);
+  border-bottom: 2px solid var(--color-secondary);
+  padding-bottom: 0.35rem;
+}
+
+.week-restrictions,
+.week-meals {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.week-restrictions li,
+.week-meals li {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--color-grayBorder);
+  border-radius: 6px;
+  background: var(--color-card);
+  color: var(--color-textOnBackground);
+}
+
+

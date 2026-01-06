@@ -199,7 +199,7 @@ export default function NewMeal() {
   return (
     <div className="new-meal">
       <div className="new-meal-header">
-        <button className="back-button" onClick={() => navigate("/meals")}>
+        <button className="back-button" onClick={() => navigate(-1)}>
           ← Back
         </button>
         <h1>{isEditing ? "Edit Meal" : "New Meal"}</h1>
@@ -464,7 +464,7 @@ export default function NewMeal() {
         <div className="form-actions">
           <button
             type="button"
-            onClick={() => navigate("/meals")}
+            onClick={() => navigate(-1)}
             className="cancel-button"
           >
             Cancel

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Meal } from "../types/meal";
+import { DayOfWeek, MealSlot, Menu } from "../types/menu";
 import "./MealDetail.css";
 
 export default function MealDetail() {
@@ -8,6 +9,14 @@ export default function MealDetail() {
   const navigate = useNavigate();
   const [meal, setMeal] = useState<Meal | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedDay, setSelectedDay] = useState<DayOfWeek>("monday");
+  const [selectedSlot, setSelectedSlot] = useState<MealSlot>("dinner");
+  const [showAddToMenu, setShowAddToMenu] = useState(false);
+  const [menu, setMenu] = useState<Menu | null>(null);
+  const [selectedCell, setSelectedCell] = useState<{
+    day: DayOfWeek;
+    slot: MealSlot;
+  } | null>(null);
 
   useEffect(() => {
     async function loadMeal() {
@@ -43,7 +52,7 @@ export default function MealDetail() {
     try {
       const result = await window.electronAPI.deleteMeal(meal.id);
       if (result.success) {
-        navigate("/meals");
+        navigate(-1);
       }
     } catch (error) {
       console.error("Error deleting meal:", error);
@@ -63,15 +72,22 @@ export default function MealDetail() {
     return (
       <div className="meal-detail">
         <h1>Meal not found</h1>
-        <button onClick={() => navigate("/meals")}>Back to Meals</button>
+        <button onClick={() => navigate(-1)}>Back</button>
       </div>
     );
   }
 
+  const openAddToMenu = async () => {
+    const currentMenu = await window.electronAPI.getMenu();
+    setMenu(currentMenu);
+    setShowAddToMenu(true);
+  };
+
+
   return (
     <div className="meal-detail">
       <div className="meal-detail-header">
-        <button className="back-button" onClick={() => navigate("/meals")}>
+        <button className="back-button" onClick={() => navigate(-1)}>
           ← Back
         </button>
         <div className="meal-actions">
@@ -86,19 +102,14 @@ export default function MealDetail() {
       <div className="meal-header">
         <h1>{meal.name}</h1>
         <h2>{meal.mealTime}</h2>
+        <button
+          className="add-to-menu-button"
+          onClick={() => openAddToMenu()}
+        >
+          + Add to Menu
+        </button>
       </div>
       
-      <div className="meal-meta">
-        {meal.prepTime && (
-          <span>Prep: {meal.prepTime} min</span>
-        )}
-        {meal.cookTime && (
-          <span>Cook: {meal.cookTime} min</span>
-        )}
-        {meal.servings && (
-          <span>Servings: {meal.servings}</span>
-        )}
-      </div>
 
       {meal.description && (
         <div className="meal-section">
@@ -152,7 +163,82 @@ export default function MealDetail() {
           </div>
         </div>
       )}
+ {showAddToMenu && menu && meal && (
+  <div className="modal-overlay" onClick={() => setShowAddToMenu(false)}>
+    <div className="modal large" onClick={(e) => e.stopPropagation()}>
+      <h2>Select a slot</h2>
+
+      <table className="mini-menu">
+        <thead>
+          <tr>
+            <th />
+            {["breakfast", "lunch", "dinner"].map(slot => (
+              <th key={slot}>{slot.toUpperCase()}</th>
+            ))}
+          </tr>
+        </thead>
+
+        <tbody>
+          {Object.entries(menu.days).map(([day, slots]) => (
+            <tr key={day}>
+              <td className="day">{day.toUpperCase()}</td>
+
+              {(["breakfast","lunch","dinner"] as MealSlot[]).map(slot => {
+                const occupiedMealId = slots[slot];
+                const isSelected =
+                  selectedCell?.day === day &&
+                  selectedCell?.slot === slot;
+
+                return (
+                  <td
+                    key={slot}
+                    className={`
+                      mini-menu-cell
+                      ${occupiedMealId ? "filled" : "empty"}
+                      ${isSelected ? "selected" : ""}
+                    `}
+                    onClick={() =>
+                      setSelectedCell({
+                        day: day as DayOfWeek,
+                        slot,
+                      })
+                    }
+                  >
+                    {occupiedMealId ? "Occupied" : "Empty"}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="modal-actions">
+        <button onClick={() => setShowAddToMenu(false)}>Cancel</button>
+
+        <button
+          disabled={!selectedCell}
+          onClick={async () => {
+            if (!selectedCell) return;
+
+            const updated = structuredClone(menu);
+
+            updated.days[selectedCell.day][selectedCell.slot] = meal.id;
+
+            await window.electronAPI.saveMenu(updated);
+            setShowAddToMenu(false);
+          }}
+        >
+          Add to Menu
+        </button>
+      </div>
     </div>
+  </div>
+)}
+
+
+    </div>
+    
   );
 }
 

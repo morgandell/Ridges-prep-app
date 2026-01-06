@@ -1,0 +1,134 @@
+.week-schedule-page {
+  padding: 2rem;
+}
+
+.week-schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.week-schedule-header h1 {
+  margin: 0;
+  color: var(--color-textOnBackground);
+}
+
+.new-week-button {
+  padding: 0.75rem 1.5rem;
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.new-week-button:hover {
+  background: var(--color-primaryHover);
+}
+
+.week-schedule-loading,
+.week-schedule-empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--color-textOnBackground);
+}
+
+.week-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.week-card {
+  background: var(--color-card);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--color-grayBorderLight);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.week-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+}
+
+.week-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.week-card-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--color-textOnCard, #111827);
+}
+
+.week-age-group {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background: var(--color-secondary);
+  color: var(--color-textOnSecondary);
+}
+
+.week-card-body p {
+  margin: 0.25rem 0;
+  color: var(--color-textOnCard, #374151);
+  font-size: 0.95rem;
+}
+
+.week-card-restrictions {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--color-grayTextDark);
+}
+
+.week-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.week-form label {
+  font-weight: 500;
+  color: var(--color-grayText);
+}
+
+.week-form input,
+.week-form select,
+.week-form textarea {
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-grayBorder);
+  background-color: var(--color-backgroundLight);
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.week-form input:focus,
+.week-form select:focus,
+.week-form textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.week-form .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+
