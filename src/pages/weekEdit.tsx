@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { WeekStats } from "../types/weekStats";
+import { WeekMealSelection, WeekStats } from "../types/weekStats";
+import { Meal } from "../types/meal";
+import { DayOfWeek, MealSlot } from "../types/menu";
 import "./weekSchedule.css";
+import "./weekEdit.css";
 
 export default function WeekEdit() {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +25,15 @@ export default function WeekEdit() {
     ageGroup: "intro",
     dietaryRestrictions: "",
   });
+  const [selectedMeals, setSelectedMeals] = useState<Set<string>>(new Set());
+const DAYS: DayOfWeek[] = [
+  "sunday","monday","tuesday","wednesday","thursday","friday"
+];
+
+const SLOTS: MealSlot[] = ["breakfast","lunch","dinner"];
+const [meals, setMeals] = useState<Meal[]>([]);
+const [included, setIncluded] = useState<WeekMealSelection[]>([]);
+
 
   useEffect(() => {
     async function loadWeek() {
@@ -37,7 +49,10 @@ export default function WeekEdit() {
               numberOfCampers: found.numberOfCampers.toString(),
               ageGroup: found.ageGroup,
               dietaryRestrictions: found.dietaryRestrictions.join(", "),
+              
             });
+            setIncluded(found.mealsEatingOnTrail ?? []);
+            // setSelectedMeals(new Set(found.mealsEatingOnTrail ?? []));
           }
         }
       } catch (err) {
@@ -48,6 +63,21 @@ export default function WeekEdit() {
     }
     loadWeek();
   }, [id]);
+
+  useEffect(() => {
+  async function loadMeals() {
+    const loadedMeals = await window.electronAPI.getMeals();
+    setMeals(loadedMeals);
+  }
+  loadMeals();
+}, []);
+
+useEffect(() => {
+  window.electronAPI.getMeals().then(setMeals);
+}, []);
+
+
+
 
   const handleInputChange = (
     field: keyof typeof formData,
@@ -83,7 +113,7 @@ export default function WeekEdit() {
       numberOfCampers: campers,
       ageGroup: formData.ageGroup,
       dietaryRestrictions: restrictions,
-      mealsEatingOnTrail: [],
+      mealsEatingOnTrail: included,
     };
 
     setSaving(true);
@@ -103,6 +133,35 @@ export default function WeekEdit() {
       setSaving(false);
     }
   }
+
+  function toggleMeal(mealId: string) {
+  setSelectedMeals(prev => {
+    const next = new Set(prev);
+    next.has(mealId) ? next.delete(mealId) : next.add(mealId);
+    return next;
+  });
+}
+function toggleCell(day: DayOfWeek, slot: MealSlot) {
+  setIncluded(prev => {
+    const exists = prev.find(
+      c => c.day === day && c.slot === slot
+    );
+
+    if (exists) {
+      return prev.filter(c => c !== exists);
+    }
+
+    return [
+      ...prev,
+      {
+        day,
+        slot,
+        mealId: "", // filled later by menu
+      },
+    ];
+  });
+}
+
 
   if (loading) {
     return <div className="week-schedule-page">Loading...</div>;
@@ -183,6 +242,49 @@ export default function WeekEdit() {
             placeholder="e.g. vegetarian, nut allergy"
           />
         </div>
+<div className="form-group">
+  <label>Meals included this week</label>
+
+  <table className="week-grid">
+    <thead>
+      <tr>
+        <th />
+        {SLOTS.map(slot => (
+          <th key={slot}>{slot.toUpperCase()}</th>
+        ))}
+      </tr>
+    </thead>
+
+    <tbody>
+      {DAYS.map(day => (
+        <tr key={day}>
+          <td className="day">{day.toUpperCase()}</td>
+
+          {SLOTS.map(slot => {
+            const active = included.some(
+              c => c.day === day && c.slot === slot
+            );
+
+            return (
+              <td
+                key={slot}
+                className={`week-grid-cell ${active ? "active" : ""}`}
+                onClick={() => toggleCell(day, slot)}
+              >
+                {active ? "✓" : ""}
+              </td>
+            );
+          })}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  <small className="hint">
+    Select which meal slots will be used during this week.
+  </small>
+</div>
+
 
         <div className="form-actions">
           <button

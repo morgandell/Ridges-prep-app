@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { DayOfWeek, MealSlot } from "../types/menu";
 import "./weekDetail.css";
 import { WeekStats } from "../types/weekStats";
 
@@ -8,6 +9,17 @@ export default function WeekDetail() {
   const navigate = useNavigate();
   const [week, setWeek] = useState<WeekStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const DAYS: DayOfWeek[] = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+];
+
+const SLOTS: MealSlot[] = ["breakfast", "lunch", "dinner"];
+
 
   useEffect(() => {
     async function loadWeek() {
@@ -43,6 +55,13 @@ export default function WeekDetail() {
       return iso;
     }
   };
+
+  function isIncluded(day: DayOfWeek, slot: MealSlot) {
+  return week?.mealsEatingOnTrail?.some(
+    m => m.day === day && m.slot === slot
+  );
+}
+
 
   if (loading) {
     return <div className="week-detail">Loading...</div>;
@@ -94,16 +113,44 @@ export default function WeekDetail() {
         </div>
       )}
 
-      {week.mealsEatingOnTrail?.length > 0 && (
-        <div className="week-section">
-          <h2>Meals on Trail</h2>
-          <ul className="week-meals">
-            {week.mealsEatingOnTrail.map(meal => (
-              <li key={meal.id}>{meal.name}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+     {week.mealsEatingOnTrail?.length > 0 && (
+  <div className="week-section">
+    <h2>Meals Included This Week</h2>
+
+    <table className="week-grid read-only">
+      <thead>
+        <tr>
+          <th />
+          {SLOTS.map(slot => (
+            <th key={slot}>{slot.toUpperCase()}</th>
+          ))}
+        </tr>
+      </thead>
+
+      <tbody>
+        {DAYS.map(day => (
+          <tr key={day}>
+            <td className="day">{day.toUpperCase()}</td>
+
+            {SLOTS.map(slot => {
+              const active = isIncluded(day, slot);
+
+              return (
+                <td
+                  key={slot}
+                  className={`week-grid-cell ${active ? "active" : ""}`}
+                >
+                  {active ? "✓" : ""}
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+
     </div>
   );
 }
