@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { WeekMealSelection, WeekStats } from "../types/weekStats";
+import { CamperRestriction, WeekMealSelection, WeekStats } from "../types/weekStats";
 import { Meal } from "../types/meal";
 import { DayOfWeek, MealSlot } from "../types/menu";
 import "./weekSchedule.css";
 import "./weekEdit.css";
+import { PRESET_DIETARY_RESTRICTIONS } from "../constants/tags";
 
 export default function WeekEdit() {
   const { id } = useParams<{ id: string }>();
@@ -14,16 +15,15 @@ export default function WeekEdit() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [campers, setCampers] = useState<CamperRestriction[]>([]);
   const [formData, setFormData] = useState<{
     weekStart: string;
     numberOfCampers: string;
-    ageGroup: WeekStats["ageGroup"];
-    dietaryRestrictions: string;
+    ageGroup: WeekStats["ageGroup"];    
   }>({
     weekStart: "",
     numberOfCampers: "",
     ageGroup: "intro",
-    dietaryRestrictions: "",
   });
   const [selectedMeals, setSelectedMeals] = useState<Set<string>>(new Set());
 const DAYS: DayOfWeek[] = [
@@ -48,11 +48,17 @@ const [included, setIncluded] = useState<WeekMealSelection[]>([]);
               weekStart: found.weekStart,
               numberOfCampers: found.numberOfCampers.toString(),
               ageGroup: found.ageGroup,
-              dietaryRestrictions: found.dietaryRestrictions.join(", "),
               
             });
             setIncluded(found.mealsEatingOnTrail ?? []);
-            // setSelectedMeals(new Set(found.mealsEatingOnTrail ?? []));
+           setCampers(
+  found.camperRestrictions.map(c => ({
+    ...c,
+    draftRestriction: "",
+  }))
+);
+
+
           }
         }
       } catch (err) {
@@ -94,25 +100,19 @@ useEffect(() => {
       setError("Please select a week start date.");
       return;
     }
-    const campers = parseInt(formData.numberOfCampers || "0", 10);
-    if (Number.isNaN(campers) || campers <= 0) {
+    const campersCount = parseInt(formData.numberOfCampers || "0", 10);
+    if (Number.isNaN(campersCount) || campersCount <= 0) {
       setError("Number of campers must be a positive number.");
       return;
     }
 
-    const restrictions = formData.dietaryRestrictions
-      ? formData.dietaryRestrictions
-          .split(",")
-          .map(r => r.trim())
-          .filter(Boolean)
-      : [];
 
     const updatedWeek: WeekStats = {
       id: id || Date.now().toString(),
       weekStart: formData.weekStart,
-      numberOfCampers: campers,
+      numberOfCampers: campersCount,
       ageGroup: formData.ageGroup,
-      dietaryRestrictions: restrictions,
+      camperRestrictions: campers,
       mealsEatingOnTrail: included,
     };
 
@@ -160,6 +160,38 @@ function toggleCell(day: DayOfWeek, slot: MealSlot) {
       },
     ];
   });
+}
+
+function addRestriction(camperId: string) {
+  setCampers(prev =>
+    prev.map(c => {
+      if (c.id !== camperId) return c;
+
+      const value = c.draftRestriction.trim();
+      if (!value || c.restrictions.includes(value)) {
+        return { ...c, draftRestriction: "" };
+      }
+
+      return {
+        ...c,
+        restrictions: [...c.restrictions, value],
+        draftRestriction: "",
+      };
+    })
+  );
+}
+
+function removeRestriction(camperId: string, value: string) {
+  setCampers(prev =>
+    prev.map(c =>
+      c.id === camperId
+        ? {
+            ...c,
+            restrictions: c.restrictions.filter(r => r !== value),
+          }
+        : c
+    )
+  );
 }
 
 
@@ -225,23 +257,139 @@ function toggleCell(day: DayOfWeek, slot: MealSlot) {
           </select>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="restrictions">
-            Dietary restrictions (comma separated)
-          </label>
-          <textarea
-            id="restrictions"
-            rows={3}
-            value={formData.dietaryRestrictions}
-            onChange={e =>
-              handleInputChange(
-                "dietaryRestrictions",
-                e.target.value,
-              )
-            }
-            placeholder="e.g. vegetarian, nut allergy"
-          />
-        </div>
+       <div className="form-group">
+  <label>Camper dietary restrictions</label>
+
+  {campers.map(camper => (
+    <div key={camper.id} className="camper-row">
+      <button
+        type="button"
+        className="remove-button"
+        onClick={() =>
+          setCampers(prev =>
+            prev.filter(c => c.id !== camper.id)
+          )
+        }
+      >
+        ✕
+      </button>
+      <input
+        type="text"
+        placeholder="Camper name"
+        value={camper.name}
+        onChange={e =>
+          setCampers(prev =>
+            prev.map(c =>
+              c.id === camper.id
+                ? { ...c, name: e.target.value }
+                : c
+            )
+          )
+        }
+      />
+
+<div className="preset-tags">
+  {PRESET_DIETARY_RESTRICTIONS.map(tag => {
+    const isSelected = camper.restrictions.includes(tag);
+
+    return (
+      <button
+        key={tag}
+        type="button"
+        className={`preset-tag-btn ${isSelected ? "selected" : ""}`}
+        onClick={() => {
+          setCampers(prev =>
+            prev.map(c =>
+              c.id === camper.id
+                ? {
+                    ...c,
+                    restrictions: isSelected
+                      ? c.restrictions.filter(t => t !== tag)
+                      : [...c.restrictions, tag],
+                  }
+                : c
+            )
+          );
+        }}
+      >
+        {tag}
+      </button>
+    );
+  })}
+</div>
+
+      <div className="restriction-input">
+  <input
+    type="text"
+    placeholder="Add restriction"
+    value={camper.draftRestriction}
+    onChange={e =>
+      setCampers(prev =>
+        prev.map(c =>
+          c.id === camper.id
+            ? { ...c, draftRestriction: e.target.value }
+            : c
+        )
+      )
+    }
+    onKeyDown={e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        addRestriction(camper.id);
+      }
+    }}
+  />
+
+  <button
+    type="button"
+    className="add-button"
+    onClick={() => addRestriction(camper.id)}
+  >
+    Add
+  </button>
+</div>
+
+<div className="restriction-tags">
+  {camper.restrictions.map(r => (
+    <span key={r} className="restriction-tag">
+      {r}
+      <button
+        type="button"
+        onClick={() => removeRestriction(camper.id, r)}
+      >
+        ✕
+      </button>
+    </span>
+  ))}
+</div>
+
+    </div>
+  ))}
+
+  <button
+    type="button"
+    className="add-button"
+    onClick={() =>
+      setCampers(prev => [
+        ...prev,
+        {
+  id: crypto.randomUUID(),
+  name: "",
+  restrictions: [],
+  draftRestriction: "",
+},
+
+      ])
+    }
+  >
+    + Add camper
+  </button>
+
+  <small className="hint">
+    Multiple campers can share the same restriction.
+  </small>
+</div>
+
 <div className="form-group">
   <label>Meals included this week</label>
 

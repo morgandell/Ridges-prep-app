@@ -62,6 +62,20 @@ const SLOTS: MealSlot[] = ["breakfast", "lunch", "dinner"];
   );
 }
 
+function groupRestrictions(
+  campers: WeekStats["camperRestrictions"]
+) {
+  const map = new Map<string, number>();
+
+  campers.forEach(camper => {
+    camper.restrictions.forEach(r => {
+      map.set(r, (map.get(r) ?? 0) + 1);
+    });
+  });
+
+  return Array.from(map.entries());
+}
+
 
   if (loading) {
     return <div className="week-detail">Loading...</div>;
@@ -102,16 +116,45 @@ const SLOTS: MealSlot[] = ["breakfast", "lunch", "dinner"];
         <span>Trail meals: {week.mealsEatingOnTrail?.length ?? 0}</span>
       </div>
 
-      {week.dietaryRestrictions?.length > 0 && (
-        <div className="week-section">
-          <h2>Dietary Restrictions</h2>
-          <ul className="week-restrictions">
-            {week.dietaryRestrictions.map((r, i) => (
-              <li key={`${r}-${i}`}>{r}</li>
-            ))}
-          </ul>
+{week.camperRestrictions?.length > 0 && (
+  <div className="week-section">
+    <h2>Camper Dietary Restrictions</h2>
+
+    <div className="camper-restrictions">
+      {week.camperRestrictions.map(camper => (
+        <div key={camper.id} className="camper-card">
+          <strong className="camper-name">{camper.name}</strong>
+
+          {camper.restrictions.length > 0 ? (
+            <ul className="restriction-list">
+              {camper.restrictions.map((r, i) => (
+                <li key={i}>{r}</li>
+              ))}
+            </ul>
+          ) : (
+            <span className="no-restrictions">No restrictions</span>
+          )}
         </div>
+      ))}
+    </div>
+  </div>
+)}
+
+{week.camperRestrictions?.length > 0 && (
+  <div className="week-section">
+    <h2>Restriction Summary</h2>
+    <ul className="restriction-summary">
+      {groupRestrictions(week.camperRestrictions).map(
+        ([restriction, count]) => (
+          <li key={restriction}>
+            {restriction} — {count} camper{count !== 1 && "s"}
+          </li>
+        )
       )}
+    </ul>
+  </div>
+)}
+
 
      {week.mealsEatingOnTrail?.length > 0 && (
   <div className="week-section">

@@ -10,18 +10,18 @@ export default function WeekSchedule() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
 
   const [formData, setFormData] = useState<{
-    weekStart: string;
-    numberOfCampers: string;
-    ageGroup: WeekStats["ageGroup"];
-    dietaryRestrictions: string;
-  }>({
-    weekStart: "",
-    numberOfCampers: "",
-    ageGroup: "intro",
-    dietaryRestrictions: "",
-  });
+  weekStart: string;
+  numberOfCampers: string;
+  ageGroup: WeekStats["ageGroup"];
+}>({
+  weekStart: "",
+  numberOfCampers: "",
+  ageGroup: "intro",
+});
+
 
   useEffect(() => {
     loadWeeks();
@@ -63,21 +63,15 @@ export default function WeekSchedule() {
       return;
     }
 
-    const restrictions = formData.dietaryRestrictions
-      ? formData.dietaryRestrictions
-          .split(",")
-          .map(r => r.trim())
-          .filter(Boolean)
-      : [];
-
     const newWeek: WeekStats = {
-      id: Date.now().toString(),
-      weekStart: formData.weekStart,
-      numberOfCampers: campers,
-      ageGroup: formData.ageGroup,
-      dietaryRestrictions: restrictions,
-      mealsEatingOnTrail: [],
-    };
+  id: Date.now().toString(),
+  weekStart: formData.weekStart,
+  numberOfCampers: campers,
+  ageGroup: formData.ageGroup,
+  camperRestrictions: [],
+  mealsEatingOnTrail: [],
+};
+
 
     setSaving(true);
     try {
@@ -92,7 +86,6 @@ export default function WeekSchedule() {
         weekStart: "",
         numberOfCampers: "",
         ageGroup: "intro",
-        dietaryRestrictions: "",
       });
     } catch (err: any) {
       console.error("Error saving week:", err);
@@ -117,6 +110,13 @@ export default function WeekSchedule() {
       return iso;
     }
   };
+
+  function countRestrictedCampers(week: WeekStats) {
+  return week.camperRestrictions?.filter(
+    c => c.restrictions.length > 0
+  ).length ?? 0;
+}
+
 
   return (
     <div className="week-schedule-page">
@@ -178,15 +178,13 @@ export default function WeekSchedule() {
                     <strong>Trail meals:</strong>{" "}
                     {week.mealsEatingOnTrail.length}
                   </p>
-                  {week.dietaryRestrictions.length > 0 && (
-                    <p className="week-card-restrictions">
-                      <strong>Restrictions:</strong>{" "}
-                      {week.dietaryRestrictions
-                        .slice(0, 3)
-                        .join(", ")}
-                      {week.dietaryRestrictions.length > 3 && "…"}
-                    </p>
-                  )}
+                  {countRestrictedCampers(week) > 0 && (
+  <p className="week-card-restrictions">
+    <strong>Campers w/ restrictions:</strong>{" "}
+    {countRestrictedCampers(week)}
+  </p>
+)}
+
                 </div>
               </div>
             ))}
@@ -269,23 +267,7 @@ export default function WeekSchedule() {
                 </select>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="restrictions">
-                  Dietary restrictions (comma separated)
-                </label>
-                <textarea
-                  id="restrictions"
-                  rows={3}
-                  value={formData.dietaryRestrictions}
-                  onChange={e =>
-                    handleInputChange(
-                      "dietaryRestrictions",
-                      e.target.value,
-                    )
-                  }
-                  placeholder="e.g. vegetarian, nut allergy"
-                />
-              </div>
+              
 
               <div className="form-actions">
                 <button
