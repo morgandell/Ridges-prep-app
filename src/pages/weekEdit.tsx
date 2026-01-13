@@ -123,7 +123,7 @@ useEffect(() => {
         setError(result.error || "Failed to save week.");
         return;
       }
-      navigate(`/weeks/${updatedWeek.id}`);
+      navigate(`/weeks/${updatedWeek.id}`, { state: { fromEdit: true } });
     } catch (err: any) {
       console.error("Error saving week:", err);
       setError(

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { DayOfWeek, MealSlot } from "../types/menu";
 import "./weekDetail.css";
 import { WeekStats } from "../types/weekStats";
@@ -7,6 +7,7 @@ import { WeekStats } from "../types/weekStats";
 export default function WeekDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [week, setWeek] = useState<WeekStats | null>(null);
   const [loading, setLoading] = useState(true);
   const DAYS: DayOfWeek[] = [
@@ -81,11 +82,24 @@ function groupRestrictions(
     return <div className="week-detail">Loading...</div>;
   }
 
+  const handleBack = () => {
+    // If we came from an edit page, go to weeks list instead
+    const cameFromEdit = location.state?.fromEdit;
+    const referrer = document.referrer;
+    const isFromEditRoute = referrer.includes('/edit') || cameFromEdit;
+    
+    if (isFromEditRoute) {
+      navigate("/weeks");
+    } else {
+      navigate(-1);
+    }
+  };
+
   if (!week) {
     return (
       <div className="week-detail">
         <h1>Week not found</h1>
-        <button onClick={() => navigate(-1)}>Back</button>
+        <button onClick={handleBack}>Back</button>
       </div>
     );
   }
@@ -93,13 +107,13 @@ function groupRestrictions(
   return (
     <div className="week-detail">
       <div className="week-detail-header">
-        <button className="back-button" onClick={() => navigate(-1)}>
+        <button className="back-button" onClick={handleBack}>
           ← Back
         </button>
         <div className="week-actions">
           <button
             className="edit-button"
-            onClick={() => navigate(`/weeks/${week.id}/edit`)}
+            onClick={() => navigate(`/weeks/${week.id}/edit`, { state: { fromDetail: true } })}
           >
             Edit
           </button>

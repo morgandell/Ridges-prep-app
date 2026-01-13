@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Meal } from "../types/meal";
 import { DayOfWeek, MealSlot, Menu } from "../types/menu";
 import "./MealDetail.css";
@@ -7,6 +7,7 @@ import "./MealDetail.css";
 export default function MealDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [meal, setMeal] = useState<Meal | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>("monday");
@@ -44,6 +45,19 @@ export default function MealDetail() {
     loadMeal();
   }, [id]);
 
+  const handleBack = () => {
+    // If we came from an edit page, go to meals list instead
+    const cameFromEdit = location.state?.fromEdit;
+    const referrer = document.referrer;
+    const isFromEditRoute = referrer.includes('/edit') || cameFromEdit;
+    
+    if (isFromEditRoute) {
+      navigate("/meals");
+    } else {
+      navigate(-1);
+    }
+  };
+
   const handleDelete = async () => {
     if (!meal || !window.confirm("Are you sure you want to delete this meal?")) {
       return;
@@ -52,7 +66,7 @@ export default function MealDetail() {
     try {
       const result = await window.electronAPI.deleteMeal(meal.id);
       if (result.success) {
-        navigate(-1);
+        navigate("/meals");
       }
     } catch (error) {
       console.error("Error deleting meal:", error);
@@ -61,7 +75,7 @@ export default function MealDetail() {
   };
 
   const handleEdit = () => {
-    navigate(`/meals/${id}/edit`);
+    navigate(`/meals/${id}/edit`, { state: { fromDetail: true } });
   };
 
   if (loading) {
@@ -72,7 +86,7 @@ export default function MealDetail() {
     return (
       <div className="meal-detail">
         <h1>Meal not found</h1>
-        <button onClick={() => navigate(-1)}>Back</button>
+        <button onClick={handleBack}>Back</button>
       </div>
     );
   }
@@ -87,7 +101,7 @@ export default function MealDetail() {
   return (
     <div className="meal-detail">
       <div className="meal-detail-header">
-        <button className="back-button" onClick={() => navigate(-1)}>
+        <button className="back-button" onClick={handleBack}>
           ← Back
         </button>
         <div className="meal-actions">

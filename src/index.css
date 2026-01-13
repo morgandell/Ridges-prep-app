@@ -20,3 +20,20 @@ body {
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
 }
+
+/* Print styles */
+@media print {
+  html, body {
+    height: auto !important;
+    width: 100% !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #root {
+    height: auto !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+}

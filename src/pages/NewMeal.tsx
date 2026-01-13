@@ -177,7 +177,7 @@ export default function NewMeal() {
       console.log(meal.mealTime)
       const result = await window.electronAPI.saveMeal(meal);
       if (result.success && result.meal) {
-        navigate(`/meals/${result.meal.id}`);
+        navigate(`/meals/${result.meal.id}`, { state: { fromEdit: true } });
       } else {
         const errorMessage = result.error || 'Failed to save meal. Please try again.';
         setError(errorMessage);

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { WeekStats } from "../types/weekStats";
 import { Meal } from "../types/meal";
 import { Ingredient } from "../types/meal";
@@ -19,22 +19,61 @@ interface WeekMealData {
     day: DayOfWeek;
     slot: MealSlot;
     meal: Meal | null;
+    excludedCampers: string[]; // Campers who can't eat this meal
+    includedCampers: number; // Number of campers who can eat this meal
+    note?: string; // Custom note for this meal
+    selectionIndex: number; // Index in mealsEatingOnTrail array
   }>;
 }
 
 export default function FoodPrint() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [weeks, setWeeks] = useState<WeekStats[]>([]);
   const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [weekMealData, setWeekMealData] = useState<WeekMealData[]>([]);
   const [totalIngredients, setTotalIngredients] = useState<Map<string, IngredientTotal>>(new Map());
+  const [editingNote, setEditingNote] = useState<{ weekId: string; day: DayOfWeek; slot: MealSlot } | null>(null);
+  const [mealNotes, setMealNotes] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     loadData();
   }, []);
 
-  async function loadData() {
+  // Reload data when navigating to this page
+  useEffect(() => {
+    if (location.pathname === '/food-print') {
+      loadData(true);
+    }
+  }, [location.pathname]);
+
+  // Reload data when window comes into focus (user navigates back or switches tabs)
+  useEffect(() => {
+    const handleFocus = () => {
+      loadData(true);
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        loadData(true);
+      }
+    });
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
+  async function loadData(showRefreshing = false) {
+    if (showRefreshing) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    
     try {
       const [weeksResult, mealsData] = await Promise.all([
         window.electronAPI.getWeekStats(),
@@ -61,11 +100,28 @@ export default function FoodPrint() {
                 meal = mealsData.find(m => m.id === menuMealId) || null;
               }
             }
+
+            // Calculate which campers can/can't eat this meal
+            const excludedCampers: string[] = [];
+            let includedCampers = week.numberOfCampers;
+
+            if (week.camperRestrictions && week.camperRestrictions.length > 0) {
+              week.camperRestrictions.forEach(camper => {
+                if (!mealCanAccommodateCamper(meal, camper.restrictions)) {
+                  excludedCampers.push(camper.name || `Camper ${camper.id}`);
+                  includedCampers--;
+                }
+              });
+            }
             
             return {
               day: selection.day,
               slot: selection.slot,
               meal: meal,
+              excludedCampers,
+              includedCampers: Math.max(0, includedCampers), // Ensure non-negative
+              note: selection.note,
+              selectionIndex: week.mealsEatingOnTrail.indexOf(selection),
             };
           });
           return { week, mealSelections };
@@ -77,10 +133,14 @@ export default function FoodPrint() {
         const ingredientMap = new Map<string, IngredientTotal>();
 
         weekData.forEach(({ week, mealSelections }) => {
-          const servings = week.numberOfCampers + 2;
-
-          mealSelections.forEach(({ meal }) => {
+          mealSelections.forEach(({ meal, includedCampers }) => {
             if (!meal || !meal.ingredients) return;
+
+            // Calculate servings based on included campers (those who can eat the meal)
+            let servings = (includedCampers + 2) * 1.5;
+            if (week.ageGroup === "high school") {
+              servings = (includedCampers + 2) * 2;
+            }
 
             meal.ingredients.forEach(ing => {
               const key = `${ing.name}|${ing.unit}|${ing.perServing}`;
@@ -129,8 +189,13 @@ export default function FoodPrint() {
       console.error("Error loading data:", err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }
+
+  const handleRefresh = () => {
+    loadData(true);
+  };
 
   const formatDate = (iso: string) => {
     if (!iso) return "";
@@ -154,12 +219,61 @@ export default function FoodPrint() {
     return `${formatted} ${ing.unit || ""}`.trim();
   };
 
+  // Check if a meal can accommodate a camper's restrictions
+  const mealCanAccommodateCamper = (meal: Meal | null, camperRestrictions: string[]): boolean => {
+    if (!meal) {
+      // No meal assigned, can't accommodate anyone
+      return false;
+    }
+
+    if (camperRestrictions.length === 0) {
+      // Camper has no restrictions, they can eat any meal
+      return true;
+    }
+
+    // If meal has no tags, it can't accommodate any restrictions
+    if (!meal.tags || meal.tags.length === 0) {
+      return false;
+    }
+
+    // Normalize tags and restrictions for comparison (case-insensitive)
+    const mealTags = meal.tags.map(t => t.toLowerCase().trim().replace(/\s+/g, ''));
+    const restrictions = camperRestrictions.map(r => r.toLowerCase().trim().replace(/\s+/g, ''));
+
+    // Check if meal has tags that match ALL of the camper's restrictions
+    // A meal can accommodate if it has tags covering all restrictions
+    // Match exact or if tag contains restriction (e.g., "Easy-Gluten-Free-Alternative" matches "Gluten-Free")
+    const mealCanAccommodate = restrictions.every(restriction => {
+      return mealTags.some(tag => {
+        // Exact match
+        if (tag === restriction) return true;
+        // Tag contains restriction (e.g., "easy-gluten-free-alternative" contains "gluten-free")
+        if (tag.includes(restriction)) return true;
+        // Restriction contains tag (less common but possible)
+        if (restriction.includes(tag)) return true;
+        // Handle hyphenated variations (e.g., "gluten-free" vs "glutenfree")
+        const tagNormalized = tag.replace(/-/g, '');
+        const restrictionNormalized = restriction.replace(/-/g, '');
+        if (tagNormalized === restrictionNormalized) return true;
+        if (tagNormalized.includes(restrictionNormalized)) return true;
+        return false;
+      });
+    });
+
+    return mealCanAccommodate;
+  };
+
   const getWeekIngredients = (weekData: WeekMealData) => {
     const ingredientMap = new Map<string, IngredientTotal>();
-    const servings = weekData.week.numberOfCampers + 2;
 
-    weekData.mealSelections.forEach(({ meal }) => {
+    weekData.mealSelections.forEach(({ meal, includedCampers }) => {
       if (!meal || !meal.ingredients) return;
+
+      // Calculate servings based on included campers
+      let servings = (includedCampers + 2) * 1.5;
+      if (weekData.week.ageGroup === "high school") {
+        servings = (includedCampers + 2) * 2;
+      }
 
       meal.ingredients.forEach(ing => {
         const key = `${ing.name}|${ing.unit}|${ing.perServing}`;
@@ -213,9 +327,19 @@ export default function FoodPrint() {
         <button className="back-button" onClick={() => navigate(-1)}>
           ← Back
         </button>
-        <button className="print-button" onClick={() => window.print()}>
-          Print
-        </button>
+        <div className="header-actions">
+          <button 
+            className="refresh-button" 
+            onClick={handleRefresh}
+            disabled={refreshing || loading}
+            title="Refresh data (updates when menu or meals change)"
+          >
+            {refreshing ? "Refreshing..." : "🔄 Refresh"}
+          </button>
+          <button className="print-button" onClick={() => window.print()}>
+            Print
+          </button>
+        </div>
       </div>
 
       <div className="print-content">
@@ -249,7 +373,7 @@ export default function FoodPrint() {
         {/* Per-Week Breakdown */}
         {weekMealData.map((weekData, weekIdx) => {
           const weekIngredients = getWeekIngredients(weekData);
-          const servings = weekData.week.numberOfCampers + 2;
+          const multiplier = weekData.week.ageGroup === "high school" ? 2 : 1.5;
 
           return (
             <div key={weekData.week.id} className="print-section page-break">
@@ -257,7 +381,7 @@ export default function FoodPrint() {
                 Week: {formatDate(weekData.week.weekStart)} — {weekData.week.ageGroup}
               </h2>
               <p className="print-meta">
-                Campers: {weekData.week.numberOfCampers} | Servings per meal: {servings} (campers + 2)
+                Total Campers: {weekData.week.numberOfCampers} | Servings calculated per meal based on dietary restrictions
               </p>
 
               <h3>Meals This Week</h3>
@@ -267,16 +391,116 @@ export default function FoodPrint() {
                     <th>Day</th>
                     <th>Meal</th>
                     <th>Meal Name</th>
+                    <th>Notes</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {weekData.mealSelections.map((selection, idx) => (
-                    <tr key={idx}>
-                      <td>{selection.day}</td>
-                      <td>{selection.slot}</td>
-                      <td>{selection.meal?.name || "Not assigned"}</td>
-                    </tr>
-                  ))}
+                  {weekData.mealSelections.map((selection, idx) => {
+                    const noteKey = `${weekData.week.id}-${selection.day}-${selection.slot}`;
+                    const isEditing = editingNote?.weekId === weekData.week.id && 
+                                     editingNote?.day === selection.day && 
+                                     editingNote?.slot === selection.slot;
+                    const currentNote = mealNotes[noteKey] || selection.note || "";
+
+                    return (
+                      <tr key={idx}>
+                        <td>{selection.day}</td>
+                        <td>{selection.slot}</td>
+                        <td>{selection.meal?.name || "Not assigned"}</td>
+                        <td className="notes-cell">
+                          {isEditing ? (
+                            <div className="meal-note-editor">
+                              <textarea
+                                value={currentNote}
+                                onChange={(e) => setMealNotes(prev => ({ ...prev, [noteKey]: e.target.value }))}
+                                placeholder="Add note..."
+                                className="meal-note-textarea"
+                                rows={2}
+                                autoFocus
+                              />
+                              <div className="meal-note-actions">
+                                <button
+                                  type="button"
+                                  className="save-note-button"
+                                  onClick={async () => {
+                                    // Update the week's meal selection with the note
+                                    const updatedSelections = [...weekData.week.mealsEatingOnTrail];
+                                    const selectionToUpdate = updatedSelections[selection.selectionIndex];
+                                    if (selectionToUpdate) {
+                                      updatedSelections[selection.selectionIndex] = {
+                                        ...selectionToUpdate,
+                                        note: mealNotes[noteKey] || "",
+                                      };
+                                    }
+
+                                    const updatedWeek = {
+                                      ...weekData.week,
+                                      mealsEatingOnTrail: updatedSelections,
+                                    };
+
+                                    const result = await window.electronAPI.saveWeekStats(updatedWeek);
+                                    if (result.success) {
+                                      setEditingNote(null);
+                                      // Reload weeks to get updated data
+                                      const weeksResult = await window.electronAPI.getWeekStats();
+                                      if (weeksResult.success && weeksResult.weeks) {
+                                        setWeeks(weeksResult.weeks);
+                                        // Reload data to refresh the display
+                                        loadData(true);
+                                      }
+                                    } else {
+                                      alert("Failed to save note: " + (result.error || "Unknown error"));
+                                    }
+                                  }}
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  type="button"
+                                  className="cancel-note-button"
+                                  onClick={() => {
+                                    setEditingNote(null);
+                                    // Restore original note
+                                    setMealNotes(prev => {
+                                      const newNotes = { ...prev };
+                                      delete newNotes[noteKey];
+                                      return newNotes;
+                                    });
+                                  }}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="meal-note-display">
+                              {selection.excludedCampers.length > 0 && (
+                                <span className="restriction-note">
+                                  ⚠️ Need alternative for: {selection.excludedCampers.join(", ")}
+                                </span>
+                              )}
+                              {selection.excludedCampers.length === 0 && selection.meal && (
+                                <span className="no-restrictions-note">All campers included</span>
+                              )}
+                              {currentNote && (
+                                <div className="custom-note">
+                                  <strong>Note:</strong> {currentNote}
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                className="edit-note-button"
+                                onClick={() => setEditingNote({ weekId: weekData.week.id, day: selection.day, slot: selection.slot })}
+                                title="Edit note"
+                              >
+                                ✏️
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
 
@@ -303,14 +527,22 @@ export default function FoodPrint() {
               {weekData.mealSelections.map((selection, idx) => {
                 if (!selection.meal) return null;
 
+                // Calculate servings for this specific meal
+                let mealServings = (selection.includedCampers + 2) * multiplier;
+
                 return (
                   <div key={idx} className="meal-detail-print">
                     <h4>
                       {selection.day} {selection.slot}: {selection.meal.name}
                     </h4>
                     <p className="servings-info">
-                      Servings: {servings} (for {weekData.week.numberOfCampers} campers + 2)
+                      Servings: {mealServings.toFixed(1)} (for {selection.includedCampers} campers who can eat this meal + 2, × {multiplier})
                     </p>
+                    {selection.excludedCampers.length > 0 && (
+                      <div className="restriction-alert">
+                        <strong>⚠️ Dietary Restriction Note:</strong> The following campers cannot eat this meal and need an alternative: {selection.excludedCampers.join(", ")}
+                      </div>
+                    )}
                     <table className="meal-ingredients-table">
                       <thead>
                         <tr>
@@ -325,8 +557,8 @@ export default function FoodPrint() {
                           let notes = "";
 
                           if (ing.perServing && quantity !== null) {
-                            quantity = quantity * servings;
-                            notes = `(${ing.quantity} ${ing.unit || ""} per serving × ${servings})`.trim();
+                            quantity = quantity * mealServings;
+                            notes = `(${ing.quantity} ${ing.unit || ""} per serving × ${mealServings.toFixed(1)})`.trim();
                           } else if (!ing.perServing) {
                             notes = "whole recipe";
                           }

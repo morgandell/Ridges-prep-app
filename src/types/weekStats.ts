@@ -5,6 +5,7 @@ export interface WeekMealSelection {
   day: DayOfWeek;
   slot: MealSlot;
   mealId: string;
+  note?: string; // Editable note for this specific meal
 }
 
 export interface WeekStats {

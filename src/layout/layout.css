@@ -43,3 +43,22 @@
   background: var(--color-background);
   overflow-y: auto;
 }
+
+/* Print styles - hide sidebar and make content full width */
+@media print {
+  .app-layout {
+    display: block !important;
+    height: auto !important;
+  }
+
+  .sidebar {
+    display: none !important;
+  }
+
+  .content {
+    width: 100% !important;
+    padding: 0 !important;
+    background: white !important;
+    overflow: visible !important;
+  }
+}
