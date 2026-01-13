@@ -261,7 +261,8 @@ function removeRestriction(camperId: string, value: string) {
   <label>Camper dietary restrictions</label>
 
   {campers.map(camper => (
-    <div key={camper.id} className="camper-row">
+    <div key={camper.id} className="camper-details">
+    <div className="camper-row">
       <button
         type="button"
         className="remove-button"
@@ -348,13 +349,14 @@ function removeRestriction(camperId: string, value: string) {
     Add
   </button>
 </div>
-
+</div>
 <div className="restriction-tags">
   {camper.restrictions.map(r => (
     <span key={r} className="restriction-tag">
       {r}
       <button
         type="button"
+        className="remove-button"
         onClick={() => removeRestriction(camper.id, r)}
       >
         ✕
@@ -368,7 +370,7 @@ function removeRestriction(camperId: string, value: string) {
 
   <button
     type="button"
-    className="add-button"
+    className="add-camper-button"
     onClick={() =>
       setCampers(prev => [
         ...prev,
@@ -454,5 +456,6 @@ function removeRestriction(camperId: string, value: string) {
     </div>
   );
 }
+
 
 

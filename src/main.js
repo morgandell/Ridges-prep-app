@@ -323,4 +323,3 @@ ipcMain.handle("save-week-stats", async (_event, week) => {
   }
 });
 
-

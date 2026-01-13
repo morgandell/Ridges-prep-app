@@ -18,6 +18,7 @@ export default function Sidebar() {
     <h2 className="logo">Planning</h2>
         <NavLink to="/menu">Menu</NavLink>
         <NavLink to="/weeks">Weeks</NavLink>
+        <NavLink to="/food-print">Food Print</NavLink>
     </nav>
   );
 }

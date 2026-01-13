@@ -25,6 +25,16 @@ type DragData =
 
 const SLOTS: MealSlot[] = ["breakfast", "lunch", "dinner"];
 
+const BLOCKED_CELLS: Partial<Record<DayOfWeek, MealSlot[]>> = {
+  sunday: ["breakfast", "lunch"],
+  friday: ["lunch", "dinner"],
+};
+
+function isBlocked(day: DayOfWeek, slot: MealSlot) {
+  return BLOCKED_CELLS[day]?.includes(slot) ?? false;
+}
+
+
 export default function WeeklyMenuPage() {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [menu, setMenu] = useState<Menu | null>(null);
@@ -147,11 +157,7 @@ export default function WeeklyMenuPage() {
         <h1>Weekly Menu</h1>
          <div className="menu-actions">
             <button className="clear-menu-btn" onClick={clearMenu}>
-            Clear Menu
-            </button>
-
-            <button className="save-menu-btn" onClick={saveMenuAndNotify}>
-            Save Menu
+             🗑 Clear Menu
             </button>
         </div>
         </div>
@@ -206,12 +212,17 @@ export default function WeeklyMenuPage() {
                 const meal = meals.find(m => m.id === mealId);
 
                 const isDragOver = dragOverCell?.day === day && dragOverCell?.slot === slot;
+                const blocked = isBlocked(day, slot);
 
                 return (
                    <td
                         key={slot}
-                        className={`menu-cell ${meal ? "filled" : "empty"} ${isDragOver ? "drag-over" : ""}`}
-                        draggable={!!meal}
+                        className={`
+                            menu-cell
+                            ${blocked ? "blocked" : meal ? "filled" : "empty"}
+                            ${isDragOver && !blocked ? "drag-over" : ""}
+                        `}   
+                        draggable={!blocked &&!!meal}
                         onDragStart={(e) => {
                             if (!mealId) return;
                             setDragOverCell(null); // Clear drag-over when starting to drag
@@ -224,6 +235,7 @@ export default function WeeklyMenuPage() {
                             });
                             }}
                         onDragEnter={(e) => {
+                            if (blocked) return;
                             e.preventDefault();
                             setDragOverCell({ day, slot });
                         }}
@@ -238,12 +250,14 @@ export default function WeeklyMenuPage() {
                             }
                         }}
                         onDragOver={(e) => {
+                           if (blocked) return;
                             e.preventDefault();
                             setDragOverCell({ day, slot });
                         }}
                        onDrop={(e) => {
+                            if (blocked) return;
                             e.preventDefault();
-                            setDragOverCell(null); // Clear drag-over state
+                            setDragOverCell(null);
                             
                             const data = getDragData(e);
                             if (!data) return;

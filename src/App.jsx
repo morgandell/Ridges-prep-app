@@ -12,6 +12,7 @@ import Menu from "./pages/menu";
 import WeekSchedule from "./pages/weekSchedule";
 import WeekDetail from "./pages/weekDetail";
 import WeekEdit from "./pages/weekEdit";
+import FoodPrint from "./pages/foodPrint";
 
 export default function App() {
   return (
@@ -28,8 +29,10 @@ export default function App() {
           <Route path="/sundays" element={<Sundays />} />
           <Route path="/menu" element={<Menu />} />
           <Route path="/weeks" element={<WeekSchedule />} />
+          <Route path="/weeks/new" element={<WeekEdit />} />
           <Route path="/weeks/:id" element={<WeekDetail />} />
           <Route path="/weeks/:id/edit" element={<WeekEdit />} />
+          <Route path="/food-print" element={<FoodPrint />} />
         </Route>
       </Routes>
     </HashRouter>

@@ -7,20 +7,6 @@ export default function WeekSchedule() {
   const navigate = useNavigate();
   const [weeks, setWeeks] = useState<WeekStats[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-
-  const [formData, setFormData] = useState<{
-  weekStart: string;
-  numberOfCampers: string;
-  ageGroup: WeekStats["ageGroup"];
-}>({
-  weekStart: "",
-  numberOfCampers: "",
-  ageGroup: "intro",
-});
 
 
   useEffect(() => {
@@ -42,60 +28,7 @@ export default function WeekSchedule() {
     }
   }
 
-  const handleInputChange = (
-    field: keyof typeof formData,
-    value: string,
-  ) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-
-    if (!formData.weekStart) {
-      setError("Please select a week start date.");
-      return;
-    }
-    const campers = parseInt(formData.numberOfCampers || "0", 10);
-    if (Number.isNaN(campers) || campers <= 0) {
-      setError("Number of campers must be a positive number.");
-      return;
-    }
-
-    const newWeek: WeekStats = {
-  id: Date.now().toString(),
-  weekStart: formData.weekStart,
-  numberOfCampers: campers,
-  ageGroup: formData.ageGroup,
-  camperRestrictions: [],
-  mealsEatingOnTrail: [],
-};
-
-
-    setSaving(true);
-    try {
-      const result = await window.electronAPI.saveWeekStats(newWeek);
-      if (!result.success) {
-        setError(result.error || "Failed to save week.");
-        return;
-      }
-      setWeeks(prev => [...prev, newWeek]);
-      setShowForm(false);
-      setFormData({
-        weekStart: "",
-        numberOfCampers: "",
-        ageGroup: "intro",
-      });
-    } catch (err: any) {
-      console.error("Error saving week:", err);
-      setError(
-        err?.message || "Unexpected error while saving the week.",
-      );
-    } finally {
-      setSaving(false);
-    }
-  }
+  
 
   const formatDate = (iso: string) => {
     if (!iso) return "";
@@ -124,7 +57,7 @@ export default function WeekSchedule() {
         <h1>Weekly Schedules</h1>
         <button
           className="new-week-button"
-          onClick={() => setShowForm(true)}
+          onClick={() => navigate("/weeks/new")}
         >
           + New Week
         </button>
@@ -137,7 +70,7 @@ export default function WeekSchedule() {
           <p>No weeks created yet.</p>
           <button
             className="new-week-button"
-            onClick={() => setShowForm(true)}
+            onClick={() => navigate("/weeks/new")}
           >
             Create first week
           </button>
@@ -191,106 +124,9 @@ export default function WeekSchedule() {
         </div>
       )}
 
-      {showForm && (
-        <div
-          className="modal-overlay"
-          onClick={() => !saving && setShowForm(false)}
-        >
-          <div
-            className="modal large"
-            onClick={e => e.stopPropagation()}
-          >
-            <h2>New Week</h2>
-            {error && (
-              <div className="error-message">
-                <strong>Error:</strong> {error}
-              </div>
-            )}
-            <form
-              className="week-form"
-              onSubmit={handleSubmit}
-            >
-              <div className="form-group">
-                <label htmlFor="weekStart">
-                  Week starting (Monday)
-                </label>
-                <input
-                  id="weekStart"
-                  type="date"
-                  value={formData.weekStart}
-                  onChange={e =>
-                    handleInputChange(
-                      "weekStart",
-                      e.target.value,
-                    )
-                  }
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="campers">Number of campers</label>
-                <input
-                  id="campers"
-                  type="number"
-                  min={1}
-                  value={formData.numberOfCampers}
-                  onChange={e =>
-                    handleInputChange(
-                      "numberOfCampers",
-                      e.target.value,
-                    )
-                  }
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="ageGroup">Age group</label>
-                <select
-                  id="ageGroup"
-                  value={formData.ageGroup}
-                  onChange={e =>
-                    handleInputChange(
-                      "ageGroup",
-                      e.target.value,
-                    )
-                  }
-                >
-                  <option value="intro">Intro</option>
-                  <option value="middle school">
-                    Middle school
-                  </option>
-                  <option value="high school">
-                    High school
-                  </option>
-                </select>
-              </div>
-
-              
-
-              <div className="form-actions">
-                <button
-                  type="button"
-                  className="cancel-button"
-                  onClick={() => !saving && setShowForm(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="submit-button"
-                  disabled={saving}
-                >
-                  {saving ? "Saving..." : "Save week"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      
+      
     </div>
   );
+
 }
-
-
