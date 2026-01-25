@@ -258,7 +258,7 @@ export default function WeeklyMenuPage() {
                             if (blocked) return;
                             e.preventDefault();
                             setDragOverCell(null);
-                            
+
                             const data = getDragData(e);
                             if (!data) return;
 
@@ -303,7 +303,11 @@ export default function WeeklyMenuPage() {
 
                         >
                         <div className="menu-cell-content">
-                            {meal ? meal.name : "Drop meal here"}
+                            {blocked
+                                ? "—"
+                                : meal
+                                ? meal.name
+                                : "Drop meal here"}
                         </div>
                         </td>
 
@@ -327,7 +331,7 @@ export default function WeeklyMenuPage() {
                         
                         // Auto-save after removing meal
                         setTimeout(() => {
-                            saveMenu();
+                            saveMenu(updated);
                         }, 0);
                         
                         return updated;

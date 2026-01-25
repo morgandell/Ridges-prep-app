@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { DayOfWeek, MealSlot } from "../types/menu";
+import { DayOfWeek, MealSlot, Menu } from "../types/menu";
 import "./weekDetail.css";
 import { WeekStats } from "../types/weekStats";
+import { Meal } from "../types/meal";
 
 export default function WeekDetail() {
   const { id } = useParams<{ id: string }>();
@@ -10,6 +11,8 @@ export default function WeekDetail() {
   const location = useLocation();
   const [week, setWeek] = useState<WeekStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [menu, setMenu] = useState<Menu | null>(null);
+  const [meals, setMeals] = useState<Meal[]>([]);
   const DAYS: DayOfWeek[] = [
   "sunday",
   "monday",
@@ -29,11 +32,17 @@ const SLOTS: MealSlot[] = ["breakfast", "lunch", "dinner"];
         return;
       }
       try {
-        const result = await window.electronAPI.getWeekStats();
-        if (result.success && result.weeks) {
-          const found = result.weeks.find(w => w.id === id);
+        const [weekResult, menuData, mealsData] = await Promise.all([
+          window.electronAPI.getWeekStats(),
+          window.electronAPI.getMenu(),
+          window.electronAPI.getMeals(),
+        ]);
+        if (weekResult.success && weekResult.weeks) {
+          const found = weekResult.weeks.find(w => w.id === id);
           setWeek(found || null);
         }
+        setMenu(menuData);
+        setMeals(mealsData);
       } catch (err) {
         console.error("Error loading week:", err);
       } finally {
@@ -198,6 +207,54 @@ function groupRestrictions(
                   className={`week-grid-cell ${active ? "active" : ""}`}
                 >
                   {active ? "✓" : ""}
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+
+{menu && week.mealOverrides && Object.keys(week.mealOverrides).length > 0 && (
+  <div className="week-section">
+    <h2>Week-Specific Meal Swaps</h2>
+    <p className="hint">These meals have been swapped from the main menu for this week only.</p>
+    <table className="week-menu-table">
+      <thead>
+        <tr>
+          <th>Day</th>
+          {SLOTS.map(slot => (
+            <th key={slot}>{slot.charAt(0).toUpperCase() + slot.slice(1)}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {DAYS.map(day => (
+          <tr key={day}>
+            <td className="day">{day.charAt(0).toUpperCase() + day.slice(1)}</td>
+            {SLOTS.map(slot => {
+              const overrideMealId = week.mealOverrides?.[day]?.[slot];
+              const menuMealId = menu.days[day]?.[slot];
+              const overrideMeal = overrideMealId ? meals.find(m => m.id === overrideMealId) : null;
+              const menuMeal = menuMealId ? meals.find(m => m.id === menuMealId) : null;
+              const hasOverride = !!overrideMealId;
+
+              if (!hasOverride) return <td key={slot}></td>;
+
+              return (
+                <td key={slot} className="menu-swap-cell overridden">
+                  <div className="meal-swap-display">
+                    <div>
+                      <strong>Swapped:</strong> {overrideMeal?.name || "Unknown"}
+                    </div>
+                    {menuMeal && (
+                      <div className="original-meal">
+                        <small>Original: {menuMeal.name}</small>
+                      </div>
+                    )}
+                  </div>
                 </td>
               );
             })}

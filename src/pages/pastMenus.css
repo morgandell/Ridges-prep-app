@@ -1,0 +1,254 @@
+.past-menus-page {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.past-menus-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.past-menus-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: var(--color-text);
+}
+
+.back-button {
+  padding: 0.5rem 1rem;
+  background: var(--color-secondary);
+  color: var(--color-textOnSecondary);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-right: 1rem;
+}
+
+.back-button:hover {
+  background: var(--color-secondaryHover);
+}
+
+.add-button {
+  padding: 0.75rem 1.5rem;
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.add-button:hover {
+  background: var(--color-primaryHover);
+}
+
+.error-message {
+  padding: 1rem;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 6px;
+  color: #c33;
+  margin-bottom: 1rem;
+}
+
+.add-menu-form {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.add-menu-form h3 {
+  margin: 0 0 1rem 0;
+  color: var(--color-text);
+}
+
+.add-menu-form input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.save-button,
+.cancel-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.save-button {
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
+}
+
+.save-button:hover {
+  background: var(--color-primaryHover);
+}
+
+.cancel-button {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.cancel-button:hover {
+  background: #d1d5db;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #6b7280;
+}
+
+.past-menus-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.past-menu-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--color-text);
+  flex: 1;
+}
+
+.past-menu-date {
+  font-size: 0.875rem;
+  color: #6b7280;
+  white-space: nowrap;
+  margin-left: 1rem;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.view-button,
+.import-button,
+.delete-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.view-button {
+  background: var(--color-secondary);
+  color: var(--color-textOnSecondary);
+}
+
+.view-button:hover {
+  background: var(--color-secondaryHover);
+}
+
+.import-button {
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
+}
+
+.import-button:hover {
+  background: var(--color-primaryHover);
+}
+
+.delete-button {
+  background: #fee;
+  color: #c33;
+}
+
+.delete-button:hover {
+  background: #fcc;
+}
+
+.past-menu-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.past-menu-preview {
+  margin-top: 2rem;
+}
+
+.past-menu-preview .past-menu-date {
+  margin-bottom: 1rem;
+  color: #6b7280;
+}
+
+.past-menu-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-background);
+}
+
+.past-menu-table th {
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+.past-menu-table td {
+  padding: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.past-menu-table td.day {
+  font-weight: 600;
+  background: #f9fafb;
+}
+
+.past-menu-table td.filled {
+  background: #f0f9ff;
+}
+
+.past-menu-table td.empty {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: #6b7280;
+}

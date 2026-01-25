@@ -11,6 +11,7 @@ export default function Sidebar() {
         <NavLink to="/gear">Gear</NavLink>
         <NavLink to="/sundays">Sundays</NavLink>
         <NavLink to="/meals">Meals</NavLink>
+        <NavLink to="/past-menus">Past Menus</NavLink>
 
         <br></br>
         <br></br>

@@ -1,5 +1,7 @@
 import { Meal } from "./meal";
 import { WeekStats } from "./weekStats";
+import { Menu } from "./menu";
+import { PastMenu } from "./pastMenu";
 
 export interface ElectronAPI {
   getMeals: () => Promise<Meal[]>;
@@ -15,6 +17,10 @@ export interface ElectronAPI {
   getWeekStats: () => Promise<{ success: boolean; weeks?: WeekStats[]; error?: string }>;
   saveWeekStats: (week: WeekStats) => Promise<{ success: boolean; error?: string }>;
 
+  // Past menus
+  getPastMenus: () => Promise<{ success: boolean; pastMenus?: PastMenu[]; error?: string }>;
+  savePastMenu: (pastMenu: PastMenu) => Promise<{ success: boolean; pastMenu?: PastMenu; error?: string }>;
+  deletePastMenu: (id: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 declare global {

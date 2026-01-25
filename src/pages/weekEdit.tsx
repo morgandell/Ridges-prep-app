@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CamperRestriction, WeekMealSelection, WeekStats } from "../types/weekStats";
 import { Meal } from "../types/meal";
-import { DayOfWeek, MealSlot } from "../types/menu";
+import { DayOfWeek, MealSlot, Menu } from "../types/menu";
 import "./weekSchedule.css";
 import "./weekEdit.css";
 import { PRESET_DIETARY_RESTRICTIONS } from "../constants/tags";
@@ -33,6 +33,9 @@ const DAYS: DayOfWeek[] = [
 const SLOTS: MealSlot[] = ["breakfast","lunch","dinner"];
 const [meals, setMeals] = useState<Meal[]>([]);
 const [included, setIncluded] = useState<WeekMealSelection[]>([]);
+const [menu, setMenu] = useState<Menu | null>(null);
+const [mealOverrides, setMealOverrides] = useState<WeekStats["mealOverrides"]>({});
+const [swappingMeal, setSwappingMeal] = useState<{ day: DayOfWeek; slot: MealSlot } | null>(null);
 
 
   useEffect(() => {
@@ -51,6 +54,7 @@ const [included, setIncluded] = useState<WeekMealSelection[]>([]);
               
             });
             setIncluded(found.mealsEatingOnTrail ?? []);
+            setMealOverrides(found.mealOverrides || {});
            setCampers(
   found.camperRestrictions.map(c => ({
     ...c,
@@ -79,7 +83,15 @@ const [included, setIncluded] = useState<WeekMealSelection[]>([]);
 }, []);
 
 useEffect(() => {
-  window.electronAPI.getMeals().then(setMeals);
+  async function loadData() {
+    const [loadedMeals, loadedMenu] = await Promise.all([
+      window.electronAPI.getMeals(),
+      window.electronAPI.getMenu(),
+    ]);
+    setMeals(loadedMeals);
+    setMenu(loadedMenu);
+  }
+  loadData();
 }, []);
 
 
@@ -114,6 +126,7 @@ useEffect(() => {
       ageGroup: formData.ageGroup,
       camperRestrictions: campers,
       mealsEatingOnTrail: included,
+      mealOverrides: Object.keys(mealOverrides).length > 0 ? mealOverrides : undefined,
     };
 
     setSaving(true);
@@ -435,6 +448,99 @@ function removeRestriction(camperId: string, value: string) {
   </small>
 </div>
 
+<div className="form-group">
+  <label>Week-specific meal swaps</label>
+  <p className="hint">Override meals from the main menu for this week only. Click a meal to swap it.</p>
+  {menu && (
+    <table className="week-menu-table">
+      <thead>
+        <tr>
+          <th>Day</th>
+          {SLOTS.map(slot => (
+            <th key={slot}>{slot.charAt(0).toUpperCase() + slot.slice(1)}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {DAYS.map(day => (
+          <tr key={day}>
+            <td className="day">{day.charAt(0).toUpperCase() + day.slice(1)}</td>
+            {SLOTS.map(slot => {
+              const overrideMealId = mealOverrides[day]?.[slot];
+              const menuMealId = menu.days[day]?.[slot];
+              const currentMealId = overrideMealId || menuMealId;
+              const currentMeal = meals.find(m => m.id === currentMealId);
+              const isSwapping = swappingMeal?.day === day && swappingMeal?.slot === slot;
+              const hasOverride = !!overrideMealId;
+
+              return (
+                <td key={slot} className={`menu-swap-cell ${hasOverride ? "overridden" : ""}`}>
+                  {isSwapping ? (
+                    <div className="meal-swap-selector">
+                      <select
+                        value={overrideMealId || ""}
+                        onChange={(e) => {
+                          const newMealId = e.target.value || undefined;
+                          setMealOverrides(prev => {
+                            const updated = { ...prev };
+                            if (!updated[day]) updated[day] = {};
+                            if (newMealId) {
+                              updated[day][slot] = newMealId;
+                            } else {
+                              delete updated[day][slot];
+                              if (Object.keys(updated[day]).length === 0) {
+                                delete updated[day];
+                              }
+                            }
+                            return Object.keys(updated).length > 0 ? updated : {};
+                          });
+                          setSwappingMeal(null);
+                        }}
+                        onBlur={() => setSwappingMeal(null)}
+                        autoFocus
+                      >
+                        <option value="">Use menu default</option>
+                        {meals
+                          .filter(m => m.mealTime === slot || slot === "dinner")
+                          .map(meal => (
+                            <option key={meal.id} value={meal.id}>
+                              {meal.name}
+                            </option>
+                          ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => setSwappingMeal(null)}
+                        className="cancel-swap-button"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className="meal-swap-display"
+                      onClick={() => setSwappingMeal({ day, slot })}
+                      title="Click to swap meal"
+                    >
+                      {currentMeal ? (
+                        <>
+                          <span className="meal-name">{currentMeal.name}</span>
+                          {hasOverride && <span className="override-badge">Swapped</span>}
+                        </>
+                      ) : (
+                        <span className="no-meal">Click to set</span>
+                      )}
+                    </div>
+                  )}
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</div>
 
         <div className="form-actions">
           <button

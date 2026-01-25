@@ -142,6 +142,7 @@
     width: 56%;
     border-collapse: separate; /* NOT collapse */
     border-spacing: 4px;
+    background-color: var(--color-background);
 }
 /* Days of week (left column) */
 .menu-table .day {

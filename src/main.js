@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, globalShortcut } = require('electron');
 const path = require('node:path');
 const fs = require("fs");
 const fsPromises = fs.promises;
+const pastMenusPath = path.join(app.getPath("userData"), "past-menus.json");
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -323,3 +324,37 @@ ipcMain.handle("save-week-stats", async (_event, week) => {
   }
 });
 
+
+function loadPastMenus() {
+  if (!fs.existsSync(pastMenusPath)) return [];
+  return JSON.parse(fs.readFileSync(pastMenusPath, "utf-8"));
+}
+
+function savePastMenus(pastMenus) {
+  fs.writeFileSync(pastMenusPath, JSON.stringify(pastMenus, null, 2));
+}
+
+ipcMain.handle("get-past-menus", async () => {
+  return {
+    success: true,
+    pastMenus: loadPastMenus(),
+  };
+});
+
+ipcMain.handle("save-past-menu", async (_event, pastMenu) => {
+  const pastMenus = loadPastMenus();
+  pastMenus.push(pastMenu);
+  savePastMenus(pastMenus);
+
+  return {
+    success: true,
+    pastMenu,
+  };
+});
+
+ipcMain.handle("delete-past-menu", async (_event, id) => {
+  const pastMenus = loadPastMenus().filter(pm => pm.id !== id);
+  savePastMenus(pastMenus);
+
+  return { success: true };
+});

@@ -21,10 +21,17 @@ interface WeekMealData {
     meal: Meal | null;
     excludedCampers: string[]; // Campers who can't eat this meal
     includedCampers: number; // Number of campers who can eat this meal
+    alternativeCampers: string[];
     note?: string; // Custom note for this meal
     selectionIndex: number; // Index in mealsEatingOnTrail array
   }>;
 }
+
+type MealAccommodationResult = {
+  canEat: boolean;
+  needsAdjustment: boolean;
+};
+
 
 export default function FoodPrint() {
   const navigate = useNavigate();
@@ -89,28 +96,54 @@ export default function FoodPrint() {
         const weekData: WeekMealData[] = weeksResult.weeks.map(week => {
           const mealSelections = week.mealsEatingOnTrail.map(selection => {
             // Get meal from menu for this day/slot, or use mealId if available
+            // Check for week-specific override first, then selection.mealId, then menu
             let meal: Meal | null = null;
+            let mealId: string | undefined;
             
-            if (selection.mealId) {
-              meal = mealsData.find(m => m.id === selection.mealId) || null;
+            // Priority: mealOverrides > selection.mealId > menu
+            if (week.mealOverrides?.[selection.day]?.[selection.slot]) {
+              mealId = week.mealOverrides[selection.day]?.[selection.slot];
+            } else if (selection.mealId) {
+              mealId = selection.mealId;
             } else if (menuResult && menuResult.days) {
-              // Fallback to menu if mealId not set
-              const menuMealId = menuResult.days[selection.day]?.[selection.slot];
-              if (menuMealId) {
-                meal = mealsData.find(m => m.id === menuMealId) || null;
-              }
+              mealId = menuResult.days[selection.day]?.[selection.slot];
+            }
+            
+            if (mealId) {
+              meal = mealsData.find(m => m.id === mealId) || null;
             }
 
             // Calculate which campers can/can't eat this meal
             const excludedCampers: string[] = [];
             let includedCampers = week.numberOfCampers;
+            const alternativeCampers: string[] = [];
 
             if (week.camperRestrictions && week.camperRestrictions.length > 0) {
               week.camperRestrictions.forEach(camper => {
-                if (!mealCanAccommodateCamper(meal, camper.restrictions)) {
+                // if (!mealCanAccommodateCamper(meal, camper.restrictions)) {
+                //   excludedCampers.push(camper.name || `Camper ${camper.id}`);
+                //   includedCampers--;
+                // } else {
+                //   // Camper can eat the meal but with slight variation - eg gluten-free tortilla
+                //   if(mealNeedAlternativeForCamper(meal, camper.restrictions)) {
+                //     alternativeCampers.push(camper.name || `Camper ${camper.id}`);
+                //   }
+                // }
+
+                const { canEat, needsAdjustment } =
+                  mealAccommodationForCamper(meal, camper.restrictions);
+
+                if (!canEat) {
+                  // Show red / blocked
                   excludedCampers.push(camper.name || `Camper ${camper.id}`);
                   includedCampers--;
+                } else if (needsAdjustment) {
+                  // Show warning icon: "small change required"
+                  alternativeCampers.push(camper.name || `Camper ${camper.id}`);
+                } else {
+                  // Green / fully compatible
                 }
+
               });
             }
             
@@ -120,6 +153,7 @@ export default function FoodPrint() {
               meal: meal,
               excludedCampers,
               includedCampers: Math.max(0, includedCampers), // Ensure non-negative
+              alternativeCampers,
               note: selection.note,
               selectionIndex: week.mealsEatingOnTrail.indexOf(selection),
             };
@@ -220,48 +254,121 @@ export default function FoodPrint() {
   };
 
   // Check if a meal can accommodate a camper's restrictions
-  const mealCanAccommodateCamper = (meal: Meal | null, camperRestrictions: string[]): boolean => {
-    if (!meal) {
-      // No meal assigned, can't accommodate anyone
+  // const mealCanAccommodateCamper = (meal: Meal | null, camperRestrictions: string[]): boolean => {
+  //   if (!meal) {
+  //     // No meal assigned, can't accommodate anyone
+  //     return false;
+  //   }
+
+  //   if (camperRestrictions.length === 0) {
+  //     // Camper has no restrictions, they can eat any meal
+  //     return true;
+  //   }
+
+  //   // If meal has no tags, it can't accommodate any restrictions
+  //   if (!meal.tags || meal.tags.length === 0) {
+  //     return false;
+  //   }
+
+  //   // Normalize tags and restrictions for comparison (case-insensitive)
+  //   const mealTags = meal.tags.map(t => t.toLowerCase().trim().replace(/\s+/g, ''));
+  //   const restrictions = camperRestrictions.map(r => r.toLowerCase().trim().replace(/\s+/g, ''));
+
+  //   // Check if meal has tags that match ALL of the camper's restrictions
+  //   // A meal can accommodate if it has tags covering all restrictions
+  //   // Match exact or if tag contains restriction (e.g., "Easy-Gluten-Free-Alternative" matches "Gluten-Free")
+  //   const mealCanAccommodate = restrictions.every(restriction => {
+  //     return mealTags.some(tag => {
+  //       // Exact match
+  //       if (tag === restriction) return true;
+  //       // Tag contains restriction (e.g., "easy-gluten-free-alternative" contains "gluten-free")
+  //       if (tag.includes(restriction)) return true;
+  //       // Restriction contains tag (less common but possible)
+  //       if (restriction.includes(tag)) return true;
+  //       // Handle hyphenated variations (e.g., "gluten-free" vs "glutenfree")
+  //       const tagNormalized = tag.replace(/-/g, '');
+  //       const restrictionNormalized = restriction.replace(/-/g, '');
+  //       if (tagNormalized === restrictionNormalized) return true;
+  //       if (tagNormalized.includes(restrictionNormalized)) return true;
+  //       return false;
+  //     });
+  //   });
+
+  //   return mealCanAccommodate;
+  // };
+
+    const tagMatchesRestriction = (tag: string, restriction: string): boolean => {
+      if (tag === restriction) return true;
+      if (tag.includes(restriction)) return true;
+      if (restriction.includes(tag)) return true;
+
+      const tagNormalized = tag.replace(/-/g, "");
+      const restrictionNormalized = restriction.replace(/-/g, "");
+
+      if (tagNormalized === restrictionNormalized) return true;
+      if (tagNormalized.includes(restrictionNormalized)) return true;
+
       return false;
-    }
+    };
 
-    if (camperRestrictions.length === 0) {
-      // Camper has no restrictions, they can eat any meal
-      return true;
-    }
+    const isAdjustmentTag = (tag: string) =>
+      tag.includes("alternative") || tag.includes("option");
 
-    // If meal has no tags, it can't accommodate any restrictions
-    if (!meal.tags || meal.tags.length === 0) {
-      return false;
-    }
 
-    // Normalize tags and restrictions for comparison (case-insensitive)
-    const mealTags = meal.tags.map(t => t.toLowerCase().trim().replace(/\s+/g, ''));
-    const restrictions = camperRestrictions.map(r => r.toLowerCase().trim().replace(/\s+/g, ''));
 
-    // Check if meal has tags that match ALL of the camper's restrictions
-    // A meal can accommodate if it has tags covering all restrictions
-    // Match exact or if tag contains restriction (e.g., "Easy-Gluten-Free-Alternative" matches "Gluten-Free")
-    const mealCanAccommodate = restrictions.every(restriction => {
-      return mealTags.some(tag => {
-        // Exact match
-        if (tag === restriction) return true;
-        // Tag contains restriction (e.g., "easy-gluten-free-alternative" contains "gluten-free")
-        if (tag.includes(restriction)) return true;
-        // Restriction contains tag (less common but possible)
-        if (restriction.includes(tag)) return true;
-        // Handle hyphenated variations (e.g., "gluten-free" vs "glutenfree")
-        const tagNormalized = tag.replace(/-/g, '');
-        const restrictionNormalized = restriction.replace(/-/g, '');
-        if (tagNormalized === restrictionNormalized) return true;
-        if (tagNormalized.includes(restrictionNormalized)) return true;
-        return false;
+    const mealAccommodationForCamper = (
+      meal: Meal | null,
+      camperRestrictions: string[]
+    ): MealAccommodationResult => {
+      if (!meal) {
+        return { canEat: false, needsAdjustment: false };
+      }
+
+      if (camperRestrictions.length === 0) {
+        return { canEat: true, needsAdjustment: false };
+      }
+
+      if (!meal.tags || meal.tags.length === 0) {
+        return { canEat: false, needsAdjustment: false };
+      }
+
+      const mealTags = meal.tags.map(t =>
+        t.toLowerCase().trim().replace(/\s+/g, "")
+      );
+      const restrictions = camperRestrictions.map(r =>
+        r.toLowerCase().trim().replace(/\s+/g, "")
+      );
+
+      let needsAdjustment = false;
+
+      const canEat = restrictions.every(restriction => {
+        const matchingTags = mealTags.filter(tag =>
+          tagMatchesRestriction(tag, restriction)
+        );
+
+        if (matchingTags.length === 0) return false;
+
+        // If *all* matches are "alternative/option" tags → adjustment needed
+        if (matchingTags.every(isAdjustmentTag)) {
+          needsAdjustment = true;
+        }
+
+        return true;
       });
-    });
 
-    return mealCanAccommodate;
-  };
+      return { canEat, needsAdjustment };
+    };
+
+
+  // const mealNeedAlternativeForCamper = (meal: Meal | null, camperRestrictions: string[]): boolean => {
+  //   if (!meal) {
+  //     return false; 
+  //   }
+
+  //   if (camperRestrictions.length === 0) {
+  //     return false; 
+  //   }
+  // }
 
   const getWeekIngredients = (weekData: WeekMealData) => {
     const ingredientMap = new Map<string, IngredientTotal>();
@@ -479,6 +586,11 @@ export default function FoodPrint() {
                                   ⚠️ Need alternative for: {selection.excludedCampers.join(", ")}
                                 </span>
                               )}
+                              {selection.alternativeCampers.length > 0 && (
+                                <span className="restriction-note">
+                                  ⚠️ Need substitute ingredient for: {selection.alternativeCampers.join(", ")}
+                                </span>
+                              )}
                               {selection.excludedCampers.length === 0 && selection.meal && (
                                 <span className="no-restrictions-note">All campers included</span>
                               )}
@@ -541,6 +653,11 @@ export default function FoodPrint() {
                     {selection.excludedCampers.length > 0 && (
                       <div className="restriction-alert">
                         <strong>⚠️ Dietary Restriction Note:</strong> The following campers cannot eat this meal and need an alternative: {selection.excludedCampers.join(", ")}
+                      </div>
+                    )}
+                    {selection.alternativeCampers.length > 0 && (
+                      <div className="restriction-alert">
+                        <strong>⚠️ Dietary Restriction Note:</strong> The following campers need an alternative for a small portion of this meal. e.g. switch a tortilla for a gluten free tortilla: {selection.alternativeCampers.join(", ")}
                       </div>
                     )}
                     <table className="meal-ingredients-table">

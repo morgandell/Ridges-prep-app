@@ -67,6 +67,101 @@
   font-weight: bold;
 }
 
+.week-menu-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.week-menu-table th {
+  background: var(--color-secondary);
+  color: var(--color-textOnSecondary);
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+.week-menu-table td {
+  padding: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.week-menu-table td.day {
+  font-weight: 600;
+  background: #f9fafb;
+}
+
+.menu-swap-cell {
+  min-height: 60px;
+  cursor: pointer;
+  position: relative;
+}
+
+.menu-swap-cell.overridden {
+  background: #fef3c7;
+  border: 2px solid #f59e0b;
+}
+
+.meal-swap-display {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: start;
+}
+
+.meal-swap-display:hover {
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+.meal-name {
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.no-meal {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.override-badge {
+  font-size: 0.75rem;
+  background: #f59e0b;
+  color: white;
+  padding: 0.125rem 0.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.meal-swap-selector {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.meal-swap-selector select {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.cancel-swap-button {
+  padding: 0.25rem 0.5rem;
+  background: #fee;
+  color: #c33;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.cancel-swap-button:hover {
+  background: #fcc;
+}
+
 .camper-details {
   display: flex;
   flex-direction: column;

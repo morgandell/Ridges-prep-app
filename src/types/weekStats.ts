@@ -15,6 +15,11 @@ export interface WeekStats {
     mealsEatingOnTrail: WeekMealSelection[];
     camperRestrictions: CamperRestriction[];
     ageGroup: "intro" | "middle school" | "high school"; // e.g., "children", "adults", "seniors"
+    mealOverrides?: { // Week-specific meal swaps that override the menu
+      [day in DayOfWeek]?: {
+        [slot in MealSlot]?: string; // mealId
+      };
+    };
 }
 
 export type CamperRestriction = {
