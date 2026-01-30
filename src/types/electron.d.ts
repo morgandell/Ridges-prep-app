@@ -25,6 +25,7 @@ export interface ElectronAPI {
 
   // Routes
   getRoutes: () => Promise<{ success: boolean; routes?: Route[]; error?: string }>;
+  getRoute: (id: string) => Promise<{ success: boolean; route?: Route; error?: string }>;
   saveRoute: (route: Route) => Promise<{ success: boolean; route?: Route; error?: string }>;
   deleteRoute: (id: string) => Promise<{ success: boolean; error?: string }>;
 }

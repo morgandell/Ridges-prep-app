@@ -393,6 +393,26 @@ ipcMain.handle("get-routes", async () => {
   }
 });
 
+ipcMain.handle("get-route", async (_event, id) => {
+  try {
+    if (!id) {
+      return { success: false, error: "Route ID is required" };
+    }
+    
+    const routes = readRoutes();
+    const route = routes.find(r => r.id === id);
+    
+    if (!route) {
+      return { success: false, error: "Route not found" };
+    }
+    
+    return { success: true, route };
+  } catch (err) {
+    console.error("Failed to get route:", err);
+    return { success: false, error: "Failed to read route" };
+  }
+});
+
 ipcMain.handle("save-route", async (_event, route) => {
   try {
     if (!route) {

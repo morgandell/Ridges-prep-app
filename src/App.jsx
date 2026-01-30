@@ -5,7 +5,9 @@ import Dashboard from "./pages/dashboard";
 import Meals from "./pages/meals";
 import MealDetail from "./pages/MealDetail";
 import NewMeal from "./pages/NewMeal";
-import RoutesPage from "./pages/routes";   // renamed to RoutesPage
+import RoutesPage from "./pages/routesPage";
+import RouteDetail from "./pages/RouteDetail";
+import RouteEdit from "./pages/RouteEdit";
 import Gear from "./pages/gear";
 import Sundays from "./pages/sundays";
 import Menu from "./pages/menu";
@@ -26,6 +28,9 @@ export default function App() {
           <Route path="/meals/:id" element={<MealDetail />} />
           <Route path="/meals/:id/edit" element={<NewMeal />} />
           <Route path="/routes" element={<RoutesPage />} />
+          <Route path="/routes/new" element={<RouteEdit />} />
+          <Route path="/routes/:id" element={<RouteDetail />} />
+          <Route path="/routes/:id/edit" element={<RouteEdit />} />
           <Route path="/gear" element={<Gear />} />
           <Route path="/sundays" element={<Sundays />} />
           <Route path="/menu" element={<Menu />} />
