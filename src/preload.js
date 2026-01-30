@@ -19,6 +19,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getPastMenus: () => ipcRenderer.invoke("get-past-menus"),
   savePastMenu: (pastMenu) => ipcRenderer.invoke("save-past-menu", pastMenu),
   deletePastMenu: (id) => ipcRenderer.invoke("delete-past-menu", id),
+
+  // Routes
+  getRoutes: () => ipcRenderer.invoke("get-routes"),
+  saveRoute: (route) => ipcRenderer.invoke("save-route", route),
+  deleteRoute: (id) => ipcRenderer.invoke("delete-route", id),
 });
 
 

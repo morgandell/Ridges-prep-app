@@ -4,12 +4,18 @@ export interface RoutePoint {
   label?: string;
 }
 
+export interface RouteSegment {
+  mileage: number;
+  elevationGainFt: number;
+}
+
 export interface Route {
   id: string;
   name: string;
-  points: RoutePoint[];
-  distanceMiles?: number;
-  elevationGainFt?: number;
+  startPoint: RoutePoint;
+  endPoint: RoutePoint;
+  stops: RoutePoint[];
+  segments: RouteSegment[]; // One segment per stop (start->stop1, stop1->stop2, ..., stopN->end)
   notes?: string;
 }
 

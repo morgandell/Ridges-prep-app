@@ -219,6 +219,7 @@ ipcMain.handle('delete-meal', async (event, id) => {
 
 const MENU_PATH = path.join(app.getPath("userData"), "menu.json");
 const WEEK_STATS_PATH = path.join(app.getPath("userData"), "weekStats.json");
+const ROUTES_PATH = path.join(app.getPath("userData"), "routes.json");
 
 function createEmptyMenu() {
   return {
@@ -357,4 +358,87 @@ ipcMain.handle("delete-past-menu", async (_event, id) => {
   savePastMenus(pastMenus);
 
   return { success: true };
+});
+
+// Routes handlers
+function readRoutes() {
+  try {
+    if (!fs.existsSync(ROUTES_PATH)) {
+      return [];
+    }
+    const raw = fs.readFileSync(ROUTES_PATH, "utf-8");
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.error("Failed to read routes:", err);
+    return [];
+  }
+}
+
+function writeRoutes(routes) {
+  fs.writeFileSync(
+    ROUTES_PATH,
+    JSON.stringify(routes, null, 2),
+    "utf-8"
+  );
+}
+
+ipcMain.handle("get-routes", async () => {
+  try {
+    const routes = readRoutes();
+    return { success: true, routes };
+  } catch (err) {
+    console.error("Failed to get routes:", err);
+    return { success: false, error: "Failed to read routes" };
+  }
+});
+
+ipcMain.handle("save-route", async (_event, route) => {
+  try {
+    if (!route) {
+      return { success: false, error: "No route data provided" };
+    }
+    if (!route.name || route.name.trim() === "") {
+      return { success: false, error: "Route name is required" };
+    }
+
+    const routes = readRoutes();
+    const cleanRoute = {
+      id: route.id || Date.now().toString(),
+      name: route.name.trim(),
+      startPoint: route.startPoint || { lat: 0, lng: 0 },
+      endPoint: route.endPoint || { lat: 0, lng: 0 },
+      stops: Array.isArray(route.stops) ? route.stops : [],
+      segments: Array.isArray(route.segments) ? route.segments : [],
+      notes: route.notes || undefined,
+    };
+
+    const idx = routes.findIndex(r => r.id === cleanRoute.id);
+    if (idx >= 0) {
+      routes[idx] = cleanRoute;
+    } else {
+      routes.push(cleanRoute);
+    }
+    writeRoutes(routes);
+    return { success: true, route: cleanRoute };
+  } catch (err) {
+    console.error("Failed to save route:", err);
+    return { success: false, error: "Failed to save route" };
+  }
+});
+
+ipcMain.handle("delete-route", async (_event, id) => {
+  try {
+    if (!id) {
+      return { success: false, error: "Route ID is required" };
+    }
+
+    const routes = readRoutes();
+    const filtered = routes.filter(r => r.id !== id);
+    writeRoutes(filtered);
+    return { success: true };
+  } catch (err) {
+    console.error("Failed to delete route:", err);
+    return { success: false, error: "Failed to delete route" };
+  }
 });
