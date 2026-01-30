@@ -53,6 +53,63 @@
   font-weight: 500;
 }
 
+.menu-cell-content-subtle {
+  pointer-events: none;
+  font-weight: 400;
+  opacity: 0.75;
+  font-size: 0.85rem;
+}
+
+.menu-cell-multi {
+  height: 100%;
+  width: 100%;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+
+.menu-cell-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-card) 85%, white);
+  cursor: grab;
+  user-select: none;
+}
+
+.menu-cell-pill:active {
+  cursor: grabbing;
+  opacity: 0.9;
+}
+
+.menu-cell-pill-dinner {
+  border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+}
+
+.menu-cell-pill-dessert {
+  border-color: color-mix(in srgb, var(--color-warning) 50%, var(--color-border));
+  background: color-mix(in srgb, var(--color-warning) 12%, var(--color-card));
+}
+
+.menu-pill-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  opacity: 0.75;
+  letter-spacing: 0.04em;
+}
+
+.menu-pill-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
 .draggable-meal {
   cursor: grab;
   padding: 8px;

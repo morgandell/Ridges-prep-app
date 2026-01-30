@@ -323,7 +323,7 @@ export default function NewMeal() {
                     ingredients: [...(prev.ingredients || []), newIngredient],
                   }));
 
-                  setNewIngredient({ name: "", quantity: null, unit: "", perServing: false });
+                  setNewIngredient({ name: "", quantity: null, unit: "", perServing: true });
                   setShowIngredientModal(false);
                 }}
               />
@@ -539,7 +539,7 @@ function IngredientModal({
             }
             className="unit-select"
           >
-            <option value="">—</option>
+            <option value="pcs">pieces</option>
             <option value="g">g</option>
             <option value="kg">kg</option>
             <option value="ml">mL</option>
@@ -547,7 +547,8 @@ function IngredientModal({
             <option value="cup">cup</option>
             <option value="tbsp">tbsp</option>
             <option value="tsp">tsp</option>
-            <option value="pcs">pieces</option>
+            <option value="oz">oz</option>
+            <option value="lb">lb</option>
           </select>
         </label>
 

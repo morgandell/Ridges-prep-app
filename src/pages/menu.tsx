@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Meal } from "../types/meal";
 import { DayOfWeek, MealSlot, Menu } from "../types/menu";
-import MealCell from "../components/mealCell";
 import "./menu.css";
 import RecipeCard from "../components/RecipeCard";
 
@@ -137,6 +136,22 @@ export default function WeeklyMenuPage() {
     return JSON.parse(raw) as DragData;
     }
 
+    function getMealById(mealId?: string) {
+      if (!mealId) return null;
+      return meals.find(m => m.id === mealId) ?? null;
+    }
+
+    function isDessertMeal(mealId?: string) {
+      return getMealById(mealId)?.mealTime === "dessert";
+    }
+
+    function getDropSlot(targetSlot: MealSlot, droppedMealId: string): MealSlot | null {
+      // Only allow dessert to be dropped into the Dinner column (stored in hidden "dessert" slot)
+      if (targetSlot === "dinner" && isDessertMeal(droppedMealId)) return "dessert";
+      if (targetSlot !== "dinner" && isDessertMeal(droppedMealId)) return null;
+      return targetSlot;
+    }
+
     const filteredMeals = meals
     .filter(meal =>
         filterMealTime === "all"
@@ -208,8 +223,15 @@ export default function WeeklyMenuPage() {
             <tr key={day}>
                 <td className="day">{day}</td>
                 {SLOTS.map(slot => {
+                // Dinner column can display two meals: dinner + dessert (dessert is stored in slot "dessert")
+                const isDinnerColumn = slot === "dinner";
+                const dinnerMealId = menu.days?.[day]?.["dinner"];
+                const dessertMealId = menu.days?.[day]?.["dessert"];
+                const dinnerMeal = getMealById(dinnerMealId);
+                const dessertMeal = getMealById(dessertMealId);
+
                 const mealId = menu.days?.[day]?.[slot];
-                const meal = meals.find(m => m.id === mealId);
+                const meal = getMealById(mealId);
 
                 const isDragOver = dragOverCell?.day === day && dragOverCell?.slot === slot;
                 const blocked = isBlocked(day, slot);
@@ -219,24 +241,13 @@ export default function WeeklyMenuPage() {
                         key={slot}
                         className={`
                             menu-cell
-                            ${blocked ? "blocked" : meal ? "filled" : "empty"}
+                            ${blocked ? "blocked" : (isDinnerColumn ? (dinnerMeal || dessertMeal) : meal) ? "filled" : "empty"}
                             ${isDragOver && !blocked ? "drag-over" : ""}
                         `}   
-                        draggable={!blocked &&!!meal}
-                        onDragStart={(e) => {
-                            if (!mealId) return;
-                            setDragOverCell(null); // Clear drag-over when starting to drag
-
-                            setDragData(e, {
-                                type: "cell",
-                                mealId,
-                                day,
-                                slot,
-                            });
-                            }}
                         onDragEnter={(e) => {
                             if (blocked) return;
                             e.preventDefault();
+                            // highlight dinner column for both dinner and dessert drops
                             setDragOverCell({ day, slot });
                         }}
                         onDragLeave={(e) => {
@@ -267,24 +278,34 @@ export default function WeeklyMenuPage() {
 
                                 const updated = structuredClone(prev);
 
+                                // Determine which slot we are actually writing to (dinner vs dessert)
+                                const dropSlot =
+                                  slot === "dinner"
+                                    ? getDropSlot("dinner", data.mealId)
+                                    : getDropSlot(slot, data.mealId);
+
+                                if (!dropSlot) {
+                                  return prev;
+                                }
+
                                 // Prevent self-drop
                                 if (
                                 data.type === "cell" &&
                                 data.day === day &&
-                                data.slot === slot
+                                data.slot === dropSlot
                                 ) {
                                 return prev;
                                 }
 
                                 // If target slot is filled and we're dragging from a cell, switch the meals
-                                const targetMealId = updated.days[day]?.[slot];
+                                const targetMealId = updated.days[day]?.[dropSlot];
                                 if (targetMealId && data.type === "cell") {
                                     // Switch: put target meal in source slot, dragged meal in target slot
                                     updated.days[data.day][data.slot] = targetMealId;
-                                    updated.days[day][slot] = data.mealId;
+                                    updated.days[day][dropSlot] = data.mealId;
                                 } else {
                                     // Normal drop: just set the target slot
-                                    updated.days[day][slot] = data.mealId;
+                                    updated.days[day][dropSlot] = data.mealId;
 
                                     if (data.type === "cell") {
                                         updated.days[data.day][data.slot] = undefined;
@@ -302,13 +323,61 @@ export default function WeeklyMenuPage() {
 
 
                         >
-                        <div className="menu-cell-content">
-                            {blocked
-                                ? "—"
-                                : meal
-                                ? meal.name
-                                : "Drop meal here"}
-                        </div>
+                        {blocked ? (
+                          <div className="menu-cell-content">—</div>
+                        ) : slot !== "dinner" ? (
+                          <div className="menu-cell-content">
+                            {meal ? meal.name : "Drop meal here"}
+                          </div>
+                        ) : (
+                          <div className="menu-cell-multi">
+                            {dinnerMeal ? (
+                              <div
+                                className="menu-cell-pill menu-cell-pill-dinner"
+                                draggable
+                                onDragStart={(e) => {
+                                  setDragOverCell(null);
+                                  setDragData(e, {
+                                    type: "cell",
+                                    mealId: dinnerMealId!,
+                                    day,
+                                    slot: "dinner",
+                                  });
+                                }}
+                                title="Drag to move dinner"
+                              >
+                                <span className="menu-pill-label">Dinner</span>
+                                <span className="menu-pill-name">{dinnerMeal.name}</span>
+                              </div>
+                            ) : (
+                              <div className="menu-cell-content">Drop dinner here</div>
+                            )}
+
+                            {dessertMeal ? (
+                              <div
+                                className="menu-cell-pill menu-cell-pill-dessert"
+                                draggable
+                                onDragStart={(e) => {
+                                  setDragOverCell(null);
+                                  setDragData(e, {
+                                    type: "cell",
+                                    mealId: dessertMealId!,
+                                    day,
+                                    slot: "dessert",
+                                  });
+                                }}
+                                title="Drag to move dessert"
+                              >
+                                <span className="menu-pill-label">Dessert</span>
+                                <span className="menu-pill-name">{dessertMeal.name}</span>
+                              </div>
+                            ) : (
+                              <div className="menu-cell-content menu-cell-content-subtle">
+                                Drop dessert here (optional)
+                              </div>
+                            )}
+                          </div>
+                        )}
                         </td>
 
                 );

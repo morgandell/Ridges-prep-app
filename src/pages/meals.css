@@ -73,4 +73,22 @@
   border-color: var(--color-grayBorder);
 }
 
+.content::-webkit-scrollbar {
+  width: 8px; /* thinner scrollbar */
+}
 
+/* Thumb (the draggable part) */
+.content::-webkit-scrollbar-thumb {
+  background-color: var(--color-grayTextLight); /* the gray bar */
+  border-radius: 4px;
+}
+
+/* Optional: when hovering over scrollbar */
+.content::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-grayTextDark);
+}
+
+/* Optional: scrollbar track */
+.content::-webkit-scrollbar-track {
+  background: transparent; /* no white box behind */
+}
