@@ -166,3 +166,16 @@
   line-height: 1.6;
   color: var(--color-text);
 }
+
+.route-map-container {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-top: 1rem;
+}
+
+/* Leaflet map styles */
+.leaflet-container {
+  font-family: inherit;
+}
