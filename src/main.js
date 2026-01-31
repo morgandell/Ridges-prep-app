@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, globalShortcut } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut, session } = require('electron');
 const path = require('node:path');
 const fs = require("fs");
 const fsPromises = fs.promises;
@@ -16,6 +16,7 @@ const createWindow = () => {
     height: 600,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
+      webSecurity: true,
     },
   });
 
@@ -34,7 +35,6 @@ const createWindow = () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  createWindow();
 
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
@@ -43,6 +43,23 @@ app.whenReady().then(() => {
       createWindow();
     }
   });
+
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self'; " +
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+          "style-src 'self' 'unsafe-inline'; " +
+          "img-src 'self' data: https://*.openstreetmap.org https://*.tile.openstreetmap.org; " +
+          "connect-src 'self' https://*.openstreetmap.org https://maps.googleapis.com; " +
+          "font-src 'self' data:;"
+        ]
+      }
+    });
+  });
+  createWindow();
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common

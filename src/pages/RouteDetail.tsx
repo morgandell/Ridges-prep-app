@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { MapContainer, TileLayer, Marker, Polyline, Popup } from "react-leaflet";
-import { Icon, LatLngBounds } from "leaflet";
+import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from "react-leaflet";
+import { Icon, LatLngBounds, divIcon } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Route } from "../types/route";
 import "./RouteDetail.css";
@@ -14,32 +14,53 @@ Icon.Default.mergeOptions({
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
 
-// Custom icons for start, end, and stops
-const startIcon = new Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
+// Create custom colored div icons that work in Electron
+const startIcon = divIcon({
+  className: 'custom-marker',
+  html: `<div style="
+    background-color: #22c55e;
+    width: 30px;
+    height: 30px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 3px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  "></div>`,
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+  popupAnchor: [0, -30],
 });
 
-const endIcon = new Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
+const endIcon = divIcon({
+  className: 'custom-marker',
+  html: `<div style="
+    background-color: #ef4444;
+    width: 30px;
+    height: 30px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 3px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  "></div>`,
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+  popupAnchor: [0, -30],
 });
 
-const stopIcon = new Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
+const stopIcon = divIcon({
+  className: 'custom-marker',
+  html: `<div style="
+    background-color: #3b82f6;
+    width: 30px;
+    height: 30px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 3px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  "></div>`,
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+  popupAnchor: [0, -30],
 });
 
 export default function RouteDetail() {
@@ -103,6 +124,52 @@ export default function RouteDetail() {
     }
   }
 
+  // Build array of all points in order: start, stops, end
+  const allPoints = useMemo(() => {
+    if (!route) return [];
+
+    const points: Array<{
+      lat: number;
+      lng: number;
+      label?: string;
+      type: "start" | "stop" | "end";
+      index?: number;
+    }> = [];
+
+    if (route.startPoint) {
+      points.push({ ...route.startPoint, type: "start" });
+    }
+
+    if (route.stops) {
+      route.stops.forEach((stop, index) => {
+        points.push({ ...stop, type: "stop", index });
+      });
+    }
+
+    if (route.endPoint) {
+      points.push({ ...route.endPoint, type: "end" });
+    }
+
+    return points;
+  }, [route]);
+
+  const mapCenter: [number, number] = useMemo(() => {
+    if (allPoints.length === 0) return [40.7128, -74.0060];
+    const avgLat = allPoints.reduce((sum, p) => sum + p.lat, 0) / allPoints.length;
+    const avgLng = allPoints.reduce((sum, p) => sum + p.lng, 0) / allPoints.length;
+    return [avgLat, avgLng];
+  }, [allPoints]);
+
+  const bounds = useMemo(() => {
+    if (allPoints.length === 0) return undefined;
+    const lats = allPoints.map(p => p.lat);
+    const lngs = allPoints.map(p => p.lng);
+    return new LatLngBounds(
+      [Math.min(...lats), Math.min(...lngs)],
+      [Math.max(...lats), Math.max(...lngs)]
+    );
+  }, [allPoints]);
+
   if (loading) {
     return <div className="route-detail">Loading...</div>;
   }
@@ -119,44 +186,16 @@ export default function RouteDetail() {
   const totalMiles = route.segments?.reduce((sum, seg) => sum + (seg.mileage || 0), 0) || 0;
   const totalElevation = route.segments?.reduce((sum, seg) => sum + (seg.elevationGainFt || 0), 0) || 0;
 
-  // Build array of all points in order: start, stops, end
-  const allPoints = useMemo(() => {
-    const points: Array<{ lat: number; lng: number; label?: string; type: "start" | "stop" | "end"; index?: number }> = [];
-    
-    if (route.startPoint) {
-      points.push({ ...route.startPoint, type: "start" });
-    }
-    
-    if (route.stops) {
-      route.stops.forEach((stop, index) => {
-        points.push({ ...stop, type: "stop", index });
-      });
-    }
-    
-    if (route.endPoint) {
-      points.push({ ...route.endPoint, type: "end" });
-    }
-    
-    return points;
-  }, [route]);
-
-  // Calculate map center and bounds
-  const mapCenter: [number, number] = useMemo(() => {
-    if (allPoints.length === 0) return [40.7128, -74.0060]; // Default to NYC
-    const avgLat = allPoints.reduce((sum, p) => sum + p.lat, 0) / allPoints.length;
-    const avgLng = allPoints.reduce((sum, p) => sum + p.lng, 0) / allPoints.length;
-    return [avgLat, avgLng];
-  }, [allPoints]);
-
-  const bounds = useMemo(() => {
-    if (allPoints.length === 0) return undefined;
-    const lats = allPoints.map(p => p.lat);
-    const lngs = allPoints.map(p => p.lng);
-    return new LatLngBounds(
-      [Math.min(...lats), Math.min(...lngs)],
-      [Math.max(...lats), Math.max(...lngs)]
-    );
-  }, [allPoints]);
+  // Component to fit bounds after map loads
+  function FitBounds({ bounds }: { bounds: LatLngBounds | undefined }) {
+    const map = useMap();
+    useEffect(() => {
+      if (bounds) {
+        map.fitBounds(bounds, { padding: [50, 50] });
+      }
+    }, [bounds, map]);
+    return null;
+  }
 
   return (
     <div className="route-detail">
@@ -195,14 +234,14 @@ export default function RouteDetail() {
           <div className="route-map-container">
             <MapContainer
               center={mapCenter}
-              zoom={bounds ? undefined : 13}
-              bounds={bounds}
+              zoom={13}
               style={{ height: "500px", width: "100%" }}
               scrollWheelZoom={true}
             >
               <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                crossOrigin="anonymous"
               />
               
               {allPoints.map((point, index) => {
@@ -240,6 +279,7 @@ export default function RouteDetail() {
                   opacity={0.7}
                 />
               )}
+              <FitBounds bounds={bounds} />
             </MapContainer>
           </div>
         </div>
