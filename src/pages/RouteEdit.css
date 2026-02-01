@@ -238,3 +238,162 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.route-map-container {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-top: 1rem;
+}
+
+.map-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.map-control-button {
+  padding: 0.5rem 1rem;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text);
+  transition: all 0.2s;
+}
+
+.map-control-button:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.map-control-button.active {
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
+  border-color: var(--color-primary);
+}
+
+/* Leaflet map styles */
+.leaflet-container {
+  font-family: inherit;
+}
+
+.custom-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.route-map-container {
+  margin-top: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+/* Map section styles */
+.map-section-top {
+  margin-bottom: 2rem;
+}
+
+.map-instruction-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.instruction-icon {
+  font-size: 1.5rem;
+}
+
+.instruction-text {
+  flex: 1;
+}
+
+/* Points summary */
+.points-summary {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--color-backgroundLight, #f9fafb);
+  border-radius: 8px;
+}
+
+.points-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.point-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  transition: all 0.2s;
+}
+
+.point-chip:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+.start-chip {
+  border-left: 4px solid #22c55e;
+}
+
+.stop-chip {
+  border-left: 4px solid #3b82f6;
+}
+
+.end-chip {
+  border-left: 4px solid #ef4444;
+}
+
+.point-marker {
+  font-size: 1.2rem;
+}
+
+.point-label {
+  font-weight: 600;
+  min-width: 80px;
+}
+
+.point-coords {
+  flex: 1;
+  font-family: 'Courier New', monospace;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.remove-chip {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.remove-chip:hover {
+  background: #dc2626;
+}
