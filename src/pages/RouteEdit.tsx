@@ -96,6 +96,9 @@ export default function RouteEdit() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [routeGeometry, setRouteGeometry] = useState<[number, number][]>([]);
+  const [fetchingRoute, setFetchingRoute] = useState(false);
+  const [draggedPoint, setDraggedPoint] = useState<number | "start" | "end" | null>(null);
 
   useEffect(() => {
     if (isEditing && id) {
@@ -174,6 +177,36 @@ export default function RouteEdit() {
     }
   }
 
+  function handleDragStart(type: "start" | "end" | number) {
+    setDraggedPoint(type);
+  }
+
+  function handleDragOver(e: React.DragEvent, type: "start" | "end" | number) {
+    e.preventDefault();
+  }
+
+  function handleDrop(e: React.DragEvent, dropTargetType: "start" | "end" | number) {
+    e.preventDefault();
+    
+    if (draggedPoint === null || draggedPoint === dropTargetType) return;
+    
+    // Can only reorder stops, not start/end
+    if (typeof draggedPoint === "number" && typeof dropTargetType === "number") {
+      const newStops = [...stops];
+      const [draggedStop] = newStops.splice(draggedPoint, 1);
+      newStops.splice(dropTargetType, 0, draggedStop);
+      setStops(newStops);
+      
+      // Also reorder the corresponding segments
+      const newSegments = [...segments];
+      const [draggedSegment] = newSegments.splice(draggedPoint + 1, 1);
+      newSegments.splice(dropTargetType + 1, 0, draggedSegment);
+      setSegments(newSegments);
+    }
+    
+    setDraggedPoint(null);
+  }
+
   function handleMarkerDragEnd(index: number | "start" | "end", lat: number, lng: number) {
     if (index === "start") {
       setFormData({ ...formData, startLat: lat.toString(), startLng: lng.toString() });
@@ -229,6 +262,128 @@ export default function RouteEdit() {
       [Math.min(...lats), Math.min(...lngs)],
       [Math.max(...lats), Math.max(...lngs)]
     );
+  }, [allPoints]);
+
+  // Fetch route geometry when points change
+  useEffect(() => {
+    async function fetchRouteGeometry() {
+      if (allPoints.length < 2) {
+        setRouteGeometry([]);
+        return;
+      }
+
+      setFetchingRoute(true);
+      try {
+        // Use OpenRouteService for hiking trails
+        const coordinates = allPoints.map(p => [p.lng, p.lat]);
+        
+        const url = 'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson';
+        
+        console.log('Fetching hiking route from OpenRouteService');
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
+            'Authorization': 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjgzMGYzYWU5NmNkYjQxYjJiNmYwZWQxMmUzYTFhNzYwIiwiaCI6Im11cm11cjY0In0='  // Replace with your OpenRouteService API key
+          },
+          body: JSON.stringify({
+            coordinates: coordinates,
+            preference: 'recommended',
+            elevation: true  // Request elevation data
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        console.log('OpenRouteService response:', data);
+
+        if (data.features && data.features.length > 0) {
+          const feature = data.features[0];
+          const geometry = feature.geometry.coordinates;
+          
+          // Convert [lng, lat] to [lat, lng] for Leaflet
+          const leafletCoords: [number, number][] = geometry.map((coord: number[]) => [coord[1], coord[0]]);
+          console.log('Hiking route geometry points:', leafletCoords.length);
+          setRouteGeometry(leafletCoords);
+
+          // Extract segments data (distance and elevation between waypoints)
+          const summary = feature.properties.summary;
+          const segmentsData = feature.properties.segments;
+          
+          console.log('Segments data:', segmentsData);
+          console.log('Summary:', summary);
+          
+          if (segmentsData && segmentsData.length > 0) {
+            const newSegments: RouteSegment[] = [];
+            
+            // Each segment in the response represents the route between consecutive waypoints
+            segmentsData.forEach((segment: any) => {
+              console.log('Processing segment:', segment);
+              
+              // Distance is in KILOMETERS, convert to miles
+              const distanceMeters = segment.distance || 0;
+              const distanceInMiles = distanceMeters / 1609.344;
+
+              
+              // Elevation is in meters, convert to feet
+              const elevationGainFt = Math.round((segment.ascent || 0) * 3.28084);
+              
+              console.log(`Distance: ${distanceMeters}m = ${distanceInMiles.toFixed(2)}mi, Elevation: ${segment.ascent}m = ${elevationGainFt}ft`);
+              
+              newSegments.push({
+                mileage: parseFloat(distanceInMiles.toFixed(2)),
+                elevationGainFt: elevationGainFt
+              });
+            });
+            
+            console.log('Auto-filled segments:', newSegments);
+            
+            // Make sure we have the right number of segments
+            // We need stops.length + 1 segments (one for each leg of the journey)
+            const numSegmentsNeeded = allPoints.length - 1;
+            while (newSegments.length < numSegmentsNeeded) {
+              newSegments.push({ mileage: 0, elevationGainFt: 0 });
+            }
+            
+            setSegments(newSegments);
+          } else if (summary) {
+            // Fallback: if no segment data, use summary for total and divide evenly
+            const totalDistanceInMiles =
+               (summary.distance || 0) / 1609.344; // km to miles
+            const totalElevationFt = Math.round((summary.ascent || 0) * 3.28084);
+            const numSegmentsNeeded = allPoints.length - 1;
+            
+            const newSegments: RouteSegment[] = [];
+            for (let i = 0; i < numSegmentsNeeded; i++) {
+              newSegments.push({
+                mileage: parseFloat((totalDistanceInMiles / numSegmentsNeeded).toFixed(2)),
+                elevationGainFt: Math.round(totalElevationFt / numSegmentsNeeded)
+              });
+            }
+            
+            console.log('Using summary data, segments:', newSegments);
+            setSegments(newSegments);
+          }
+        } else {
+          console.warn('No hiking route found, using straight lines');
+          setRouteGeometry(allPoints.map(p => [p.lat, p.lng]));
+        }
+      } catch (error) {
+        console.error('Error fetching hiking route:', error);
+        // Fallback to straight lines
+        setRouteGeometry(allPoints.map(p => [p.lat, p.lng]));
+      } finally {
+        setFetchingRoute(false);
+      }
+    }
+
+    fetchRouteGeometry();
   }, [allPoints]);
 
   function handleUpdateSegment(index: number, field: "mileage" | "elevationGainFt", value: string) {
@@ -406,13 +561,29 @@ export default function RouteEdit() {
                 );
               })}
 
-              {allPoints.length > 1 && (
+              {allPoints.length > 1 && routeGeometry.length > 0 && (
                 <Polyline
-                  positions={allPoints.map(p => [p.lat, p.lng])}
+                  positions={routeGeometry}
                   color="#3b82f6"
                   weight={4}
                   opacity={0.8}
                 />
+              )}
+
+              {fetchingRoute && allPoints.length > 1 && (
+                <div style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  background: 'white',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                  zIndex: 1000,
+                  fontSize: '14px'
+                }}>
+                  Finding trail route...
+                </div>
               )}
             </MapContainer>
           </div>
@@ -430,7 +601,15 @@ export default function RouteEdit() {
               )}
               
               {stops.map((stop, index) => (
-                <div key={index} className="point-chip stop-chip">
+                <div 
+                  key={index} 
+                  className={`point-chip stop-chip ${draggedPoint === index ? 'dragging' : ''}`}
+                  draggable
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDrop={(e) => handleDrop(e, index)}
+                >
+                  <span className="drag-handle">⋮⋮</span>
                   <span className="point-marker">🔵</span>
                   <span className="point-label">Stop {index + 1}</span>
                   <span className="point-coords">{stop.lat.toFixed(4)}, {stop.lng.toFixed(4)}</span>
@@ -491,7 +670,7 @@ export default function RouteEdit() {
                   <label>Distance to {stops.length > 0 ? "first stop" : "end"} (miles)</label>
                   <input
                     type="number"
-                    step="0.1"
+                    step="any"
                     min="0"
                     value={segments[0]?.mileage || ""}
                     onChange={(e) => handleUpdateSegment(0, "mileage", e.target.value)}
@@ -555,7 +734,7 @@ export default function RouteEdit() {
                 <label>Distance to {index === stops.length - 1 ? "end" : `stop ${index + 2}`} (miles)</label>
                 <input
                   type="number"
-                  step="0.1"
+                  step="any"
                   min="0"
                   value={segments[index + 1]?.mileage || ""}
                   onChange={(e) => handleUpdateSegment(index + 1, "mileage", e.target.value)}

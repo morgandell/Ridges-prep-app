@@ -14,7 +14,7 @@ Icon.Default.mergeOptions({
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
 
-// Create custom colored div icons that work in Electron
+// Create custom colored div icons
 const startIcon = divIcon({
   className: 'custom-marker',
   html: `<div style="
@@ -69,6 +69,8 @@ export default function RouteDetail() {
   const location = useLocation();
   const [route, setRoute] = useState<Route | null>(null);
   const [loading, setLoading] = useState(true);
+  const [routeGeometry, setRouteGeometry] = useState<[number, number][]>([]);
+  const [fetchingRoute, setFetchingRoute] = useState(false);
 
   useEffect(() => {
     async function loadRoute() {
@@ -154,7 +156,7 @@ export default function RouteDetail() {
   }, [route]);
 
   const mapCenter: [number, number] = useMemo(() => {
-    if (allPoints.length === 0) return [40.7128, -74.0060];
+    if (allPoints.length === 0) return [40.7608, -111.8910];
     const avgLat = allPoints.reduce((sum, p) => sum + p.lat, 0) / allPoints.length;
     const avgLng = allPoints.reduce((sum, p) => sum + p.lng, 0) / allPoints.length;
     return [avgLat, avgLng];
@@ -168,6 +170,61 @@ export default function RouteDetail() {
       [Math.min(...lats), Math.min(...lngs)],
       [Math.max(...lats), Math.max(...lngs)]
     );
+  }, [allPoints]);
+
+  // Fetch route geometry for trail-following polyline
+  useEffect(() => {
+    async function fetchRouteGeometry() {
+      if (allPoints.length < 2) {
+        setRouteGeometry([]);
+        return;
+      }
+
+      setFetchingRoute(true);
+      try {
+        const coordinates = allPoints.map(p => [p.lng, p.lat]);
+        
+        const url = 'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson';
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
+            'Authorization': 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjgzMGYzYWU5NmNkYjQxYjJiNmYwZWQxMmUzYTFhNzYwIiwiaCI6Im11cm11cjY0In0='  // Replace with your OpenRouteService API key
+          },
+          body: JSON.stringify({
+            coordinates: coordinates,
+            preference: 'recommended',
+            units: 'mi',
+            elevation: true
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.features && data.features.length > 0) {
+          const geometry = data.features[0].geometry.coordinates;
+          const leafletCoords: [number, number][] = geometry.map((coord: number[]) => [coord[1], coord[0]]);
+          setRouteGeometry(leafletCoords);
+        } else {
+          // Fallback to straight lines
+          setRouteGeometry(allPoints.map(p => [p.lat, p.lng]));
+        }
+      } catch (error) {
+        console.error('Error fetching hiking route:', error);
+        // Fallback to straight lines
+        setRouteGeometry(allPoints.map(p => [p.lat, p.lng]));
+      } finally {
+        setFetchingRoute(false);
+      }
+    }
+
+    fetchRouteGeometry();
   }, [allPoints]);
 
   if (loading) {
@@ -220,11 +277,11 @@ export default function RouteDetail() {
       <div className="route-totals">
         <div className="total-item">
           <span className="total-label">Total Distance:</span>
-          <span className="total-value">{totalMiles.toFixed(1)} miles</span>
+          <span className="total-value">{totalMiles.toFixed(2)} miles</span>
         </div>
         <div className="total-item">
           <span className="total-label">Total Elevation Gain:</span>
-          <span className="total-value">{totalElevation} ft</span>
+          <span className="total-value">{totalElevation.toLocaleString()} ft</span>
         </div>
       </div>
 
@@ -235,7 +292,7 @@ export default function RouteDetail() {
             <MapContainer
               center={mapCenter}
               zoom={13}
-              style={{ height: "500px", width: "100%" }}
+              style={{ height: "500px", width: "100%", borderRadius: "8px" }}
               scrollWheelZoom={true}
             >
               <TileLayer
@@ -271,14 +328,31 @@ export default function RouteDetail() {
                 );
               })}
 
-              {allPoints.length > 1 && (
+              {routeGeometry.length > 0 && (
                 <Polyline
-                  positions={allPoints.map(p => [p.lat, p.lng] as [number, number])}
+                  positions={routeGeometry}
                   color="#3b82f6"
                   weight={4}
-                  opacity={0.7}
+                  opacity={0.8}
                 />
               )}
+
+              {fetchingRoute && (
+                <div style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  background: 'white',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                  zIndex: 1000,
+                  fontSize: '14px'
+                }}>
+                  Loading trail route...
+                </div>
+              )}
+
               <FitBounds bounds={bounds} />
             </MapContainer>
           </div>
@@ -286,7 +360,7 @@ export default function RouteDetail() {
       )}
 
       <div className="route-section">
-        <h2>Start Point</h2>
+        <h2>🟢 Start Point</h2>
         <div className="coordinate-display">
           <div><strong>Latitude:</strong> {route.startPoint?.lat?.toFixed(6)}</div>
           <div><strong>Longitude:</strong> {route.startPoint?.lng?.toFixed(6)}</div>
@@ -294,24 +368,31 @@ export default function RouteDetail() {
             <div><strong>Label:</strong> {route.startPoint.label}</div>
           )}
         </div>
+        {route.segments && route.segments[0] && (
+          <div className="segment-info">
+            <div><strong>Distance to {route.stops.length > 0 ? 'first stop' : 'end'}:</strong> {route.segments[0].mileage.toFixed(2)} mi</div>
+            <div><strong>Elevation gain:</strong> {route.segments[0].elevationGainFt.toLocaleString()} ft</div>
+          </div>
+        )}
       </div>
 
       {route.stops && route.stops.length > 0 && (
         <div className="route-section">
           <h2>Stops</h2>
           {route.stops.map((stop, index) => {
-            const segment = route.segments?.[index];
+            const segment = route.segments?.[index + 1];
             return (
               <div key={index} className="stop-item">
-                <h3>Stop {index + 1}{stop.label ? `: ${stop.label}` : ""}</h3>
+                <h3>🔵 Stop {index + 1}{stop.label ? `: ${stop.label}` : ""}</h3>
                 <div className="coordinate-display">
                   <div><strong>Latitude:</strong> {stop.lat.toFixed(6)}</div>
                   <div><strong>Longitude:</strong> {stop.lng.toFixed(6)}</div>
+                  {stop.label && <div><strong>Label:</strong> {stop.label}</div>}
                 </div>
                 {segment && (
                   <div className="segment-info">
-                    <div><strong>Mileage to next:</strong> {segment.mileage.toFixed(1)} mi</div>
-                    <div><strong>Elevation gain:</strong> {segment.elevationGainFt} ft</div>
+                    <div><strong>Distance to {index === route.stops.length - 1 ? 'end' : `stop ${index + 2}`}:</strong> {segment.mileage.toFixed(2)} mi</div>
+                    <div><strong>Elevation gain:</strong> {segment.elevationGainFt.toLocaleString()} ft</div>
                   </div>
                 )}
               </div>
@@ -320,18 +401,8 @@ export default function RouteDetail() {
         </div>
       )}
 
-      {route.segments && route.segments.length > route.stops.length && (
-        <div className="route-section">
-          <h2>Final Segment</h2>
-          <div className="segment-info">
-            <div><strong>Mileage to end:</strong> {route.segments[route.stops.length]?.mileage.toFixed(1)} mi</div>
-            <div><strong>Elevation gain:</strong> {route.segments[route.stops.length]?.elevationGainFt} ft</div>
-          </div>
-        </div>
-      )}
-
       <div className="route-section">
-        <h2>End Point</h2>
+        <h2>🔴 End Point</h2>
         <div className="coordinate-display">
           <div><strong>Latitude:</strong> {route.endPoint?.lat?.toFixed(6)}</div>
           <div><strong>Longitude:</strong> {route.endPoint?.lng?.toFixed(6)}</div>

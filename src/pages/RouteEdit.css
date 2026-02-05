@@ -397,3 +397,28 @@
 .remove-chip:hover {
   background: #dc2626;
 }
+
+/* Drag and drop styles */
+.point-chip.stop-chip {
+  cursor: move;
+}
+
+.drag-handle {
+  color: #9ca3af;
+  font-size: 1.2rem;
+  cursor: grab;
+  user-select: none;
+}
+
+.point-chip.stop-chip:active .drag-handle {
+  cursor: grabbing;
+}
+
+.point-chip.dragging {
+  opacity: 0.5;
+  border: 2px dashed #3b82f6;
+}
+
+.point-chip.stop-chip:hover {
+  cursor: move;
+}

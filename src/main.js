@@ -53,8 +53,7 @@ app.whenReady().then(() => {
           "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
           "style-src 'self' 'unsafe-inline'; " +
           "img-src 'self' data: https://*.openstreetmap.org https://*.tile.openstreetmap.org; " +
-          "connect-src 'self' https://*.openstreetmap.org https://maps.googleapis.com; " +
-          "font-src 'self' data:;"
+          "connect-src 'self' https://*.openstreetmap.org https://maps.googleapis.com https://router.project-osrm.org https://api.openrouteservice.org; " +          "font-src 'self' data:;"
         ]
       }
     });
