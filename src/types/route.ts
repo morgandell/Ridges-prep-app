@@ -1,7 +1,12 @@
+export type StopType = "campsite" | "view";
+
 export interface RoutePoint {
+  id: string;
   lat: number;
   lng: number;
   label?: string;
+  type?: StopType;
+  note?: string;
 }
 
 export interface RouteSegment {
@@ -17,5 +22,6 @@ export interface Route {
   stops: RoutePoint[];
   segments: RouteSegment[]; // One segment per stop (start->stop1, stop1->stop2, ..., stopN->end)
   notes?: string;
+  ageGroup?:"Intro" | "Middle School" | "High School";
 }
 

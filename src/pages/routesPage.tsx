@@ -79,10 +79,17 @@ export default function RoutesPage() {
                     </div>
                   )}
                   <div className="route-stat">
-                    <strong>Start:</strong> {route.startPoint?.lat?.toFixed(4)}, {route.startPoint?.lng?.toFixed(4)}
+                    <strong>Start:</strong>{" "}
+                    {route.startPoint?.label
+                      ? route.startPoint.label
+                      : `${route.startPoint?.lat?.toFixed(4)}, ${route.startPoint?.lng?.toFixed(4)}`}
                   </div>
+
                   <div className="route-stat">
-                    <strong>End:</strong> {route.endPoint?.lat?.toFixed(4)}, {route.endPoint?.lng?.toFixed(4)}
+                    <strong>End:</strong>{" "}
+                    {route.endPoint?.label
+                      ? route.endPoint.label
+                      : `${route.endPoint?.lat?.toFixed(4)}, ${route.endPoint?.lng?.toFixed(4)}`}
                   </div>
                 </div>
               </div>

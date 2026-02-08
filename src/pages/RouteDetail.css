@@ -116,9 +116,7 @@
 }
 
 .coordinate-display {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  background:var(--color-white);
   padding: 1rem;
   display: flex;
   flex-direction: column;

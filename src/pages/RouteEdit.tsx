@@ -90,6 +90,7 @@ export default function RouteEdit() {
     endLng: "",
     endLabel: "",
     notes: "",
+    ageGroup: "" as "" | "Intro" | "Middle School" | "High School",
   });
   const [stops, setStops] = useState<RoutePoint[]>([]);
   const [segments, setSegments] = useState<RouteSegment[]>([]);
@@ -122,6 +123,7 @@ export default function RouteEdit() {
           endLng: route.endPoint?.lng?.toString() || "",
           endLabel: route.endPoint?.label || "",
           notes: route.notes || "",
+          ageGroup: route.ageGroup || "Middle School",
         });
         setStops(route.stops || []);
         setSegments(route.segments || []);
@@ -148,7 +150,7 @@ export default function RouteEdit() {
       }
     } else {
       // Add stop before the end point
-      const newStop = { lat, lng, label: "" };
+      const newStop = { lat, lng, label: "" , stopType: "campsite", id: Date.now().toString()};
       setStops([...stops, newStop]);
       // Add segment for this new stop
       setSegments([...segments, { mileage: 0, elevationGainFt: 0 }]);
@@ -160,7 +162,7 @@ export default function RouteEdit() {
       // Clear start point
       setFormData({ ...formData, startLat: "", startLng: "", startLabel: "" });
       // Also clear everything else since start is required first
-      setFormData({ name: formData.name, startLat: "", startLng: "", startLabel: "", endLat: "", endLng: "", endLabel: "", notes: formData.notes });
+      setFormData({ name: formData.name, startLat: "", startLng: "", startLabel: "", endLat: "", endLng: "", endLabel: "", notes: formData.notes, ageGroup: formData.ageGroup });
       setStops([]);
       setSegments([]);
     } else if (type === "end") {
@@ -448,11 +450,13 @@ export default function RouteEdit() {
       id: id || Date.now().toString(),
       name: formData.name.trim(),
       startPoint: {
+        id: "start",
         lat: startLat,
         lng: startLng,
         label: formData.startLabel.trim() || undefined,
       },
       endPoint: {
+        id: "end",
         lat: endLat,
         lng: endLng,
         label: formData.endLabel.trim() || undefined,
@@ -460,6 +464,7 @@ export default function RouteEdit() {
       stops: stops,
       segments: adjustedSegments,
       notes: formData.notes.trim() || undefined,
+      ageGroup: formData.ageGroup || undefined,
     };
 
     setSaving(true);
@@ -505,6 +510,48 @@ export default function RouteEdit() {
             required
           />
         </div>
+
+        <div className="radio-group">
+      <label>
+        <input
+          type="radio"
+          name={`age-group${formData.name}`}
+      
+          value="Intro"
+          checked={formData.ageGroup === "Intro"}
+          onChange={() => {
+            setFormData({ ...formData, ageGroup: "Intro" });
+          }}
+        />
+        🧒 Intro
+      </label>
+
+      <label>
+        <input
+          type="radio"
+          name={`age-group${formData.name}`}
+          value="Middle School"
+          checked={formData.ageGroup === "Middle School"}
+          onChange={() => {
+            setFormData({ ...formData, ageGroup: "Middle School" });
+          }}
+        />
+        👨‍🎓 Middle School
+      </label>
+
+      <label>
+        <input
+          type="radio"
+          name={`age-group${formData.name}`}
+          value="High School"
+          checked={formData.ageGroup === "High School"}
+          onChange={() => {
+            setFormData({ ...formData, ageGroup: "High School" });
+          }}
+        />
+        🎓 High School
+      </label>
+          </div>
 
         {/* MAP SECTION AT TOP */}
         <div className="map-section-top">
@@ -697,62 +744,96 @@ export default function RouteEdit() {
           <div key={index} className="form-section">
             <h3>🔵 Stop {index + 1} Details</h3>
             <div className="form-row">
-              <div className="form-group">
-                <label>Latitude</label>
-                <input
-                  type="number"
-                  step="any"
-                  value={stop.lat}
-                  readOnly
-                />
-              </div>
-              <div className="form-group">
-                <label>Longitude</label>
-                <input
-                  type="number"
-                  step="any"
-                  value={stop.lng}
-                  readOnly
-                />
-              </div>
-              <div className="form-group">
-                <label>Label (optional)</label>
-                <input
-                  type="text"
-                  value={stop.label || ""}
-                  onChange={(e) => {
-                    const newStops = [...stops];
-                    newStops[index] = { ...newStops[index], label: e.target.value };
-                    setStops(newStops);
-                  }}
-                  placeholder="e.g., Water source"
-                />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Distance to {index === stops.length - 1 ? "end" : `stop ${index + 2}`} (miles)</label>
-                <input
-                  type="number"
-                  step="any"
-                  min="0"
-                  value={segments[index + 1]?.mileage || ""}
-                  onChange={(e) => handleUpdateSegment(index + 1, "mileage", e.target.value)}
-                  placeholder="0.0"
-                />
-              </div>
-              <div className="form-group">
-                <label>Elevation Gain (ft)</label>
-                <input
-                  type="number"
-                  step="1"
-                  min="0"
-                  value={segments[index + 1]?.elevationGainFt || ""}
-                  onChange={(e) => handleUpdateSegment(index + 1, "elevationGainFt", e.target.value)}
-                  placeholder="0"
-                />
-              </div>
-            </div>
+  <div className="form-group">
+    <label>Stop Type</label>
+    <div className="radio-group">
+      <label>
+        <input
+          type="radio"
+          name={`stop-type-${stop.id}`}
+          
+          value="campsite"
+          checked={stop.type === "campsite"}
+          onChange={() => {
+            setStops(
+              stops.map((s) =>
+                s.id === stop.id ? { ...s, type: "campsite" } : s
+              )
+            );
+          }}
+        />
+        🏕 Campsite
+      </label>
+
+      <label>
+        <input
+          type="radio"
+          name={`stop-type-${stop.id}`}
+          value="view"
+          checked={stop.type === "view"}
+          onChange={() => {
+            setStops(
+              stops.map((s) =>
+                s.id === stop.id ? { ...s, type: "view" } : s
+              )
+            );
+          }}
+        />
+        👀 View
+      </label>
+    </div>
+  </div>
+</div>
+
+<div className="form-row">
+  <div className="form-group">
+    <label>Latitude</label>
+    <div className="form-value">{stop.lat.toFixed(5)}</div>
+  </div>
+
+  <div className="form-group">
+    <label>Longitude</label>
+    <div className="form-value">{stop.lng.toFixed(5)}</div>
+  </div>
+</div>
+{/* <div className="form-row">
+  <div className="form-group">
+    <label>Distance</label>
+    <div className="form-value">
+      {stop.distanceMiles != null
+        ? `${stop.distanceMiles.toFixed(2)} mi`
+        : "—"}
+    </div>
+  </div>
+
+  <div className="form-group">
+    <label>Elevation Gain</label>
+    <div className="form-value">
+      {stop.elevationGainFt != null
+        ? `${stop.elevationGainFt} ft`
+        : "—"}
+    </div>
+  </div>
+</div> */}
+
+
+<div className="form-group">
+  <label>Stop Note (optional)</label>
+  <textarea
+    rows={2}
+    placeholder="Water source, tent sites, exposure, etc."
+    value={stop.note || ""}
+    onChange={(e) => {
+      const value = e.target.value;
+      setStops(
+        stops.map((s) =>
+          s.id === stop.id ? { ...s, note: value } : s
+        )
+      );
+    }}
+  />
+</div>
+
           </div>
         ))}
 

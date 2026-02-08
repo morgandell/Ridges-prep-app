@@ -72,18 +72,20 @@
   color: #6b7280;
 }
 
-.routes-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+.routes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
 }
 
 .route-card {
-  background: white;
-  border: 1px solid #e5e7eb;
+   background: var(--color-card);
   border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid var(--color-card);
 }
 
 .route-card-header {
@@ -98,6 +100,11 @@
   font-size: 1.1rem;
   color: var(--color-text);
   flex: 1;
+}
+
+.route-card-body {
+  display: flex;
+  flex-direction: column;
 }
 
 .delete-button {
