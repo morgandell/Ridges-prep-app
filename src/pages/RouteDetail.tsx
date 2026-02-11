@@ -2,6 +2,8 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from "react-leaflet";
 import { Icon, LatLngBounds, divIcon } from "leaflet";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBinoculars, faCampground, faSignsPost } from "@fortawesome/free-solid-svg-icons";
 import "leaflet/dist/leaflet.css";
 import { Route, RoutePoint } from "../types/route";
 import "./RouteDetail.css";
@@ -448,7 +450,7 @@ const lastCampsiteIndex = useMemo(() => {
               </div>
               {dayIndex === 0 && (
                 <div className="day-start-block">
-                  <h4>🟢 Start</h4>
+                  <h4><FontAwesomeIcon icon={faSignsPost} className="icon-primary" /> Start</h4>
                   <div className="coordinate-display coordinate-compact">
                     <div><strong>Lat:</strong> {route.startPoint?.lat?.toFixed(6)} <strong>Lng:</strong> {route.startPoint?.lng?.toFixed(6)}</div>
                     {route.startPoint?.label && <div><strong>Label:</strong> {route.startPoint.label}</div>}
@@ -496,7 +498,7 @@ const lastCampsiteIndex = useMemo(() => {
               )}
               {day.isFinalLegDay && (
                 <div className="day-start-block">
-                  <h4>🔴 End Point</h4>
+                  <h4><FontAwesomeIcon icon={faSignsPost} className="icon-primary" /> End Point</h4>
                   <div className="coordinate-display coordinate-compact">
                     <div><strong>Lat:</strong> {route.endPoint?.lat?.toFixed(6)} <strong>Lng:</strong> {route.endPoint?.lng?.toFixed(6)}</div>
                     {route.endPoint?.label && <div><strong>Label:</strong> {route.endPoint.label}</div>}
@@ -505,23 +507,25 @@ const lastCampsiteIndex = useMemo(() => {
               )}
               {day.dayStops.map((stop, indexInDay) => {
                 const globalIndex = day.firstStopIndex + indexInDay;
-                const segment = route.segments?.[globalIndex + 1];
+                const segment = route.segments?.[globalIndex];
                 const isCampsite = (stop as RoutePoint).type === "campsite";
+                const fromLabel = globalIndex === 0 ? "start" : `stop ${globalIndex}`;
                 return (
                   <div key={globalIndex} className="stop-item">
                     <h4>
-                      {isCampsite ? "🏕 " : "🔵 "}
-                      Stop {globalIndex + 1}{stop.label ? `: ${stop.label}` : ""}
-                      {isCampsite ? " (Campsite)" : ""}
+                      {isCampsite ? <FontAwesomeIcon icon={faCampground} className="icon-primary" /> :<FontAwesomeIcon icon={faBinoculars} className="icon-primary"/>
+}
+                      {" "} Stop {globalIndex + 1}{stop.label ? `: ${stop.label}` : ""}
+                      {" "} {"("} {stop.lat.toFixed(6)}, {stop.lng.toFixed(6)} {")"}
                     </h4>
-                    <div className="coordinate-display">
+                    {/* <div className="coordinate-display">
                       <div><strong>Latitude:</strong> {stop.lat.toFixed(6)}</div>
                       <div><strong>Longitude:</strong> {stop.lng.toFixed(6)}</div>
                       <div><strong>Label:</strong> {stop.label || "—"}</div>
-                    </div>
+                    </div> */}
                     {segment && (
                       <div className="segment-info">
-                        <div><strong>Distance to {globalIndex === route.stops!.length - 1 ? "end" : `stop ${globalIndex + 2}`}:</strong> {segment.mileage.toFixed(2)} mi</div>
+                        <div><strong>Distance from {fromLabel}:</strong> {segment.mileage.toFixed(2)} mi</div>
                         <div><strong>Elevation gain:</strong> {segment.elevationGainFt.toLocaleString()} ft</div>
                       </div>
                     )}
@@ -534,7 +538,7 @@ const lastCampsiteIndex = useMemo(() => {
       ) : (
         <>
           <div className="route-section">
-            <h2>🟢 Start Point</h2>
+            <h2><FontAwesomeIcon icon={faSignsPost} className="icon-primary" /> Start Point</h2>
             <div className="coordinate-display">
               <div><strong>Latitude:</strong> {route.startPoint?.lat?.toFixed(6)}</div>
               <div><strong>Longitude:</strong> {route.startPoint?.lng?.toFixed(6)}</div>
@@ -553,7 +557,8 @@ const lastCampsiteIndex = useMemo(() => {
             <div className="route-section">
               <h2>Stops</h2>
               {route.stops.map((stop, index) => {
-                const segment = route.segments?.[index + 1];
+                const segment = route.segments?.[index];
+                const fromLabel = index === 0 ? "start" : `stop ${index}`;
                 return (
                   <div key={index} className="stop-item">
                     <h3>🔵 Stop {index + 1}{stop.label ? `: ${stop.label}` : ""}</h3>
@@ -564,7 +569,7 @@ const lastCampsiteIndex = useMemo(() => {
                     </div>
                     {segment && (
                       <div className="segment-info">
-                        <div><strong>Distance to {index === route.stops.length - 1 ? "end" : `stop ${index + 2}`}:</strong> {segment.mileage.toFixed(2)} mi</div>
+                        <div><strong>Distance from {fromLabel}:</strong> {segment.mileage.toFixed(2)} mi</div>
                         <div><strong>Elevation gain:</strong> {segment.elevationGainFt.toLocaleString()} ft</div>
                       </div>
                     )}
@@ -577,7 +582,7 @@ const lastCampsiteIndex = useMemo(() => {
       )}
 
       <div className="route-section">
-        <h2>🔴 End Point</h2>
+        <h2><FontAwesomeIcon icon={faSignsPost} className="icon-primary" /> End Point</h2>
         <div className="coordinate-display">
           <div><strong>Latitude:</strong> {route.endPoint?.lat?.toFixed(6)}</div>
           <div><strong>Longitude:</strong> {route.endPoint?.lng?.toFixed(6)}</div>

@@ -23,10 +23,10 @@
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 500;
+  transition: background-color 0.2s;
 }
-
 .back-button {
   background: var(--color-secondary);
   color: var(--color-textOnSecondary);
@@ -46,12 +46,14 @@
 }
 
 .delete-button {
-  background: #fee;
-  color: #c33;
+  background: var(--color-delete);
+  color: var(--color-textOnDelete);
+  height: 100%;
+  width: 4rem;
 }
 
 .delete-button:hover {
-  background: #fcc;
+  background: var(--color-deleteHover);
 }
 
 .route-header {
@@ -64,8 +66,8 @@
 }
 
 .route-totals {
-  background: #f0f9ff;
-  border: 2px solid #3b82f6;
+  background: var(--color-card);
+  border: 2px solid var(--color-primary);
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 2rem;
@@ -82,8 +84,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem;
-  background: white;
+  background: var(--color-card);
   border-radius: 4px;
+  border-bottom: 1px solid var(--color-secondary);
 }
 
 .total-label {
@@ -94,7 +97,7 @@
 .total-value {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--color-text);
 }
 
 .route-section {
@@ -208,8 +211,9 @@
   padding-top: 0.75rem;
   border-top: 1px solid #e5e7eb;
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  flex-direction: row;
+  justify-content: end;
+  gap: 1rem;
 }
 
 .segment-info div {
@@ -237,4 +241,9 @@
 /* Leaflet map styles */
 .leaflet-container {
   font-family: inherit;
+}
+
+.icon-primary {
+  color: var(--color-secondary); 
+  font-size: 24px;
 }
