@@ -173,34 +173,46 @@ export default function RouteDetail() {
   }, [allPoints]);
 
   const stopsByDay = useMemo(() => {
-    if (!route?.stops?.length) return [];
-    const days: RoutePoint[][] = [];
-    let currentDay: RoutePoint[] = [];
-    for (const stop of route.stops) {
-      currentDay.push(stop);
-      const isCampsite = stop.type === "campsite";
-      if (isCampsite) {
-        days.push([...currentDay]);
-        currentDay = [];
-      }
+  if (!route?.stops?.length) return [];
+  const days: RoutePoint[][] = [];
+  let currentDay: RoutePoint[] = [];
+  for (const stop of route.stops) {
+    currentDay.push(stop);
+    const isCampsite = stop.type === "campsite";
+    if (isCampsite) {
+      days.push([...currentDay]);
+      currentDay = [];
     }
-    if (currentDay.length > 0) days.push(currentDay);
-    // Add a final day for the leg from last campsite to endpoint (so that leg is its own day)
-    const lastCampsiteIndex = route.stops.findLastIndex((s) => s.type === "campsite");
-    if (lastCampsiteIndex >= 0) {
-      const stopsAfterLastCamp = route.stops.slice(lastCampsiteIndex + 1);
-      if (stopsAfterLastCamp.length === 0) {
-        days.push([]); // last stop is campsite → add empty "day" for campsite → end
-      }
-      // else we already have that day as the last element (currentDay was pushed)
+  }
+  if (currentDay.length > 0) days.push(currentDay);
+  
+  // Add a final day for the leg from last campsite to endpoint
+  let lastCampIdx = -1;
+  for (let i = route.stops.length - 1; i >= 0; i--) {
+    if (route.stops[i].type === "campsite") {
+      lastCampIdx = i;
+      break;
     }
-    return days;
-  }, [route]);
+  }
+  
+  if (lastCampIdx >= 0) {
+    const stopsAfterLastCamp = route.stops.slice(lastCampIdx + 1);
+    if (stopsAfterLastCamp.length === 0) {
+      days.push([]); // last stop is campsite → add empty "day" for campsite → end
+    }
+  }
+  return days;
+}, [route]);
 
-  const lastCampsiteIndex = useMemo(
-    () => (route?.stops ? route.stops.findLastIndex((s) => s.type === "campsite") : -1),
-    [route?.stops]
-  );
+const lastCampsiteIndex = useMemo(() => {
+  if (!route?.stops) return -1;
+  for (let i = route.stops.length - 1; i >= 0; i--) {
+    if (route.stops[i].type === "campsite") {
+      return i;
+    }
+  }
+  return -1;
+}, [route?.stops]);
 
   // Per-day stats: segment indices and summed distance/elevation for each day
   const daysWithStats = useMemo(() => {
