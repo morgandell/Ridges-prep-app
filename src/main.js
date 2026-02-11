@@ -444,7 +444,19 @@ ipcMain.handle("save-route", async (_event, route) => {
       name: route.name.trim(),
       startPoint: route.startPoint || { lat: 0, lng: 0 },
       endPoint: route.endPoint || { lat: 0, lng: 0 },
-      stops: Array.isArray(route.stops) ? route.stops : [],
+      stops: Array.isArray(route.stops)
+        ? route.stops.map((s) => {
+            const type = s.type || s.stopType || "view";
+            return {
+              id: s.id,
+              lat: s.lat,
+              lng: s.lng,
+              label: s.label,
+              type,
+              note: s.note,
+            };
+          })
+        : [],
       segments: Array.isArray(route.segments) ? route.segments : [],
       notes: route.notes || undefined,
       ageGroup: route.ageGroup || undefined,

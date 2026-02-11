@@ -137,10 +137,55 @@
 }
 
 .day-heading {
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.5rem 0;
   font-size: 1.25rem;
   color: var(--color-primary);
   padding-bottom: 0.25rem;
+}
+
+.day-summary {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.day-start-block {
+  margin-bottom: 1rem;
+}
+
+.day-start-block h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: var(--color-text);
+}
+
+.coordinate-compact {
+  padding: 0.75rem !important;
+  font-size: 0.85rem !important;
+}
+
+.day-campsite-labels {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+}
+
+.day-label-row {
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+
+.day-label-row:last-child {
+  margin-bottom: 0;
 }
 
 .stop-item {

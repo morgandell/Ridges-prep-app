@@ -173,23 +173,45 @@ export default function RouteDetail() {
   }, [allPoints]);
 
   const stopsByDay = useMemo(() => {
-  if (!route?.stops?.length) return [];
-
-  const days: RoutePoint[][] = [];
-  let currentDay: RoutePoint[] = [];
-
-  for (const stop of route.stops) {
-    currentDay.push(stop);
-    const isCampsite = stop.type === "campsite";
-    if (isCampsite) {
-      days.push([...currentDay]);
-      currentDay = [];
+    if (!route?.stops?.length) return [];
+    const days: RoutePoint[][] = [];
+    let currentDay: RoutePoint[] = [];
+    for (const stop of route.stops) {
+      currentDay.push(stop);
+      const isCampsite = stop.type === "campsite";
+      if (isCampsite) {
+        days.push([...currentDay]);
+        currentDay = [];
+      }
     }
-  }
+    if (currentDay.length > 0) days.push(currentDay);
+    return days;
+  }, [route]);
 
-  if (currentDay.length > 0) days.push(currentDay);
-  return days;
-}, [route]);
+  // Per-day stats: segment indices and summed distance/elevation for each day
+  const daysWithStats = useMemo(() => {
+    if (!route?.stops?.length || !route?.segments?.length || !stopsByDay.length) return [];
+    const segs = route.segments;
+    return stopsByDay.map((dayStops, dayIndex) => {
+      const firstStopIndex = route.stops!.indexOf(dayStops[0]);
+      const lastStopIndex = route.stops!.indexOf(dayStops[dayStops.length - 1]);
+      const startSeg = dayIndex === 0 ? 0 : firstStopIndex;
+      const endSeg = lastStopIndex;
+      let dayMiles = 0;
+      let dayElevation = 0;
+      for (let i = startSeg; i <= endSeg && i < segs.length; i++) {
+        dayMiles += segs[i].mileage || 0;
+        dayElevation += segs[i].elevationGainFt || 0;
+      }
+      return {
+        dayStops,
+        firstStopIndex,
+        lastStopIndex,
+        dayMiles,
+        dayElevation,
+      };
+    });
+  }, [route?.stops, route?.segments, stopsByDay]);
 
 
   // Fetch route geometry for trail-following polyline
@@ -386,82 +408,119 @@ export default function RouteDetail() {
         </div>
       )}
 
-      <div className="route-section">
-        <h2>🟢 Start Point</h2>
-        <div className="coordinate-display">
-          <div><strong>Latitude:</strong> {route.startPoint?.lat?.toFixed(6)}</div>
-          <div><strong>Longitude:</strong> {route.startPoint?.lng?.toFixed(6)}</div>
-          {route.startPoint?.label && (
-            <div><strong>Label:</strong> {route.startPoint.label}</div>
-          )}
-        </div>
-        {route.segments && route.segments[0] && (
-          <div className="segment-info">
-            <div><strong>Distance to {route.stops.length > 0 ? 'first stop' : 'end'}:</strong> {route.segments[0].mileage.toFixed(2)} mi</div>
-            <div><strong>Elevation gain:</strong> {route.segments[0].elevationGainFt.toLocaleString()} ft</div>
-          </div>
-        )}
-      </div>
-
-      {route.stops && route.stops.length > 0 && (
+      {daysWithStats.length > 0 ? (
         <div className="route-section">
-          <h2>Stops</h2>
-          {stopsByDay.length > 0 ? (
-            stopsByDay.map((dayStops, dayIndex) => {
-              const firstStopIndex = route.stops!.indexOf(dayStops[0]);
-              return (
-                <div key={dayIndex} className="stops-by-day">
-                  <h3 className="day-heading">Day {dayIndex + 1}</h3>
-                  {dayStops.map((stop, indexInDay) => {
-                    const globalIndex = firstStopIndex + indexInDay;
-                    const segment = route.segments?.[globalIndex + 1];
-                    const isCampsite = (stop as RoutePoint).type === "campsite";
-                    return (
-                      <div key={globalIndex} className="stop-item">
-                        <h4>
-                          {isCampsite ? "🏕 " : "🔵 "}
-                          Stop {globalIndex + 1}{stop.label ? `: ${stop.label}` : ""}
-                          {isCampsite ? " (Campsite)" : ""}
-                        </h4>
-                        <div className="coordinate-display">
-                          <div><strong>Latitude:</strong> {stop.lat.toFixed(6)}</div>
-                          <div><strong>Longitude:</strong> {stop.lng.toFixed(6)}</div>
-                          {stop.label && <div><strong>Label:</strong> {stop.label}</div>}
-                        </div>
-                        {segment && (
-                          <div className="segment-info">
-                            <div><strong>Distance to {globalIndex === route.stops!.length - 1 ? "end" : `stop ${globalIndex + 2}`}:</strong> {segment.mileage.toFixed(2)} mi</div>
-                            <div><strong>Elevation gain:</strong> {segment.elevationGainFt.toLocaleString()} ft</div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })
-          ) : (
-            route.stops.map((stop, index) => {
-              const segment = route.segments?.[index + 1];
-              return (
-                <div key={index} className="stop-item">
-                  <h3>🔵 Stop {index + 1}{stop.label ? `: ${stop.label}` : ""}</h3>
-                  <div className="coordinate-display">
-                    <div><strong>Latitude:</strong> {stop.lat.toFixed(6)}</div>
-                    <div><strong>Longitude:</strong> {stop.lng.toFixed(6)}</div>
-                    {stop.label && <div><strong>Label:</strong> {stop.label}</div>}
+          <h2>Route by day</h2>
+          {daysWithStats.map((day, dayIndex) => (
+            <div key={dayIndex} className="stops-by-day">
+              <h3 className="day-heading">Day {dayIndex + 1}</h3>
+              <div className="day-summary">
+                <span>{day.dayMiles.toFixed(2)} miles</span>
+                <span>{day.dayElevation.toLocaleString()} ft elevation gain</span>
+              </div>
+              {dayIndex === 0 && (
+                <div className="day-start-block">
+                  <h4>🟢 Start</h4>
+                  <div className="coordinate-display coordinate-compact">
+                    <div><strong>Lat:</strong> {route.startPoint?.lat?.toFixed(6)} <strong>Lng:</strong> {route.startPoint?.lng?.toFixed(6)}</div>
+                    {route.startPoint?.label && <div><strong>Label:</strong> {route.startPoint.label}</div>}
                   </div>
-                  {segment && (
-                    <div className="segment-info">
-                      <div><strong>Distance to {index === route.stops.length - 1 ? "end" : `stop ${index + 2}`}:</strong> {segment.mileage.toFixed(2)} mi</div>
-                      <div><strong>Elevation gain:</strong> {segment.elevationGainFt.toLocaleString()} ft</div>
-                    </div>
-                  )}
                 </div>
-              );
-            })
-          )}
+              )}
+              {dayIndex > 0 && (
+                <div className="day-campsite-labels">
+                  <div className="day-label-row">
+                    <strong>Starting at:</strong>{" "}
+                    {(() => {
+                      const prev = stopsByDay[dayIndex - 1];
+                      const lastPrev = prev?.[prev.length - 1];
+                      if (!lastPrev) return "—";
+                      const idx = route.stops!.indexOf(lastPrev) + 1;
+                      return `Stop ${idx}${lastPrev.label ? ` — ${lastPrev.label}` : ""} (campsite)`;
+                    })()}
+                  </div>
+                  <div className="day-label-row">
+                    <strong>Ending at:</strong>{" "}
+                    {(() => {
+                      const lastStop = day.dayStops[day.dayStops.length - 1];
+                      if (!lastStop) return "—";
+                      const idx = route.stops!.indexOf(lastStop) + 1;
+                      return `Stop ${idx}${lastStop.label ? ` — ${lastStop.label}` : ""} (campsite)`;
+                    })()}
+                  </div>
+                </div>
+              )}
+              {day.dayStops.map((stop, indexInDay) => {
+                const globalIndex = day.firstStopIndex + indexInDay;
+                const segment = route.segments?.[globalIndex + 1];
+                const isCampsite = (stop as RoutePoint).type === "campsite";
+                return (
+                  <div key={globalIndex} className="stop-item">
+                    <h4>
+                      {isCampsite ? "🏕 " : "🔵 "}
+                      Stop {globalIndex + 1}{stop.label ? `: ${stop.label}` : ""}
+                      {isCampsite ? " (Campsite)" : ""}
+                    </h4>
+                    <div className="coordinate-display">
+                      <div><strong>Latitude:</strong> {stop.lat.toFixed(6)}</div>
+                      <div><strong>Longitude:</strong> {stop.lng.toFixed(6)}</div>
+                      {stop.label && <div><strong>Label:</strong> {stop.label}</div>}
+                    </div>
+                    {segment && (
+                      <div className="segment-info">
+                        <div><strong>Distance to {globalIndex === route.stops!.length - 1 ? "end" : `stop ${globalIndex + 2}`}:</strong> {segment.mileage.toFixed(2)} mi</div>
+                        <div><strong>Elevation gain:</strong> {segment.elevationGainFt.toLocaleString()} ft</div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
+      ) : (
+        <>
+          <div className="route-section">
+            <h2>🟢 Start Point</h2>
+            <div className="coordinate-display">
+              <div><strong>Latitude:</strong> {route.startPoint?.lat?.toFixed(6)}</div>
+              <div><strong>Longitude:</strong> {route.startPoint?.lng?.toFixed(6)}</div>
+              {route.startPoint?.label && (
+                <div><strong>Label:</strong> {route.startPoint.label}</div>
+              )}
+            </div>
+            {route.segments && route.segments[0] && (
+              <div className="segment-info">
+                <div><strong>Distance to {route.stops?.length ? "first stop" : "end"}:</strong> {route.segments[0].mileage.toFixed(2)} mi</div>
+                <div><strong>Elevation gain:</strong> {route.segments[0].elevationGainFt.toLocaleString()} ft</div>
+              </div>
+            )}
+          </div>
+          {route.stops && route.stops.length > 0 && (
+            <div className="route-section">
+              <h2>Stops</h2>
+              {route.stops.map((stop, index) => {
+                const segment = route.segments?.[index + 1];
+                return (
+                  <div key={index} className="stop-item">
+                    <h3>🔵 Stop {index + 1}{stop.label ? `: ${stop.label}` : ""}</h3>
+                    <div className="coordinate-display">
+                      <div><strong>Latitude:</strong> {stop.lat.toFixed(6)}</div>
+                      <div><strong>Longitude:</strong> {stop.lng.toFixed(6)}</div>
+                      {stop.label && <div><strong>Label:</strong> {stop.label}</div>}
+                    </div>
+                    {segment && (
+                      <div className="segment-info">
+                        <div><strong>Distance to {index === route.stops.length - 1 ? "end" : `stop ${index + 2}`}:</strong> {segment.mileage.toFixed(2)} mi</div>
+                        <div><strong>Elevation gain:</strong> {segment.elevationGainFt.toLocaleString()} ft</div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
 
       <div className="route-section">

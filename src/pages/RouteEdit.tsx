@@ -127,7 +127,11 @@ export default function RouteEdit() {
           ageGroup:
             route.ageGroup || "Middle School",
         });
-        setStops(route.stops || []);
+        setStops((route.stops || []).map((s) => {
+          const type = s.type ?? (s as { stopType?: string }).stopType ?? "view";
+          const { stopType: _st, ...rest } = s as RoutePoint & { stopType?: string };
+          return { ...rest, type: type as "campsite" | "view" };
+        }));
         setSegments(route.segments || []);
       }
     } catch (error) {
@@ -152,7 +156,7 @@ export default function RouteEdit() {
       }
     } else {
       // Add stop before the end point
-      const newStop = { lat, lng, label: "" , stopType: "campsite", id: Date.now().toString()};
+      const newStop: RoutePoint = { lat, lng, label: "", type: "campsite", id: Date.now().toString() };
       setStops([...stops, newStop]);
       // Add segment for this new stop
       setSegments([...segments, { mileage: 0, elevationGainFt: 0 }]);
@@ -252,7 +256,7 @@ export default function RouteEdit() {
 
   // Calculate map center and bounds
   const mapCenter: [number, number] = useMemo(() => {
-    if (allPoints.length === 0) return [40.7608, -111.8910]; // Salt Lake City default
+    if (allPoints.length === 0) return [43.9274, -114.838]; // Salt Lake City default
     const avgLat = allPoints.reduce((sum, p) => sum + p.lat, 0) / allPoints.length;
     const avgLng = allPoints.reduce((sum, p) => sum + p.lng, 0) / allPoints.length;
     return [avgLat, avgLng];
