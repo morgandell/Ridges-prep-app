@@ -185,18 +185,33 @@ export default function RouteDetail() {
       }
     }
     if (currentDay.length > 0) days.push(currentDay);
+    // Add a final day for the leg from last campsite to endpoint (so that leg is its own day)
+    const lastCampsiteIndex = route.stops.findLastIndex((s) => s.type === "campsite");
+    if (lastCampsiteIndex >= 0) {
+      const stopsAfterLastCamp = route.stops.slice(lastCampsiteIndex + 1);
+      if (stopsAfterLastCamp.length === 0) {
+        days.push([]); // last stop is campsite → add empty "day" for campsite → end
+      }
+      // else we already have that day as the last element (currentDay was pushed)
+    }
     return days;
   }, [route]);
+
+  const lastCampsiteIndex = useMemo(
+    () => (route?.stops ? route.stops.findLastIndex((s) => s.type === "campsite") : -1),
+    [route?.stops]
+  );
 
   // Per-day stats: segment indices and summed distance/elevation for each day
   const daysWithStats = useMemo(() => {
     if (!route?.stops?.length || !route?.segments?.length || !stopsByDay.length) return [];
     const segs = route.segments;
     return stopsByDay.map((dayStops, dayIndex) => {
-      const firstStopIndex = route.stops!.indexOf(dayStops[0]);
-      const lastStopIndex = route.stops!.indexOf(dayStops[dayStops.length - 1]);
-      const startSeg = dayIndex === 0 ? 0 : firstStopIndex;
-      const endSeg = lastStopIndex;
+      const isFinalLegDay = dayStops.length === 0 && lastCampsiteIndex >= 0;
+      const firstStopIndex = dayStops.length > 0 ? route.stops!.indexOf(dayStops[0]) : lastCampsiteIndex + 1;
+      const lastStopIndex = dayStops.length > 0 ? route.stops!.indexOf(dayStops[dayStops.length - 1]) : -1;
+      const startSeg = dayIndex === 0 ? 0 : isFinalLegDay ? lastCampsiteIndex + 1 : firstStopIndex;
+      const endSeg = isFinalLegDay ? segs.length - 1 : lastStopIndex;
       let dayMiles = 0;
       let dayElevation = 0;
       for (let i = startSeg; i <= endSeg && i < segs.length; i++) {
@@ -205,13 +220,14 @@ export default function RouteDetail() {
       }
       return {
         dayStops,
-        firstStopIndex,
+        firstStopIndex: dayStops.length > 0 ? firstStopIndex : lastCampsiteIndex + 1,
         lastStopIndex,
         dayMiles,
         dayElevation,
+        isFinalLegDay,
       };
     });
-  }, [route?.stops, route?.segments, stopsByDay]);
+  }, [route?.stops, route?.segments, stopsByDay, lastCampsiteIndex]);
 
 
   // Fetch route geometry for trail-following polyline
@@ -427,7 +443,7 @@ export default function RouteDetail() {
                   </div>
                 </div>
               )}
-              {dayIndex > 0 && (
+              {dayIndex > 0 && !day.isFinalLegDay && (
                 <div className="day-campsite-labels">
                   <div className="day-label-row">
                     <strong>Starting at:</strong>{" "}
@@ -450,6 +466,31 @@ export default function RouteDetail() {
                   </div>
                 </div>
               )}
+              {day.isFinalLegDay && (
+                <div className="day-campsite-labels">
+                  <div className="day-label-row">
+                    <strong>Starting at:</strong>{" "}
+                    {(() => {
+                      const lastCamp = route.stops![lastCampsiteIndex];
+                      if (!lastCamp) return "—";
+                      const idx = lastCampsiteIndex + 1;
+                      return `Stop ${idx}${lastCamp.label ? ` — ${lastCamp.label}` : ""} (campsite)`;
+                    })()}
+                  </div>
+                  <div className="day-label-row">
+                    <strong>Ending at:</strong> End point
+                  </div>
+                </div>
+              )}
+              {day.isFinalLegDay && (
+                <div className="day-start-block">
+                  <h4>🔴 End Point</h4>
+                  <div className="coordinate-display coordinate-compact">
+                    <div><strong>Lat:</strong> {route.endPoint?.lat?.toFixed(6)} <strong>Lng:</strong> {route.endPoint?.lng?.toFixed(6)}</div>
+                    {route.endPoint?.label && <div><strong>Label:</strong> {route.endPoint.label}</div>}
+                  </div>
+                </div>
+              )}
               {day.dayStops.map((stop, indexInDay) => {
                 const globalIndex = day.firstStopIndex + indexInDay;
                 const segment = route.segments?.[globalIndex + 1];
@@ -464,7 +505,7 @@ export default function RouteDetail() {
                     <div className="coordinate-display">
                       <div><strong>Latitude:</strong> {stop.lat.toFixed(6)}</div>
                       <div><strong>Longitude:</strong> {stop.lng.toFixed(6)}</div>
-                      {stop.label && <div><strong>Label:</strong> {stop.label}</div>}
+                      <div><strong>Label:</strong> {stop.label || "—"}</div>
                     </div>
                     {segment && (
                       <div className="segment-info">
@@ -507,7 +548,7 @@ export default function RouteDetail() {
                     <div className="coordinate-display">
                       <div><strong>Latitude:</strong> {stop.lat.toFixed(6)}</div>
                       <div><strong>Longitude:</strong> {stop.lng.toFixed(6)}</div>
-                      {stop.label && <div><strong>Label:</strong> {stop.label}</div>}
+                      <div><strong>Label:</strong> {stop.label || "—"}</div>
                     </div>
                     {segment && (
                       <div className="segment-info">

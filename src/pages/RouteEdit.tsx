@@ -127,11 +127,15 @@ export default function RouteEdit() {
           ageGroup:
             route.ageGroup || "Middle School",
         });
-        setStops((route.stops || []).map((s) => {
-          const type = s.type ?? (s as { stopType?: string }).stopType ?? "view";
-          const { stopType: _st, ...rest } = s as RoutePoint & { stopType?: string };
-          return { ...rest, type: type as "campsite" | "view" };
-        }));
+        setStops(
+          (route.stops || [])
+            .filter((s): s is RoutePoint & { stopType?: string } => s != null && typeof s === "object")
+            .map((s) => {
+              const type = s.type ?? s.stopType ?? "view";
+              const { stopType: _st, ...rest } = s;
+              return { ...rest, type: type as "campsite" | "view" };
+            })
+        );
         setSegments(route.segments || []);
       }
     } catch (error) {
@@ -145,18 +149,16 @@ export default function RouteEdit() {
   function handleMapClick(lat: number, lng: number) {
     // Sequential point placement
     if (!formData.startLat || !formData.startLng) {
-      // Set start point
-      setFormData({ ...formData, startLat: lat.toString(), startLng: lng.toString() });
+      setFormData((prev) => ({ ...prev, startLat: lat.toString(), startLng: lng.toString() }));
     } else if (!formData.endLat || !formData.endLng) {
-      // Set end point
-      setFormData({ ...formData, endLat: lat.toString(), endLng: lng.toString() });
+      setFormData((prev) => ({ ...prev, endLat: lat.toString(), endLng: lng.toString() }));
       // Initialize first segment
       if (segments.length === 0) {
         setSegments([{ mileage: 0, elevationGainFt: 0 }]);
       }
     } else {
       // Add stop before the end point
-      const newStop: RoutePoint = { lat, lng, label: "", type: "campsite", id: Date.now().toString() };
+      const newStop: RoutePoint = { lat, lng, label: "", type: "campsite", id: `stop-${Date.now()}-${stops.length}` };
       setStops([...stops, newStop]);
       // Add segment for this new stop
       setSegments([...segments, { mileage: 0, elevationGainFt: 0 }]);
@@ -166,14 +168,12 @@ export default function RouteEdit() {
   function handleRemovePoint(type: "start" | "end" | number) {
     if (type === "start") {
       // Clear start point
-      setFormData({ ...formData, startLat: "", startLng: "", startLabel: "" });
-      // Also clear everything else since start is required first
-      setFormData({ name: formData.name, startLat: "", startLng: "", startLabel: "", endLat: "", endLng: "", endLabel: "", notes: formData.notes, ageGroup: formData.ageGroup });
+      setFormData((prev) => ({ ...prev, startLat: "", startLng: "", startLabel: "", endLat: "", endLng: "", endLabel: "" }));
       setStops([]);
       setSegments([]);
     } else if (type === "end") {
       // Clear end point
-      setFormData({ ...formData, endLat: "", endLng: "", endLabel: "" });
+      setFormData((prev) => ({ ...prev, endLat: "", endLng: "", endLabel: "" }));
     } else {
       // Remove stop at index
       const newStops = stops.filter((_, i) => i !== type);
@@ -217,9 +217,9 @@ export default function RouteEdit() {
 
   function handleMarkerDragEnd(index: number | "start" | "end", lat: number, lng: number) {
     if (index === "start") {
-      setFormData({ ...formData, startLat: lat.toString(), startLng: lng.toString() });
+      setFormData((prev) => ({ ...prev, startLat: lat.toString(), startLng: lng.toString() }));
     } else if (index === "end") {
-      setFormData({ ...formData, endLat: lat.toString(), endLng: lng.toString() });
+      setFormData((prev) => ({ ...prev, endLat: lat.toString(), endLng: lng.toString() }));
     } else {
       const newStops = [...stops];
       newStops[index] = { ...newStops[index], lat, lng };
@@ -453,7 +453,7 @@ export default function RouteEdit() {
     }
 
     const route: Route = {
-      id: id || Date.now().toString(),
+      id: id || `stop-${Date.now()}-${stops.length}`,
       name: formData.name.trim(),
       startPoint: {
         id: "start",
@@ -512,7 +512,7 @@ export default function RouteEdit() {
             id="route-name"
             type="text"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
             placeholder="e.g., Mount Washington Trail"
             required
           />
@@ -526,7 +526,7 @@ export default function RouteEdit() {
       
           value="Intro"
           checked={formData.ageGroup === "Intro"}
-          onChange={() => setFormData({ ...formData, ageGroup: "Intro" })}
+          onChange={() => setFormData((prev) => ({ ...prev, ageGroup: "Intro" }))}
         />
         🧒 Intro
       </label>
@@ -538,7 +538,7 @@ export default function RouteEdit() {
           value="Middle School"
           checked={formData.ageGroup === "Middle School"}
           onChange={() => {
-            setFormData({ ...formData, ageGroup: "Middle School" });
+            setFormData((prev) => ({ ...prev, ageGroup: "Middle School" }));
           }}
         />
         👨‍🎓 Middle School
@@ -551,7 +551,7 @@ export default function RouteEdit() {
           value="High School"
           checked={formData.ageGroup === "High School"}
           onChange={() => {
-            setFormData({ ...formData, ageGroup: "High School" });
+            setFormData((prev) => ({ ...prev, ageGroup: "High School" }));
           }}
         />
         🎓 High School
@@ -692,7 +692,7 @@ export default function RouteEdit() {
                   type="number"
                   step="any"
                   value={formData.startLat}
-                  onChange={(e) => setFormData({ ...formData, startLat: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, startLat: e.target.value }))}
                   readOnly
                 />
               </div>
@@ -702,7 +702,7 @@ export default function RouteEdit() {
                   type="number"
                   step="any"
                   value={formData.startLng}
-                  onChange={(e) => setFormData({ ...formData, startLng: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, startLng: e.target.value }))}
                   readOnly
                 />
               </div>
@@ -711,7 +711,7 @@ export default function RouteEdit() {
                 <input
                   type="text"
                   value={formData.startLabel}
-                  onChange={(e) => setFormData({ ...formData, startLabel: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, startLabel: e.target.value }))}
                   placeholder="e.g., Trailhead"
                 />
               </div>
@@ -790,6 +790,19 @@ export default function RouteEdit() {
   </div>
 </div>
 
+<div className="form-group">
+  <label>Label (optional)</label>
+  <input
+    type="text"
+    placeholder="e.g., Lake Camp, Summit View"
+    value={stop.label || ""}
+    onChange={(e) => {
+      const value = e.target.value;
+      setStops((prev) => prev.map((s) => (s.id === stop.id ? { ...s, label: value.trim() || undefined } : s)));
+    }}
+  />
+</div>
+
 <div className="form-row">
   <div className="form-group">
     <label>Latitude</label>
@@ -852,7 +865,7 @@ export default function RouteEdit() {
                   type="number"
                   step="any"
                   value={formData.endLat}
-                  onChange={(e) => setFormData({ ...formData, endLat: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, endLat: e.target.value }))}
                   readOnly
                 />
               </div>
@@ -862,7 +875,7 @@ export default function RouteEdit() {
                   type="number"
                   step="any"
                   value={formData.endLng}
-                  onChange={(e) => setFormData({ ...formData, endLng: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, endLng: e.target.value }))}
                   readOnly
                 />
               </div>
@@ -871,7 +884,7 @@ export default function RouteEdit() {
                 <input
                   type="text"
                   value={formData.endLabel}
-                  onChange={(e) => setFormData({ ...formData, endLabel: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, endLabel: e.target.value }))}
                   placeholder="e.g., Summit"
                 />
               </div>
@@ -898,7 +911,7 @@ export default function RouteEdit() {
           <textarea
             id="notes"
             value={formData.notes}
-            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
             placeholder="Add notes about water sources, campsites, hazards, etc."
             rows={4}
           />
