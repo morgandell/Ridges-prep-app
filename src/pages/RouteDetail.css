@@ -128,6 +128,21 @@
   font-size: 0.9rem;
 }
 
+.stops-by-day {
+  margin-bottom: 1.5rem;
+}
+
+.stops-by-day:last-child {
+  margin-bottom: 0;
+}
+
+.day-heading {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.25rem;
+  color: var(--color-primary);
+  padding-bottom: 0.25rem;
+}
+
 .stop-item {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
@@ -136,7 +151,8 @@
   margin-bottom: 1rem;
 }
 
-.stop-item h3 {
+.stop-item h3,
+.stop-item h4 {
   margin: 0 0 0.75rem 0;
   font-size: 1.1rem;
   color: var(--color-text);

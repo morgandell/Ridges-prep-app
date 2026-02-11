@@ -447,6 +447,7 @@ ipcMain.handle("save-route", async (_event, route) => {
       stops: Array.isArray(route.stops) ? route.stops : [],
       segments: Array.isArray(route.segments) ? route.segments : [],
       notes: route.notes || undefined,
+      ageGroup: route.ageGroup || undefined,
     };
 
     const idx = routes.findIndex(r => r.id === cleanRoute.id);

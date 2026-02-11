@@ -1,4 +1,5 @@
 export type StopType = "campsite" | "view";
+export type AgeGroup = "Intro" | "Middle School" | "High School";
 
 export interface RoutePoint {
   id: string;
@@ -22,6 +23,6 @@ export interface Route {
   stops: RoutePoint[];
   segments: RouteSegment[]; // One segment per stop (start->stop1, stop1->stop2, ..., stopN->end)
   notes?: string;
-  ageGroup?:"Intro" | "Middle School" | "High School";
+  ageGroup?: AgeGroup;
 }
 

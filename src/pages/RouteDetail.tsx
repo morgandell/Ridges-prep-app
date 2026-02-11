@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from "react-leaflet";
 import { Icon, LatLngBounds, divIcon } from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Route } from "../types/route";
+import { Route, RoutePoint } from "../types/route";
 import "./RouteDetail.css";
 
 // Fix for default marker icons in React-Leaflet
@@ -172,6 +172,26 @@ export default function RouteDetail() {
     );
   }, [allPoints]);
 
+  const stopsByDay = useMemo(() => {
+  if (!route?.stops?.length) return [];
+
+  const days: RoutePoint[][] = [];
+  let currentDay: RoutePoint[] = [];
+
+  for (const stop of route.stops) {
+    currentDay.push(stop);
+    const isCampsite = stop.type === "campsite";
+    if (isCampsite) {
+      days.push([...currentDay]);
+      currentDay = [];
+    }
+  }
+
+  if (currentDay.length > 0) days.push(currentDay);
+  return days;
+}, [route]);
+
+
   // Fetch route geometry for trail-following polyline
   useEffect(() => {
     async function fetchRouteGeometry() {
@@ -243,6 +263,7 @@ export default function RouteDetail() {
   const totalMiles = route.segments?.reduce((sum, seg) => sum + (seg.mileage || 0), 0) || 0;
   const totalElevation = route.segments?.reduce((sum, seg) => sum + (seg.elevationGainFt || 0), 0) || 0;
 
+
   // Component to fit bounds after map loads
   function FitBounds({ bounds }: { bounds: LatLngBounds | undefined }) {
     const map = useMap();
@@ -283,6 +304,12 @@ export default function RouteDetail() {
           <span className="total-label">Total Elevation Gain:</span>
           <span className="total-value">{totalElevation.toLocaleString()} ft</span>
         </div>
+        {/* {route.ageGroup && ( */}
+          <div className="total-item">
+            <span className="total-label">Age Group:</span>
+            <span className="total-value">{route.ageGroup}</span>
+          </div>
+        {/* )} */}
       </div>
 
       {allPoints.length > 0 && (
@@ -379,25 +406,61 @@ export default function RouteDetail() {
       {route.stops && route.stops.length > 0 && (
         <div className="route-section">
           <h2>Stops</h2>
-          {route.stops.map((stop, index) => {
-            const segment = route.segments?.[index + 1];
-            return (
-              <div key={index} className="stop-item">
-                <h3>🔵 Stop {index + 1}{stop.label ? `: ${stop.label}` : ""}</h3>
-                <div className="coordinate-display">
-                  <div><strong>Latitude:</strong> {stop.lat.toFixed(6)}</div>
-                  <div><strong>Longitude:</strong> {stop.lng.toFixed(6)}</div>
-                  {stop.label && <div><strong>Label:</strong> {stop.label}</div>}
+          {stopsByDay.length > 0 ? (
+            stopsByDay.map((dayStops, dayIndex) => {
+              const firstStopIndex = route.stops!.indexOf(dayStops[0]);
+              return (
+                <div key={dayIndex} className="stops-by-day">
+                  <h3 className="day-heading">Day {dayIndex + 1}</h3>
+                  {dayStops.map((stop, indexInDay) => {
+                    const globalIndex = firstStopIndex + indexInDay;
+                    const segment = route.segments?.[globalIndex + 1];
+                    const isCampsite = (stop as RoutePoint).type === "campsite";
+                    return (
+                      <div key={globalIndex} className="stop-item">
+                        <h4>
+                          {isCampsite ? "🏕 " : "🔵 "}
+                          Stop {globalIndex + 1}{stop.label ? `: ${stop.label}` : ""}
+                          {isCampsite ? " (Campsite)" : ""}
+                        </h4>
+                        <div className="coordinate-display">
+                          <div><strong>Latitude:</strong> {stop.lat.toFixed(6)}</div>
+                          <div><strong>Longitude:</strong> {stop.lng.toFixed(6)}</div>
+                          {stop.label && <div><strong>Label:</strong> {stop.label}</div>}
+                        </div>
+                        {segment && (
+                          <div className="segment-info">
+                            <div><strong>Distance to {globalIndex === route.stops!.length - 1 ? "end" : `stop ${globalIndex + 2}`}:</strong> {segment.mileage.toFixed(2)} mi</div>
+                            <div><strong>Elevation gain:</strong> {segment.elevationGainFt.toLocaleString()} ft</div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                {segment && (
-                  <div className="segment-info">
-                    <div><strong>Distance to {index === route.stops.length - 1 ? 'end' : `stop ${index + 2}`}:</strong> {segment.mileage.toFixed(2)} mi</div>
-                    <div><strong>Elevation gain:</strong> {segment.elevationGainFt.toLocaleString()} ft</div>
+              );
+            })
+          ) : (
+            route.stops.map((stop, index) => {
+              const segment = route.segments?.[index + 1];
+              return (
+                <div key={index} className="stop-item">
+                  <h3>🔵 Stop {index + 1}{stop.label ? `: ${stop.label}` : ""}</h3>
+                  <div className="coordinate-display">
+                    <div><strong>Latitude:</strong> {stop.lat.toFixed(6)}</div>
+                    <div><strong>Longitude:</strong> {stop.lng.toFixed(6)}</div>
+                    {stop.label && <div><strong>Label:</strong> {stop.label}</div>}
                   </div>
-                )}
-              </div>
-            );
-          })}
+                  {segment && (
+                    <div className="segment-info">
+                      <div><strong>Distance to {index === route.stops.length - 1 ? "end" : `stop ${index + 2}`}:</strong> {segment.mileage.toFixed(2)} mi</div>
+                      <div><strong>Elevation gain:</strong> {segment.elevationGainFt.toLocaleString()} ft</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       )}
 

@@ -6,6 +6,7 @@ import "leaflet/dist/leaflet.css";
 import { Route, RoutePoint, RouteSegment } from "../types/route";
 import "./RouteEdit.css";
 
+
 // Create custom colored div icons
 const startIcon = divIcon({
   className: 'custom-marker',
@@ -90,7 +91,7 @@ export default function RouteEdit() {
     endLng: "",
     endLabel: "",
     notes: "",
-    ageGroup: "" as "" | "Intro" | "Middle School" | "High School",
+    ageGroup: "" as "Intro" | "Middle School" | "High School",
   });
   const [stops, setStops] = useState<RoutePoint[]>([]);
   const [segments, setSegments] = useState<RouteSegment[]>([]);
@@ -123,7 +124,8 @@ export default function RouteEdit() {
           endLng: route.endPoint?.lng?.toString() || "",
           endLabel: route.endPoint?.label || "",
           notes: route.notes || "",
-          ageGroup: route.ageGroup || "Middle School",
+          ageGroup:
+            route.ageGroup || "Middle School",
         });
         setStops(route.stops || []);
         setSegments(route.segments || []);
@@ -464,7 +466,8 @@ export default function RouteEdit() {
       stops: stops,
       segments: adjustedSegments,
       notes: formData.notes.trim() || undefined,
-      ageGroup: formData.ageGroup || undefined,
+      ageGroup: formData.ageGroup,
+
     };
 
     setSaving(true);
@@ -519,9 +522,7 @@ export default function RouteEdit() {
       
           value="Intro"
           checked={formData.ageGroup === "Intro"}
-          onChange={() => {
-            setFormData({ ...formData, ageGroup: "Intro" });
-          }}
+          onChange={() => setFormData({ ...formData, ageGroup: "Intro" })}
         />
         🧒 Intro
       </label>
