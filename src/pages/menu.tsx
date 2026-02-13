@@ -326,9 +326,21 @@ export default function WeeklyMenuPage() {
                         {blocked ? (
                           <div className="menu-cell-content">—</div>
                         ) : slot !== "dinner" ? (
-                          <div className="menu-cell-content">
-                            {meal ? meal.name : "Drop meal here"}
-                          </div>
+                           <div
+                              className="menu-cell-content"
+                              draggable={!!meal}
+                              onDragStart={meal ? (e) => {
+                                setDragOverCell(null);
+                                setDragData(e, {
+                                  type: "cell",
+                                  mealId: mealId!,
+                                  day,
+                                  slot,
+                                });
+                              } : undefined}
+                            >
+                              {meal ? meal.name : "Drop meal here"}
+                            </div>
                         ) : (
                           <div className="menu-cell-multi">
                             {dinnerMeal ? (

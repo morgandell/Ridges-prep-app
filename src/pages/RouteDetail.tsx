@@ -581,7 +581,7 @@ const lastCampsiteIndex = useMemo(() => {
         </>
       )}
 
-      <div className="route-section">
+      {/* <div className="route-section">
         <h2><FontAwesomeIcon icon={faSignsPost} className="icon-primary" /> End Point</h2>
         <div className="coordinate-display">
           <div><strong>Latitude:</strong> {route.endPoint?.lat?.toFixed(6)}</div>
@@ -590,7 +590,7 @@ const lastCampsiteIndex = useMemo(() => {
             <div><strong>Label:</strong> {route.endPoint.label}</div>
           )}
         </div>
-      </div>
+      </div> */}
 
       {route.notes && (
         <div className="route-section">
