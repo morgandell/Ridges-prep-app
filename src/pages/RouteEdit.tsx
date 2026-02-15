@@ -2,6 +2,8 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, useMap } from "react-leaflet";
 import { LatLngBounds, divIcon } from "leaflet";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBinoculars, faCampground, faSignsPost } from "@fortawesome/free-solid-svg-icons";
 import "leaflet/dist/leaflet.css";
 import { Route, RoutePoint, RouteSegment } from "../types/route";
 import "./RouteEdit.css";
@@ -407,6 +409,66 @@ export default function RouteEdit() {
   const totalMiles = segments.reduce((sum, seg) => sum + (seg.mileage || 0), 0);
   const totalElevation = segments.reduce((sum, seg) => sum + (seg.elevationGainFt || 0), 0);
 
+  // Day split preview: same logic as RouteDetail — days break at campsites
+  const stopsByDay = useMemo(() => {
+    if (!stops?.length) return [];
+    const days: RoutePoint[][] = [];
+    let currentDay: RoutePoint[] = [];
+    for (const stop of stops) {
+      currentDay.push(stop);
+      if (stop.type === "campsite") {
+        days.push([...currentDay]);
+        currentDay = [];
+      }
+    }
+    if (currentDay.length > 0) days.push(currentDay);
+    let lastCampIdx = -1;
+    for (let i = stops.length - 1; i >= 0; i--) {
+      if (stops[i].type === "campsite") {
+        lastCampIdx = i;
+        break;
+      }
+    }
+    if (lastCampIdx >= 0 && stops.slice(lastCampIdx + 1).length === 0) {
+      days.push([]);
+    }
+    return days;
+  }, [stops]);
+
+  const lastCampsiteIndex = useMemo(() => {
+    if (!stops?.length) return -1;
+    for (let i = stops.length - 1; i >= 0; i--) {
+      if (stops[i].type === "campsite") return i;
+    }
+    return -1;
+  }, [stops]);
+
+  const daysWithStats = useMemo(() => {
+    if (!stops?.length || !segments?.length || !stopsByDay.length) return [];
+    const segs = segments;
+    return stopsByDay.map((dayStops, dayIndex) => {
+      const isFinalLegDay = dayStops.length === 0 && lastCampsiteIndex >= 0;
+      const firstStopIndex = dayStops.length > 0 ? stops.indexOf(dayStops[0]) : lastCampsiteIndex + 1;
+      const lastStopIndex = dayStops.length > 0 ? stops.indexOf(dayStops[dayStops.length - 1]) : -1;
+      const startSeg = dayIndex === 0 ? 0 : isFinalLegDay ? lastCampsiteIndex + 1 : firstStopIndex;
+      const endSeg = isFinalLegDay ? segs.length - 1 : lastStopIndex;
+      let dayMiles = 0;
+      let dayElevation = 0;
+      for (let i = startSeg; i <= endSeg && i < segs.length; i++) {
+        dayMiles += segs[i].mileage || 0;
+        dayElevation += segs[i].elevationGainFt || 0;
+      }
+      return {
+        dayStops,
+        firstStopIndex: dayStops.length > 0 ? firstStopIndex : lastCampsiteIndex + 1,
+        lastStopIndex,
+        dayMiles,
+        dayElevation,
+        isFinalLegDay,
+      };
+    });
+  }, [stops, segments, stopsByDay, lastCampsiteIndex]);
+
   // Get next instruction text
   const getNextInstruction = () => {
     if (!formData.startLat || !formData.startLng) {
@@ -745,115 +807,121 @@ export default function RouteEdit() {
           </div>
         )}
 
-        {stops.map((stop, index) => (
-          <div key={index} className="form-section">
-            <h3>🔵 Stop {index + 1} Details</h3>
-            <div className="form-row">
-  <div className="form-group">
-    <label>Stop Type</label>
-    <div className="radio-group">
-      <label>
-        <input
-          type="radio"
-          name={`stop-type-${stop.id}`}
-          
-          value="campsite"
-          checked={stop.type === "campsite"}
-          onChange={() => {
-            setStops(
-              stops.map((s) =>
-                s.id === stop.id ? { ...s, type: "campsite" } : s
-              )
-            );
-          }}
-        />
-        🏕 Campsite
-      </label>
-
-      <label>
-        <input
-          type="radio"
-          name={`stop-type-${stop.id}`}
-          value="view"
-          checked={stop.type === "view"}
-          onChange={() => {
-            setStops(
-              stops.map((s) =>
-                s.id === stop.id ? { ...s, type: "view" } : s
-              )
-            );
-          }}
-        />
-        👀 View
-      </label>
-    </div>
-  </div>
-</div>
-
-<div className="form-group">
-  <label>Label (optional)</label>
-  <input
-    type="text"
-    placeholder="e.g., Lake Camp, Summit View"
-    value={stop.label || ""}
-    onChange={(e) => {
-      const value = e.target.value;
-      setStops((prev) => prev.map((s) => (s.id === stop.id ? { ...s, label: value.trim() || undefined } : s)));
-    }}
-  />
-</div>
-
-<div className="form-row">
-  <div className="form-group">
-    <label>Latitude</label>
-    <div className="form-value">{stop.lat.toFixed(5)}</div>
-  </div>
-
-  <div className="form-group">
-    <label>Longitude</label>
-    <div className="form-value">{stop.lng.toFixed(5)}</div>
-  </div>
-</div>
-{/* <div className="form-row">
-  <div className="form-group">
-    <label>Distance</label>
-    <div className="form-value">
-      {stop.distanceMiles != null
-        ? `${stop.distanceMiles.toFixed(2)} mi`
-        : "—"}
-    </div>
-  </div>
-
-  <div className="form-group">
-    <label>Elevation Gain</label>
-    <div className="form-value">
-      {stop.elevationGainFt != null
-        ? `${stop.elevationGainFt} ft`
-        : "—"}
-    </div>
-  </div>
-</div> */}
-
-
-<div className="form-group">
-  <label>Stop Note (optional)</label>
-  <textarea
-    rows={2}
-    placeholder="Water source, tent sites, exposure, etc."
-    value={stop.note || ""}
-    onChange={(e) => {
-      const value = e.target.value;
-      setStops(
-        stops.map((s) =>
-          s.id === stop.id ? { ...s, note: value } : s
-        )
-      );
-    }}
-  />
-</div>
-
+        {stops.length > 0 && daysWithStats.length > 0 && (
+          <div className="form-section route-by-day-preview">
+            <h3>Route by day</h3>
+            <p className="day-preview-hint">Days are split at campsites. Edit each stop below; changing type to Campsite updates the day breakdown.</p>
+            {daysWithStats.map((day, dayIndex) => (
+              <div key={dayIndex} className="stops-by-day">
+                <div className="day-summary">
+                  <h4 className="day-heading">Day {dayIndex + 1}</h4>
+                  <div className="day-summary-meta">
+                    <span>{day.dayMiles.toFixed(2)} miles</span>
+                    <span>{day.dayElevation.toLocaleString()} ft elevation gain</span>
+                  </div>
+                </div>
+                {dayIndex === 0 && (
+                  <div className="stop-details stop-details-readonly">
+                    <h4><FontAwesomeIcon icon={faSignsPost} className="icon-primary" /> Drop off: {formData.startLabel ? formData.startLabel : "Start"}{" "}({formData.startLat}, {formData.startLng})</h4>
+                  </div>
+                )}
+                {day.isFinalLegDay && (() => {
+                  const segment = segments?.[lastCampsiteIndex + 1];
+                  const lastCamp = lastCampsiteIndex >= 0 ? stops[lastCampsiteIndex] : null;
+                  if (!segment || !lastCamp) return null;
+                  return (
+                    <div className="stop-details stop-details-readonly">
+                      <h4>
+                        <FontAwesomeIcon icon={faSignsPost} className="icon-primary" /> Pick up
+                        {formData.endLabel ? `: ${formData.endLabel}` : ""}{" "}
+                        ({formData.endLat}, {formData.endLng})
+                      </h4>
+                      <div className="segment-info">
+                        <div><strong>Distance from {lastCamp.label || "last campsite"}:</strong> {segment.mileage.toFixed(2)} mi</div>
+                        <div><strong>Elevation gain:</strong> {segment.elevationGainFt.toLocaleString()} ft</div>
+                      </div>
+                    </div>
+                  );
+                })()}
+                {day.dayStops.map((stop, indexInDay) => {
+                  const globalIndex = day.firstStopIndex + indexInDay;
+                  const segment = segments?.[globalIndex];
+                  const isCampsite = stop.type === "campsite";
+                  const fromPoint = globalIndex === 0 ? { label: formData.startLabel || "Start" } : stops[globalIndex - 1];
+                  return (
+                    <div key={stop.id} className="stop-details stop-details-editable">
+                      <h4 className="stop-details-title">
+                        {isCampsite ? <FontAwesomeIcon icon={faCampground} className="icon-primary" /> : <FontAwesomeIcon icon={faBinoculars} className="icon-primary" />}
+                        {" "}Stop {globalIndex + 1}
+                      </h4>
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label>Stop Type</label>
+                          <div className="radio-group">
+                            <label>
+                              <input
+                                type="radio"
+                                name={`stop-type-${stop.id}`}
+                                value="campsite"
+                                checked={stop.type === "campsite"}
+                                onChange={() => setStops(stops.map((s) => s.id === stop.id ? { ...s, type: "campsite" } : s))}
+                              />
+                              🏕 Campsite
+                            </label>
+                            <label>
+                              <input
+                                type="radio"
+                                name={`stop-type-${stop.id}`}
+                                value="view"
+                                checked={stop.type === "view"}
+                                onChange={() => setStops(stops.map((s) => s.id === stop.id ? { ...s, type: "view" } : s))}
+                              />
+                              👀 View
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="form-group">
+                        <label>Label (optional)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g., Lake Camp, Summit View"
+                          value={stop.label || ""}
+                          onChange={(e) => setStops((prev) => prev.map((s) => (s.id === stop.id ? { ...s, label: e.target.value.trim() || undefined } : s)))}
+                        />
+                      </div>
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label>Latitude</label>
+                          <div className="form-value">{stop.lat.toFixed(5)}</div>
+                        </div>
+                        <div className="form-group">
+                          <label>Longitude</label>
+                          <div className="form-value">{stop.lng.toFixed(5)}</div>
+                        </div>
+                      </div>
+                      {segment && (
+                        <div className="segment-info">
+                          <div>Distance from {fromPoint?.label || (globalIndex === 0 ? "start" : `stop ${globalIndex}`)}: {segment.mileage.toFixed(2)} mi</div>
+                          <div>Elevation gain: {segment.elevationGainFt.toLocaleString()} ft</div>
+                        </div>
+                      )}
+                      <div className="form-group">
+                        <label>Stop Note (optional)</label>
+                        <textarea
+                          rows={2}
+                          placeholder="Water source, tent sites, exposure, etc."
+                          value={stop.note || ""}
+                          onChange={(e) => setStops(stops.map((s) => (s.id === stop.id ? { ...s, note: e.target.value } : s)))}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </div>
-        ))}
+        )}
 
         {formData.endLat && formData.endLng && (
           <div className="form-section">

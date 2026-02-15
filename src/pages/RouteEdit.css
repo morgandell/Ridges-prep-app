@@ -419,3 +419,102 @@
 .point-chip.stop-chip:hover {
   cursor: move;
 }
+
+/* Route by day preview (matches RouteDetail structure) */
+.route-by-day-preview .day-preview-hint {
+  margin: -0.5rem 0 1rem 0;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.route-by-day-preview .stops-by-day {
+  margin-bottom: 1.5rem;
+  background: var(--color-card, #f9fafb);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.route-by-day-preview .stops-by-day:last-child {
+  margin-bottom: 0;
+}
+
+.route-by-day-preview .day-summary {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.route-by-day-preview .day-heading {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: var(--color-primary);
+}
+
+.route-by-day-preview .day-summary-meta {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 0;
+  font-size: 0.9rem;
+  color: var(--color-primary);
+}
+
+.route-by-day-preview .stop-details {
+  margin-bottom: 1rem;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+}
+
+.route-by-day-preview .stop-details:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.route-by-day-preview .stop-details-readonly {
+  padding: 0.75rem 0;
+  margin-bottom: 0.5rem;
+}
+
+.route-by-day-preview .stop-details-editable {
+  background: #fafafa;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-top: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.route-by-day-preview .stop-details h4,
+.route-by-day-preview .stop-details-title {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  color: var(--color-text);
+}
+
+.route-by-day-preview .stop-details-editable .form-group {
+  margin-bottom: 0.75rem;
+}
+
+.route-by-day-preview .stop-details-editable .form-group:last-of-type {
+  margin-bottom: 0;
+}
+
+.route-by-day-preview .segment-info {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.route-by-day-preview .segment-info div {
+  margin-bottom: 0.25rem;
+}
+
+.route-by-day-preview .icon-primary {
+  color: var(--color-secondary);
+  margin-right: 0.25rem;
+}
