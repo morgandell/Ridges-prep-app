@@ -13,7 +13,7 @@ import "./RouteEdit.css";
 const startIcon = divIcon({
   className: 'custom-marker',
   html: `<div style="
-    background-color: #22c55e;
+    background-color: var(--color-breakfast);
     width: 30px;
     height: 30px;
     border-radius: 50% 50% 50% 0;
@@ -58,6 +58,39 @@ const stopIcon = divIcon({
   popupAnchor: [0, -30],
 });
 
+function makeStopIcon(iconClass: string, color = "#3b82f6") {
+  return divIcon({
+    className: "custom-marker",
+    html: `
+      <div style="
+        background-color: ${color};
+        width: 30px;
+        height: 30px;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        border: 3px solid white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <i class="${iconClass}" style="
+          color: white;
+          font-size: 14px;
+          transform: rotate(45deg);
+        "></i>
+      </div>
+    `,
+    iconSize: [30, 30],
+    iconAnchor: [15, 30],
+    popupAnchor: [0, -30],
+  });
+}
+
+const campsiteIcon = makeStopIcon("fa-solid fa-campground", "#a31676");
+const poiIcon = makeStopIcon("fa-solid fa-binoculars", "#3b82f6");
+
+
 // Component to handle map clicks
 function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
   useMapEvents({
@@ -86,23 +119,21 @@ export default function RouteEdit() {
 
   const [formData, setFormData] = useState({
     name: "",
-    startLat: "",
-    startLng: "",
-    startLabel: "",
-    endLat: "",
-    endLng: "",
-    endLabel: "",
     notes: "",
     ageGroup: "" as "Intro" | "Middle School" | "High School",
   });
-  const [stops, setStops] = useState<RoutePoint[]>([]);
+  // Single ordered list: first = start, last = end, middle = stops. Add by clicking in order; reorder any point.
+  const [points, setPoints] = useState<RoutePoint[]>([]);
   const [segments, setSegments] = useState<RouteSegment[]>([]);
+  const startPoint = points[0];
+  const endPoint = points.length > 1 ? points[points.length - 1] : null;
+  const stops = points.length <= 2 ? [] : points.slice(1, -1);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [routeGeometry, setRouteGeometry] = useState<[number, number][]>([]);
   const [fetchingRoute, setFetchingRoute] = useState(false);
-  const [draggedPoint, setDraggedPoint] = useState<number | "start" | "end" | null>(null);
+  const [draggedPoint, setDraggedPoint] = useState<number | null>(null);
 
   useEffect(() => {
     if (isEditing && id) {
@@ -119,25 +150,25 @@ export default function RouteEdit() {
         const route = result.route;
         setFormData({
           name: route.name,
-          startLat: route.startPoint?.lat?.toString() || "",
-          startLng: route.startPoint?.lng?.toString() || "",
-          startLabel: route.startPoint?.label || "",
-          endLat: route.endPoint?.lat?.toString() || "",
-          endLng: route.endPoint?.lng?.toString() || "",
-          endLabel: route.endPoint?.label || "",
           notes: route.notes || "",
-          ageGroup:
-            route.ageGroup || "Middle School",
+          ageGroup: route.ageGroup || "Middle School",
         });
-        setStops(
-          (route.stops || [])
-            .filter((s): s is RoutePoint & { stopType?: string } => s != null && typeof s === "object")
-            .map((s) => {
-              const type = s.type ?? s.stopType ?? "view";
-              const { stopType: _st, ...rest } = s;
-              return { ...rest, type: type as "campsite" | "view" };
-            })
-        );
+        const start = route.startPoint ? { id: route.startPoint.id || "start", lat: route.startPoint.lat, lng: route.startPoint.lng, label: route.startPoint.label } : null;
+        const end = route.endPoint ? { id: route.endPoint.id || "end", lat: route.endPoint.lat, lng: route.endPoint.lng, label: route.endPoint.label } : null;
+        const midStops = (route.stops || [])
+          .filter((s): s is RoutePoint & { stopType?: string } => s != null && typeof s === "object")
+          .map((s) => {
+            const type = s.type ?? (s as RoutePoint & { stopType?: string }).stopType ?? "view";
+            const { stopType: _st, ...rest } = s;
+            return { ...rest, type: type as "campsite" | "view" };
+          });
+        if (start && end) {
+          setPoints([start, ...midStops, end]);
+        } else if (start) {
+          setPoints([start]);
+        } else {
+          setPoints([]);
+        }
         setSegments(route.segments || []);
       }
     } catch (error) {
@@ -149,112 +180,73 @@ export default function RouteEdit() {
   }
 
   function handleMapClick(lat: number, lng: number) {
-    // Sequential point placement
-    if (!formData.startLat || !formData.startLng) {
-      setFormData((prev) => ({ ...prev, startLat: lat.toString(), startLng: lng.toString() }));
-    } else if (!formData.endLat || !formData.endLng) {
-      setFormData((prev) => ({ ...prev, endLat: lat.toString(), endLng: lng.toString() }));
-      // Initialize first segment
-      if (segments.length === 0) {
-        setSegments([{ mileage: 0, elevationGainFt: 0 }]);
-      }
-    } else {
-      // Add stop before the end point
-      const newStop: RoutePoint = { lat, lng, label: "", type: "campsite", id: `stop-${Date.now()}-${stops.length}` };
-      setStops([...stops, newStop]);
-      // Add segment for this new stop
-      setSegments([...segments, { mileage: 0, elevationGainFt: 0 }]);
+    // Add next point in order: 1st = start, 2nd = end, 3rd+ = stop
+    const isStop = points.length >= 2;
+    const newPoint: RoutePoint = {
+      id: `point-${Date.now()}-${points.length}`,
+      lat,
+      lng,
+      label: "",
+      type: isStop ? "view" : undefined,
+    };
+    setPoints((prev) => [...prev, newPoint]);
+    if (points.length >= 1) {
+      setSegments((prev) => [...prev, { mileage: 0, elevationGainFt: 0 }]);
     }
   }
 
-  function handleRemovePoint(type: "start" | "end" | number) {
-    if (type === "start") {
-      // Clear start point
-      setFormData((prev) => ({ ...prev, startLat: "", startLng: "", startLabel: "", endLat: "", endLng: "", endLabel: "" }));
-      setStops([]);
-      setSegments([]);
-    } else if (type === "end") {
-      // Clear end point
-      setFormData((prev) => ({ ...prev, endLat: "", endLng: "", endLabel: "" }));
+  function handleRemovePoint(index: number) {
+    if (index < 0 || index >= points.length) return;
+    const newPoints = points.filter((_, i) => i !== index);
+    setPoints(newPoints);
+    if (index === 0) {
+      setSegments(segments.slice(1));
+    } else if (index === points.length - 1) {
+      setSegments(segments.slice(0, -1));
     } else {
-      // Remove stop at index
-      const newStops = stops.filter((_, i) => i !== type);
-      setStops(newStops);
-      // Adjust segments
-      const newSegments = [...segments];
-      newSegments.splice(type + 1, 1);
-      setSegments(newSegments);
+      const merged = {
+        mileage: (segments[index - 1]?.mileage || 0) + (segments[index]?.mileage || 0),
+        elevationGainFt: (segments[index - 1]?.elevationGainFt || 0) + (segments[index]?.elevationGainFt || 0),
+      };
+      setSegments([...segments.slice(0, index - 1), merged, ...segments.slice(index + 1)]);
     }
   }
 
-  function handleDragStart(type: "start" | "end" | number) {
-    setDraggedPoint(type);
+  function handleDragStart(index: number) {
+    setDraggedPoint(index);
   }
 
-  function handleDragOver(e: React.DragEvent, type: "start" | "end" | number) {
+  function handleDragOver(e: React.DragEvent, index: number) {
     e.preventDefault();
   }
 
-  function handleDrop(e: React.DragEvent, dropTargetType: "start" | "end" | number) {
+  function handleDrop(e: React.DragEvent, dropIndex: number) {
     e.preventDefault();
-    
-    if (draggedPoint === null || draggedPoint === dropTargetType) return;
-    
-    // Can only reorder stops, not start/end
-    if (typeof draggedPoint === "number" && typeof dropTargetType === "number") {
-      const newStops = [...stops];
-      const [draggedStop] = newStops.splice(draggedPoint, 1);
-      newStops.splice(dropTargetType, 0, draggedStop);
-      setStops(newStops);
-      
-      // Also reorder the corresponding segments
-      const newSegments = [...segments];
-      const [draggedSegment] = newSegments.splice(draggedPoint + 1, 1);
-      newSegments.splice(dropTargetType + 1, 0, draggedSegment);
-      setSegments(newSegments);
+    if (draggedPoint === null || draggedPoint === dropIndex) {
+      setDraggedPoint(null);
+      return;
     }
-    
+    const newPoints = [...points];
+    const [moved] = newPoints.splice(draggedPoint, 1);
+    newPoints.splice(dropIndex, 0, moved);
+    setPoints(newPoints);
     setDraggedPoint(null);
+    // Segments no longer match point order; reset and let route fetch refill
+    setSegments(newPoints.length <= 1 ? [] : newPoints.slice(0, -1).map(() => ({ mileage: 0, elevationGainFt: 0 })));
   }
 
-  function handleMarkerDragEnd(index: number | "start" | "end", lat: number, lng: number) {
-    if (index === "start") {
-      setFormData((prev) => ({ ...prev, startLat: lat.toString(), startLng: lng.toString() }));
-    } else if (index === "end") {
-      setFormData((prev) => ({ ...prev, endLat: lat.toString(), endLng: lng.toString() }));
-    } else {
-      const newStops = [...stops];
-      newStops[index] = { ...newStops[index], lat, lng };
-      setStops(newStops);
-    }
+  function handleMarkerDragEnd(index: number, lat: number, lng: number) {
+    setPoints((prev) => prev.map((p, i) => (i === index ? { ...p, lat, lng } : p)));
   }
 
-  // Build array of all points for map display
+  // Build array of all points for map display (same order as points; type by position)
   const allPoints = useMemo(() => {
-    const points: Array<{ lat: number; lng: number; type: "start" | "stop" | "end"; index?: number }> = [];
-    
-    if (formData.startLat && formData.startLng) {
-      points.push({ 
-        lat: parseFloat(formData.startLat) || 0, 
-        lng: parseFloat(formData.startLng) || 0, 
-        type: "start" 
-      });
-    }
-    
-    stops.forEach((stop, index) => {
-      points.push({ ...stop, type: "stop", index });
-    });
-    
-    if (formData.endLat && formData.endLng) {
-      points.push({ 
-        lat: parseFloat(formData.endLat) || 0, 
-        lng: parseFloat(formData.endLng) || 0, 
-        type: "end" 
-      });
-    }
-    
-    return points;
-  }, [formData.startLat, formData.startLng, formData.endLat, formData.endLng, stops]);
+    return points.map((p, i) => ({
+      ...p,
+      type: i === 0 ? "start" : i === points.length - 1 ? "end" : "stop",
+      index: i === 0 || i === points.length - 1 ? undefined : i - 1,
+    })) as Array<{ lat: number; lng: number; type: "start" | "stop" | "end"; index?: number }>;
+  }, [points]);
 
   // Calculate map center and bounds
   const mapCenter: [number, number] = useMemo(() => {
@@ -469,15 +461,10 @@ export default function RouteEdit() {
     });
   }, [stops, segments, stopsByDay, lastCampsiteIndex]);
 
-  // Get next instruction text
   const getNextInstruction = () => {
-    if (!formData.startLat || !formData.startLng) {
-      return "Click on the map to set your START point";
-    } else if (!formData.endLat || !formData.endLng) {
-      return "Click on the map to set your END point";
-    } else {
-      return "Click on the map to add stops between start and end";
-    }
+    if (points.length === 0) return "Click on the map to add the first point (start)";
+    if (points.length === 1) return "Click to add the second point (end). Add more clicks for stops in between.";
+    return "Click to add another stop, or drag points in the list to reorder (including start/end).";
   };
 
   async function handleSubmit(e: React.FormEvent) {
@@ -489,23 +476,21 @@ export default function RouteEdit() {
       return;
     }
 
-    const startLat = parseFloat(formData.startLat);
-    const startLng = parseFloat(formData.startLng);
-    const endLat = parseFloat(formData.endLat);
-    const endLng = parseFloat(formData.endLng);
-
-    if (isNaN(startLat) || isNaN(startLng)) {
-      setError("Start point coordinates are required");
+    if (points.length < 2) {
+      setError("Add at least two points (start and end) on the map");
       return;
     }
 
-    if (isNaN(endLat) || isNaN(endLng)) {
-      setError("End point coordinates are required");
-      return;
-    }
+    const start = points[0];
+    const end = points[points.length - 1];
+    const startLat = start.lat;
+    const startLng = start.lng;
+    const endLat = end.lat;
+    const endLng = end.lng;
+    const routeStops = points.slice(1, -1);
 
-    // Ensure segments array matches: one per stop + one for final leg to end
-    const numSegmentsNeeded = stops.length + 1;
+    // Ensure segments array matches: one per leg (points.length - 1)
+    const numSegmentsNeeded = points.length - 1;
     const adjustedSegments = [...segments];
     while (adjustedSegments.length < numSegmentsNeeded) {
       adjustedSegments.push({ mileage: 0, elevationGainFt: 0 });
@@ -515,25 +500,24 @@ export default function RouteEdit() {
     }
 
     const route: Route = {
-      id: id || `stop-${Date.now()}-${stops.length}`,
+      id: id || `route-${Date.now()}`,
       name: formData.name.trim(),
       startPoint: {
         id: "start",
         lat: startLat,
         lng: startLng,
-        label: formData.startLabel.trim() || undefined,
+        label: start.label?.trim() || undefined,
       },
       endPoint: {
         id: "end",
         lat: endLat,
         lng: endLng,
-        label: formData.endLabel.trim() || undefined,
+        label: end.label?.trim() || undefined,
       },
-      stops: stops,
+      stops: routeStops,
       segments: adjustedSegments,
       notes: formData.notes.trim() || undefined,
       ageGroup: formData.ageGroup,
-
     };
 
     setSaving(true);
@@ -650,25 +634,18 @@ export default function RouteEdit() {
                     ? startIcon
                     : point.type === "end"
                     ? endIcon
-                    : stopIcon;
-
-                const index =
-                  point.type === "start"
-                    ? "start"
-                    : point.type === "end"
-                    ? "end"
-                    : point.index!;
+                    : campsiteIcon;
 
                 return (
                   <Marker
-                    key={i}
+                    key={points[i]?.id ?? i}
                     position={[point.lat, point.lng]}
                     icon={icon}
                     draggable
                     eventHandlers={{
                       dragend: (e) => {
                         const latlng = e.target.getLatLng();
-                        handleMarkerDragEnd(index as any, latlng.lat, latlng.lng);
+                        handleMarkerDragEnd(i, latlng.lat, latlng.lng);
                       },
                     }}
                   />
@@ -702,83 +679,61 @@ export default function RouteEdit() {
             </MapContainer>
           </div>
 
-          {/* Visual point list */}
+          {/* Visual point list — all points in order; drag to reorder (including start/end) */}
           <div className="points-summary">
+            <p className="points-instruction">{getNextInstruction()}</p>
             <div className="points-list">
-              {formData.startLat && formData.startLng && (
-                <div className="point-chip start-chip">
-                  <span className="point-marker">🟢</span>
-                  <span className="point-label">Start</span>
-                  <span className="point-coords">{parseFloat(formData.startLat).toFixed(4)}, {parseFloat(formData.startLng).toFixed(4)}</span>
-                  <button type="button" className="remove-chip" onClick={() => handleRemovePoint("start")}>✕</button>
-                </div>
-              )}
-              
-              {stops.map((stop, index) => (
-                <div 
-                  key={index} 
-                  className={`point-chip stop-chip ${draggedPoint === index ? 'dragging' : ''}`}
-                  draggable
-                  onDragStart={() => handleDragStart(index)}
-                  onDragOver={(e) => handleDragOver(e, index)}
-                  onDrop={(e) => handleDrop(e, index)}
-                >
-                  <span className="drag-handle">⋮⋮</span>
-                  <span className="point-marker">🔵</span>
-                  <span className="point-label">Stop {index + 1}</span>
-                  <span className="point-coords">{stop.lat.toFixed(4)}, {stop.lng.toFixed(4)}</span>
-                  <button type="button" className="remove-chip" onClick={() => handleRemovePoint(index)}>✕</button>
-                </div>
-              ))}
-
-              {formData.endLat && formData.endLng && (
-                <div className="point-chip end-chip">
-                  <span className="point-marker">🔴</span>
-                  <span className="point-label">End</span>
-                  <span className="point-coords">{parseFloat(formData.endLat).toFixed(4)}, {parseFloat(formData.endLng).toFixed(4)}</span>
-                  <button type="button" className="remove-chip" onClick={() => handleRemovePoint("end")}>✕</button>
-                </div>
-              )}
+              {points.map((point, index) => {
+                const isStart = index === 0;
+                const isEnd = index === points.length - 1;
+                const chipClass = isStart ? "start-chip" : isEnd ? "end-chip" : "stop-chip";
+                const label = isStart ? "Start" : isEnd ? "End" : `Stop ${index}`;
+                const marker = isStart ? "🟢" : isEnd ? "🔴" : "🔵";
+                return (
+                  <div
+                    key={point.id}
+                    className={`point-chip ${chipClass} ${draggedPoint === index ? "dragging" : ""}`}
+                    draggable
+                    onDragStart={() => handleDragStart(index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDrop={(e) => handleDrop(e, index)}
+                  >
+                    <span className="drag-handle">⋮⋮</span>
+                    <span className="point-marker">{marker}</span>
+                    <span className="point-label">{label}</span>
+                    <span className="point-coords">{point.lat.toFixed(4)}, {point.lng.toFixed(4)}</span>
+                    <button type="button" className="remove-chip" onClick={() => handleRemovePoint(index)} aria-label="Remove">✕</button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
 
         {/* POINT DETAILS */}
-        {formData.startLat && formData.startLng && (
+        {startPoint && (
           <div className="form-section">
             <h3>🟢 Start Point Details</h3>
             <div className="form-row">
               <div className="form-group">
                 <label>Latitude</label>
-                <input
-                  type="number"
-                  step="any"
-                  value={formData.startLat}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, startLat: e.target.value }))}
-                  readOnly
-                />
+                <input type="number" step="any" value={startPoint.lat} readOnly />
               </div>
               <div className="form-group">
                 <label>Longitude</label>
-                <input
-                  type="number"
-                  step="any"
-                  value={formData.startLng}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, startLng: e.target.value }))}
-                  readOnly
-                />
+                <input type="number" step="any" value={startPoint.lng} readOnly />
               </div>
               <div className="form-group">
                 <label>Label (optional)</label>
                 <input
                   type="text"
-                  value={formData.startLabel}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, startLabel: e.target.value }))}
+                  value={startPoint.label ?? ""}
+                  onChange={(e) => setPoints((prev) => prev.map((p, i) => (i === 0 ? { ...p, label: e.target.value.trim() || undefined } : p)))}
                   placeholder="e.g., Trailhead"
                 />
               </div>
             </div>
-            {formData.endLat && formData.endLng && (
+            {points.length >= 2 && (
               <div className="form-row">
                 <div className="form-group">
                   <label>Distance to {stops.length > 0 ? "first stop" : "end"} (miles)</label>
@@ -786,7 +741,7 @@ export default function RouteEdit() {
                     type="number"
                     step="any"
                     min="0"
-                    value={segments[0]?.mileage || ""}
+                    value={segments[0]?.mileage ?? ""}
                     onChange={(e) => handleUpdateSegment(0, "mileage", e.target.value)}
                     placeholder="0.0"
                   />
@@ -797,7 +752,7 @@ export default function RouteEdit() {
                     type="number"
                     step="1"
                     min="0"
-                    value={segments[0]?.elevationGainFt || ""}
+                    value={segments[0]?.elevationGainFt ?? ""}
                     onChange={(e) => handleUpdateSegment(0, "elevationGainFt", e.target.value)}
                     placeholder="0"
                   />
@@ -822,7 +777,7 @@ export default function RouteEdit() {
                 </div>
                 {dayIndex === 0 && (
                   <div className="stop-details stop-details-readonly">
-                    <h4><FontAwesomeIcon icon={faSignsPost} className="icon-primary" /> Drop off: {formData.startLabel ? formData.startLabel : "Start"}{" "}({formData.startLat}, {formData.startLng})</h4>
+                    <h4><FontAwesomeIcon icon={faSignsPost} className="icon-secondary" /> Drop off: {startPoint?.label || "Start"}{" "}({startPoint?.lat.toFixed(6)}, {startPoint?.lng.toFixed(6)})</h4>
                   </div>
                 )}
                 {day.isFinalLegDay && (() => {
@@ -832,9 +787,9 @@ export default function RouteEdit() {
                   return (
                     <div className="stop-details stop-details-readonly">
                       <h4>
-                        <FontAwesomeIcon icon={faSignsPost} className="icon-primary" /> Pick up
-                        {formData.endLabel ? `: ${formData.endLabel}` : ""}{" "}
-                        ({formData.endLat}, {formData.endLng})
+                        <FontAwesomeIcon icon={faSignsPost} className="icon-secondary" /> Pick up
+                        {endPoint?.label ? `: ${endPoint.label}` : ""}{" "}
+                        ({endPoint?.lat.toFixed(6)}, {endPoint?.lng.toFixed(6)})
                       </h4>
                       <div className="segment-info">
                         <div><strong>Distance from {lastCamp.label || "last campsite"}:</strong> {segment.mileage.toFixed(2)} mi</div>
@@ -847,12 +802,12 @@ export default function RouteEdit() {
                   const globalIndex = day.firstStopIndex + indexInDay;
                   const segment = segments?.[globalIndex];
                   const isCampsite = stop.type === "campsite";
-                  const fromPoint = globalIndex === 0 ? { label: formData.startLabel || "Start" } : stops[globalIndex - 1];
+                  const fromPoint = globalIndex === 0 ? { label: startPoint?.label || "Start" } : stops[globalIndex - 1];
                   return (
                     <div key={stop.id} className="stop-details stop-details-editable">
                       <h4 className="stop-details-title">
-                        {isCampsite ? <FontAwesomeIcon icon={faCampground} className="icon-primary" /> : <FontAwesomeIcon icon={faBinoculars} className="icon-primary" />}
-                        {" "}Stop {globalIndex + 1}
+                        {isCampsite ? <FontAwesomeIcon icon={faCampground} className="icon-secondary" /> : <FontAwesomeIcon icon={faBinoculars} className="icon-secondary" />}
+                        {" "}Stop {globalIndex + 1} {" ("} {stop.lat.toFixed(5)}, {stop.lng.toFixed(5)} {")"}
                       </h4>
                       <div className="form-row">
                         <div className="form-group">
@@ -864,9 +819,9 @@ export default function RouteEdit() {
                                 name={`stop-type-${stop.id}`}
                                 value="campsite"
                                 checked={stop.type === "campsite"}
-                                onChange={() => setStops(stops.map((s) => s.id === stop.id ? { ...s, type: "campsite" } : s))}
+                                onChange={() => setPoints((prev) => prev.map((p) => (p.id === stop.id ? { ...p, type: "campsite" } : p)))}
                               />
-                              🏕 Campsite
+                              <FontAwesomeIcon icon={faCampground} className="icon-primary" /> Campsite
                             </label>
                             <label>
                               <input
@@ -874,9 +829,9 @@ export default function RouteEdit() {
                                 name={`stop-type-${stop.id}`}
                                 value="view"
                                 checked={stop.type === "view"}
-                                onChange={() => setStops(stops.map((s) => s.id === stop.id ? { ...s, type: "view" } : s))}
+                                onChange={() => setPoints((prev) => prev.map((p) => (p.id === stop.id ? { ...p, type: "view" } : p)))}
                               />
-                              👀 View
+                               <FontAwesomeIcon icon={faBinoculars} className="icon-primary" /> View
                             </label>
                           </div>
                         </div>
@@ -887,18 +842,8 @@ export default function RouteEdit() {
                           type="text"
                           placeholder="e.g., Lake Camp, Summit View"
                           value={stop.label || ""}
-                          onChange={(e) => setStops((prev) => prev.map((s) => (s.id === stop.id ? { ...s, label: e.target.value.trim() || undefined } : s)))}
+                          onChange={(e) => setPoints((prev) => prev.map((p) => (p.id === stop.id ? { ...p, label: e.target.value.trim() || undefined } : p)))}
                         />
-                      </div>
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label>Latitude</label>
-                          <div className="form-value">{stop.lat.toFixed(5)}</div>
-                        </div>
-                        <div className="form-group">
-                          <label>Longitude</label>
-                          <div className="form-value">{stop.lng.toFixed(5)}</div>
-                        </div>
                       </div>
                       {segment && (
                         <div className="segment-info">
@@ -912,7 +857,7 @@ export default function RouteEdit() {
                           rows={2}
                           placeholder="Water source, tent sites, exposure, etc."
                           value={stop.note || ""}
-                          onChange={(e) => setStops(stops.map((s) => (s.id === stop.id ? { ...s, note: e.target.value } : s)))}
+                          onChange={(e) => setPoints((prev) => prev.map((p) => (p.id === stop.id ? { ...p, note: e.target.value } : p)))}
                         />
                       </div>
                     </div>
@@ -923,36 +868,24 @@ export default function RouteEdit() {
           </div>
         )}
 
-        {formData.endLat && formData.endLng && (
+        {endPoint && (
           <div className="form-section">
             <h3>🔴 End Point Details</h3>
             <div className="form-row">
               <div className="form-group">
                 <label>Latitude</label>
-                <input
-                  type="number"
-                  step="any"
-                  value={formData.endLat}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, endLat: e.target.value }))}
-                  readOnly
-                />
+                <input type="number" step="any" value={endPoint.lat} readOnly />
               </div>
               <div className="form-group">
                 <label>Longitude</label>
-                <input
-                  type="number"
-                  step="any"
-                  value={formData.endLng}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, endLng: e.target.value }))}
-                  readOnly
-                />
+                <input type="number" step="any" value={endPoint.lng} readOnly />
               </div>
               <div className="form-group">
                 <label>Label (optional)</label>
                 <input
                   type="text"
-                  value={formData.endLabel}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, endLabel: e.target.value }))}
+                  value={endPoint.label ?? ""}
+                  onChange={(e) => setPoints((prev) => prev.map((p, i) => (i === prev.length - 1 ? { ...p, label: e.target.value.trim() || undefined } : p)))}
                   placeholder="e.g., Summit"
                 />
               </div>
@@ -996,7 +929,7 @@ export default function RouteEdit() {
           <button
             type="submit"
             className="save-button"
-            disabled={saving || !formData.name.trim() || !formData.startLat || !formData.startLng || !formData.endLat || !formData.endLng}
+            disabled={saving || !formData.name.trim() || points.length < 2}
           >
             {saving ? "Saving..." : isEditing ? "Update Route" : "Save Route"}
           </button>

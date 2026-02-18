@@ -17,6 +17,7 @@ import WeekEdit from "./pages/weekEdit";
 import FoodPrint from "./pages/foodPrint";
 import PastMenus from "./pages/pastMenus";
 
+
 export default function App() {
   return (
     <HashRouter>

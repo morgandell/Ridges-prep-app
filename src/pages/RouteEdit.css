@@ -326,6 +326,12 @@
   border-radius: 8px;
 }
 
+.points-instruction {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
 .points-list {
   display: flex;
   flex-direction: column;
@@ -515,6 +521,6 @@
 }
 
 .route-by-day-preview .icon-primary {
-  color: var(--color-secondary);
+  color: var(--color-primary);
   margin-right: 0.25rem;
 }

@@ -452,7 +452,7 @@ const lastCampsiteIndex = useMemo(() => {
               </div>
               {dayIndex === 0 && (
                 <div className="stop-details">
-                  <h4><FontAwesomeIcon icon={faSignsPost} className="icon-primary" /> Drop Off: {route.startPoint?.label ? `: ${route.startPoint.label}` : ""}
+                  <h4><FontAwesomeIcon icon={faSignsPost} className="icon-secondary" /> Drop Off: {route.startPoint?.label ? `: ${route.startPoint.label}` : ""}
                       {" "} {"("} {route.startPoint?.lat?.toFixed(6)}, {route.startPoint?.lng?.toFixed(6)} {")"} </h4>
                 </div>
               )}
@@ -505,7 +505,7 @@ const lastCampsiteIndex = useMemo(() => {
   return (
     <div className="stop-details">
       <h4>
-        <FontAwesomeIcon icon={faSignsPost} className="icon-primary" />
+        <FontAwesomeIcon icon={faSignsPost} className="icon-secondary" />
         {" "}Pick up
         {route.endPoint?.label ? `: ${route.endPoint.label}` : ""}
         {" "}(
@@ -541,7 +541,7 @@ const lastCampsiteIndex = useMemo(() => {
                 return (
                   <div key={globalIndex} className="stop-details">
                     <h4> 
-                      {isCampsite ? <FontAwesomeIcon icon={faCampground} className="icon-primary" /> :<FontAwesomeIcon icon={faBinoculars} className="icon-primary"/>
+                      {isCampsite ? <FontAwesomeIcon icon={faCampground} className="icon-secondary" /> :<FontAwesomeIcon icon={faBinoculars} className="icon-secondary"/>
 }
                       {" "} {stop.label ? ` ${stop.label}` : ""}
                       {" "} {"("} {stop.lat.toFixed(6)}, {stop.lng.toFixed(6)} {")"}
@@ -561,7 +561,7 @@ const lastCampsiteIndex = useMemo(() => {
       ) : (
         <>
           <div className="route-section">
-            <h2><FontAwesomeIcon icon={faSignsPost} className="icon-primary" /> Start Point</h2>
+            <h2><FontAwesomeIcon icon={faSignsPost} className="icon-secondary" /> Start Point</h2>
             <div className="coordinate-display">
               <div><strong>Latitude:</strong> {route.startPoint?.lat?.toFixed(6)}</div>
               <div><strong>Longitude:</strong> {route.startPoint?.lng?.toFixed(6)}</div>
