@@ -458,6 +458,13 @@ ipcMain.handle("save-route", async (_event, route) => {
           })
         : [],
       segments: Array.isArray(route.segments) ? route.segments : [],
+      evacPoints: Array.isArray(route.evacPoints)
+        ? route.evacPoints.map((p) => ({
+            lat: typeof p.lat === "number" ? p.lat : 0,
+            lng: typeof p.lng === "number" ? p.lng : 0,
+            label: p.label,
+          }))
+        : undefined,
       notes: route.notes || undefined,
       ageGroup: route.ageGroup || undefined,
     };

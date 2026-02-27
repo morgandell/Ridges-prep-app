@@ -5,7 +5,8 @@ import { Icon, LatLngBounds, divIcon } from "leaflet";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBinoculars, faCampground, faSignsPost } from "@fortawesome/free-solid-svg-icons";
 import "leaflet/dist/leaflet.css";
-import { Route, RoutePoint } from "../types/route";
+import { Route, RoutePoint, EvacPoint } from "../types/route";
+import { WeekStats } from "../types/weekStats";
 import "./RouteDetail.css";
 
 // Fix for default marker icons in React-Leaflet
@@ -73,6 +74,12 @@ export default function RouteDetail() {
   const [loading, setLoading] = useState(true);
   const [routeGeometry, setRouteGeometry] = useState<[number, number][]>([]);
   const [fetchingRoute, setFetchingRoute] = useState(false);
+  const [weeks, setWeeks] = useState<WeekStats[]>([]);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [weeksLoading, setWeeksLoading] = useState(false);
+  const [selectedWeekId, setSelectedWeekId] = useState("");
+  const [assignSaving, setAssignSaving] = useState(false);
+  const [assignError, setAssignError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadRoute() {
@@ -109,6 +116,88 @@ export default function RouteDetail() {
   const handleEdit = () => {
     navigate(`/routes/${id}/edit`, { state: { fromDetail: true } });
   };
+
+  const formatDate = (iso?: string) => {
+    if (!iso) return "";
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return iso;
+    }
+  };
+
+  async function openAssignModal() {
+    setAssignError(null);
+    setAssignModalOpen(true);
+
+    if (weeks.length > 0) return;
+
+    setWeeksLoading(true);
+    try {
+      const result = await window.electronAPI.getWeekStats();
+      if (result.success && result.weeks) {
+        const sorted = result.weeks
+          .slice()
+          .sort((a, b) => a.weekStart.localeCompare(b.weekStart));
+        setWeeks(sorted);
+      } else {
+        setWeeks([]);
+        setAssignError(result.error || "Failed to load weeks.");
+      }
+    } catch (err) {
+      console.error("Error loading weeks:", err);
+      setWeeks([]);
+      setAssignError("Failed to load weeks.");
+    } finally {
+      setWeeksLoading(false);
+    }
+  }
+
+  async function assignRouteToSelectedWeek() {
+    if (!route) return;
+    if (!selectedWeekId) {
+      setAssignError("Please select a week.");
+      return;
+    }
+
+    const week = weeks.find(w => w.id === selectedWeekId);
+    if (!week) {
+      setAssignError("Selected week not found.");
+      return;
+    }
+
+    if (week.routeId && String(week.routeId) !== String(route.id)) {
+      const ok = window.confirm(
+        `That week already has a route assigned.\n\nReplace it with "${route.name}"?`
+      );
+      if (!ok) return;
+    }
+
+    setAssignSaving(true);
+    setAssignError(null);
+    try {
+      const updatedWeek: WeekStats = { ...week, routeId: route.id };
+      const saveResult = await window.electronAPI.saveWeekStats(updatedWeek);
+      if (!saveResult.success) {
+        setAssignError(saveResult.error || "Failed to assign route to week.");
+        return;
+      }
+
+      setWeeks(prev => prev.map(w => (w.id === updatedWeek.id ? updatedWeek : w)));
+      setAssignModalOpen(false);
+      navigate(`/weeks/${updatedWeek.id}`, { state: { fromRoute: true } });
+    } catch (err) {
+      console.error("Error assigning route to week:", err);
+      setAssignError("Failed to assign route to week.");
+    } finally {
+      setAssignSaving(false);
+    }
+  }
 
   async function handleDelete() {
     if (!route || !window.confirm("Are you sure you want to delete this route?")) {
@@ -225,7 +314,8 @@ const lastCampsiteIndex = useMemo(() => {
       const firstStopIndex = dayStops.length > 0 ? route.stops!.indexOf(dayStops[0]) : lastCampsiteIndex + 1;
       const lastStopIndex = dayStops.length > 0 ? route.stops!.indexOf(dayStops[dayStops.length - 1]) : -1;
       const startSeg = dayIndex === 0 ? 0 : isFinalLegDay ? lastCampsiteIndex + 1 : firstStopIndex;
-      const endSeg = isFinalLegDay ? segs.length - 1 : lastStopIndex;
+      const isLastDay = dayIndex === stopsByDay.length - 1;
+      const endSeg = isFinalLegDay || isLastDay ? segs.length - 1 : lastStopIndex;
       let dayMiles = 0;
       let dayElevation = 0;
       for (let i = startSeg; i <= endSeg && i < segs.length; i++) {
@@ -314,6 +404,8 @@ const lastCampsiteIndex = useMemo(() => {
 
   const totalMiles = route.segments?.reduce((sum, seg) => sum + (seg.mileage || 0), 0) || 0;
   const totalElevation = route.segments?.reduce((sum, seg) => sum + (seg.elevationGainFt || 0), 0) || 0;
+  const evacPoints: EvacPoint[] = route.evacPoints || [];
+  const weeksUsingThisRoute = weeks.filter(w => String(w.routeId) === String(route.id));
 
 
   // Component to fit bounds after map loads
@@ -334,6 +426,9 @@ const lastCampsiteIndex = useMemo(() => {
           ← Back
         </button>
         <div className="route-actions">
+          <button className="assign-button" onClick={openAssignModal}>
+            Add to Week
+          </button>
           <button className="edit-button" onClick={handleEdit}>
             Edit
           </button>
@@ -342,6 +437,79 @@ const lastCampsiteIndex = useMemo(() => {
           </button>
         </div>
       </div>
+
+      {assignModalOpen && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            if (!assignSaving) setAssignModalOpen(false);
+          }}
+        >
+          <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">Add route to a week</h2>
+              <button
+                className="modal-close"
+                type="button"
+                onClick={() => setAssignModalOpen(false)}
+                disabled={assignSaving}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="modal-row">
+                <label htmlFor="assign-week">Week</label>
+                <select
+                  id="assign-week"
+                  value={selectedWeekId}
+                  onChange={(e) => setSelectedWeekId(e.target.value)}
+                  disabled={weeksLoading || assignSaving}
+                >
+                  <option value="">{weeksLoading ? "Loading weeks..." : "Select a week"}</option>
+                  {weeks.map(w => (
+                    <option key={w.id} value={w.id}>
+                      {formatDate(w.weekStart)} — {w.ageGroup}
+                      {w.routeId ? " (has route)" : ""}
+                    </option>
+                  ))}
+                </select>
+                {assignError && <div className="modal-error">{assignError}</div>}
+              </div>
+
+              {weeksUsingThisRoute.length > 0 && (
+                <div className="modal-hint">
+                  Already assigned to:{" "}
+                  {weeksUsingThisRoute
+                    .map(w => `${formatDate(w.weekStart)} (${w.ageGroup})`)
+                    .join(", ")}
+                </div>
+              )}
+            </div>
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setAssignModalOpen(false)}
+                disabled={assignSaving}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={assignRouteToSelectedWeek}
+                disabled={assignSaving || weeksLoading}
+              >
+                {assignSaving ? "Assigning..." : "Assign route"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="route-header">
         <h1>{route.name}</h1>
@@ -450,6 +618,27 @@ const lastCampsiteIndex = useMemo(() => {
                 <span>{day.dayElevation.toLocaleString()} ft elevation gain</span>
                 </div>
               </div>
+              {(() => {
+                const evac = evacPoints[dayIndex] || route.startPoint;
+                if (!evac) return null;
+                return (
+                  <div className="stop-details">
+                    <h4>
+                      <FontAwesomeIcon icon={faSignsPost} className="icon-secondary" /> Evacuation point
+                    </h4>
+                    <div className="coordinate-display coordinate-compact">
+                      <div>
+                        <strong>Location:</strong>{" "}
+                        {evac.label || "Unlabeled point"}
+                      </div>
+                      <div>
+                        <strong>Lat/Lng:</strong>{" "}
+                        {evac.lat.toFixed(6)}, {evac.lng.toFixed(6)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
               {dayIndex === 0 && (
                 <div className="stop-details">
                   <h4><FontAwesomeIcon icon={faSignsPost} className="icon-secondary" /> Drop Off: {route.startPoint?.label ? `: ${route.startPoint.label}` : ""}
@@ -560,7 +749,7 @@ const lastCampsiteIndex = useMemo(() => {
         </div>
       ) : (
         <>
-          <div className="route-section">
+          {/* <div className="route-section">
             <h2><FontAwesomeIcon icon={faSignsPost} className="icon-secondary" /> Start Point</h2>
             <div className="coordinate-display">
               <div><strong>Latitude:</strong> {route.startPoint?.lat?.toFixed(6)}</div>
@@ -575,7 +764,7 @@ const lastCampsiteIndex = useMemo(() => {
                 <div><strong>Elevation gain:</strong> {route.segments[0].elevationGainFt.toLocaleString()} ft</div>
               </div>
             )}
-          </div>
+          </div> */}
           {route.stops && route.stops.length > 0 && (
             <div className="route-section">
               <h2>Stops</h2>

@@ -12,6 +12,7 @@ export interface WeekStats {
   id: string;
     weekStart: string; // ISO date string (YYYY-MM-DD)
     numberOfCampers: number;
+    routeId?: string | null; // Optional: one route assigned per week
     mealsEatingOnTrail: WeekMealSelection[];
     camperRestrictions: CamperRestriction[];
     ageGroup: "intro" | "middle school" | "high school"; // e.g., "children", "adults", "seniors"

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { CamperRestriction, WeekMealSelection, WeekStats } from "../types/weekStats";
 import { Meal } from "../types/meal";
 import { DayOfWeek, MealSlot, Menu } from "../types/menu";
+import { Route } from "../types/route";
 import "./weekSchedule.css";
 import "./weekEdit.css";
 import { PRESET_DIETARY_RESTRICTIONS } from "../constants/tags";
@@ -34,8 +35,12 @@ const SLOTS: MealSlot[] = ["breakfast","lunch","dinner"];
 const [meals, setMeals] = useState<Meal[]>([]);
 const [included, setIncluded] = useState<WeekMealSelection[]>([]);
 const [menu, setMenu] = useState<Menu | null>(null);
-const [mealOverrides, setMealOverrides] = useState<WeekStats["mealOverrides"]>({});
+const [mealOverrides, setMealOverrides] = useState<
+  NonNullable<WeekStats["mealOverrides"]>
+  >({});
 const [swappingMeal, setSwappingMeal] = useState<{ day: DayOfWeek; slot: MealSlot } | null>(null);
+const [routes, setRoutes] = useState<Route[]>([]);
+const [routeId, setRouteId] = useState<string>("");
 
 
   useEffect(() => {
@@ -55,6 +60,7 @@ const [swappingMeal, setSwappingMeal] = useState<{ day: DayOfWeek; slot: MealSlo
             });
             setIncluded(found.mealsEatingOnTrail ?? []);
             setMealOverrides(found.mealOverrides || {});
+            setRouteId(found.routeId ? String(found.routeId) : "");
            setCampers(
   found.camperRestrictions.map(c => ({
     ...c,
@@ -84,12 +90,18 @@ const [swappingMeal, setSwappingMeal] = useState<{ day: DayOfWeek; slot: MealSlo
 
 useEffect(() => {
   async function loadData() {
-    const [loadedMeals, loadedMenu] = await Promise.all([
+    const [loadedMeals, loadedMenu, routesResult] = await Promise.all([
       window.electronAPI.getMeals(),
       window.electronAPI.getMenu(),
+      window.electronAPI.getRoutes(),
     ]);
     setMeals(loadedMeals);
     setMenu(loadedMenu);
+    if (routesResult?.success && routesResult.routes) {
+      setRoutes(routesResult.routes);
+    } else {
+      setRoutes([]);
+    }
   }
   loadData();
 }, []);
@@ -125,6 +137,7 @@ useEffect(() => {
       numberOfCampers: campersCount,
       ageGroup: formData.ageGroup,
       camperRestrictions: campers,
+      routeId: routeId || null,
       mealsEatingOnTrail: included,
       mealOverrides: Object.keys(mealOverrides).length > 0 ? mealOverrides : undefined,
     };
@@ -268,6 +281,28 @@ function removeRestriction(camperId: string, value: string) {
             <option value="middle school">Middle school</option>
             <option value="high school">High school</option>
           </select>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="routeId">Assigned route (optional)</label>
+          <select
+            id="routeId"
+            value={routeId}
+            onChange={(e) => setRouteId(e.target.value)}
+          >
+            <option value="">No route assigned</option>
+            {routes
+              .slice()
+              .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+              .map(r => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+          </select>
+          <small className="hint">
+            Each week can have one route. You’ll see a preview on the week details page.
+          </small>
         </div>
 
        <div className="form-group">

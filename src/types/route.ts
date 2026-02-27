@@ -15,6 +15,12 @@ export interface RouteSegment {
   elevationGainFt: number;
 }
 
+export interface EvacPoint {
+  lat: number;
+  lng: number;
+  label?: string;
+}
+
 export interface Route {
   id: string;
   name: string;
@@ -24,5 +30,10 @@ export interface Route {
   segments: RouteSegment[]; // One segment per stop (start->stop1, stop1->stop2, ..., stopN->end)
   notes?: string;
   ageGroup?: AgeGroup;
+  /**
+   * Optional evacuation points per day.
+   * Index corresponds to day index in the "route by day" breakdown.
+   */
+  evacPoints?: EvacPoint[];
 }
 

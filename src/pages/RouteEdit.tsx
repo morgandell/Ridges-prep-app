@@ -3,9 +3,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, useMap } from "react-leaflet";
 import { LatLngBounds, divIcon } from "leaflet";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBinoculars, faCampground, faSignsPost } from "@fortawesome/free-solid-svg-icons";
+import { faBinoculars, faCampground, faSignsPost, faCircleExclamation } from "@fortawesome/free-solid-svg-icons";
 import "leaflet/dist/leaflet.css";
-import { Route, RoutePoint, RouteSegment } from "../types/route";
+import { Route, RoutePoint, RouteSegment, EvacPoint } from "../types/route";
 import "./RouteEdit.css";
 
 
@@ -134,6 +134,7 @@ export default function RouteEdit() {
   const [routeGeometry, setRouteGeometry] = useState<[number, number][]>([]);
   const [fetchingRoute, setFetchingRoute] = useState(false);
   const [draggedPoint, setDraggedPoint] = useState<number | null>(null);
+  const [evacPoints, setEvacPoints] = useState<EvacPoint[]>([]);
 
   useEffect(() => {
     if (isEditing && id) {
@@ -170,6 +171,7 @@ export default function RouteEdit() {
           setPoints([]);
         }
         setSegments(route.segments || []);
+        setEvacPoints(route.evacPoints || []);
       }
     } catch (error) {
       console.error("Error loading route:", error);
@@ -265,6 +267,8 @@ export default function RouteEdit() {
       [Math.max(...lats), Math.max(...lngs)]
     );
   }, [allPoints]);
+
+  
 
   // Fetch route geometry when points change
   useEffect(() => {
@@ -397,11 +401,6 @@ export default function RouteEdit() {
     setSegments(updated);
   }
 
-  // Calculate totals
-  const totalMiles = segments.reduce((sum, seg) => sum + (seg.mileage || 0), 0);
-  const totalElevation = segments.reduce((sum, seg) => sum + (seg.elevationGainFt || 0), 0);
-
-  // Day split preview: same logic as RouteDetail — days break at campsites
   const stopsByDay = useMemo(() => {
     if (!stops?.length) return [];
     const days: RoutePoint[][] = [];
@@ -427,13 +426,14 @@ export default function RouteEdit() {
     return days;
   }, [stops]);
 
-  const lastCampsiteIndex = useMemo(() => {
+ const lastCampsiteIndex = useMemo(() => {
     if (!stops?.length) return -1;
     for (let i = stops.length - 1; i >= 0; i--) {
       if (stops[i].type === "campsite") return i;
     }
     return -1;
   }, [stops]);
+
 
   const daysWithStats = useMemo(() => {
     if (!stops?.length || !segments?.length || !stopsByDay.length) return [];
@@ -443,7 +443,8 @@ export default function RouteEdit() {
       const firstStopIndex = dayStops.length > 0 ? stops.indexOf(dayStops[0]) : lastCampsiteIndex + 1;
       const lastStopIndex = dayStops.length > 0 ? stops.indexOf(dayStops[dayStops.length - 1]) : -1;
       const startSeg = dayIndex === 0 ? 0 : isFinalLegDay ? lastCampsiteIndex + 1 : firstStopIndex;
-      const endSeg = isFinalLegDay ? segs.length - 1 : lastStopIndex;
+      const isLastDay = dayIndex === stopsByDay.length - 1;
+      const endSeg = isFinalLegDay || isLastDay ? segs.length - 1 : lastStopIndex;
       let dayMiles = 0;
       let dayElevation = 0;
       for (let i = startSeg; i <= endSeg && i < segs.length; i++) {
@@ -460,6 +461,48 @@ export default function RouteEdit() {
       };
     });
   }, [stops, segments, stopsByDay, lastCampsiteIndex]);
+
+
+  // Keep evacPoints array in sync with number of days; default each day to startPoint
+  useEffect(() => {
+    if (!startPoint) return;
+    if (!daysWithStats.length) {
+      setEvacPoints([]);
+      return;
+    }
+    setEvacPoints(prev => {
+      const next = [...prev];
+      for (let i = 0; i < daysWithStats.length; i++) {
+        if (!next[i]) {
+          next[i] = {
+            lat: startPoint.lat,
+            lng: startPoint.lng,
+            label: startPoint.label,
+          };
+        }
+      }
+      if (next.length > daysWithStats.length) {
+        next.length = daysWithStats.length;
+      }
+      return next;
+    });
+  }, [daysWithStats.length, startPoint?.lat, startPoint?.lng, startPoint?.label]);
+
+  function setEvacPointForDay(dayIndex: number, point: EvacPoint) {
+    setEvacPoints(prev => {
+      const next = [...prev];
+      next[dayIndex] = point;
+      return next;
+    });
+  }
+
+  // Calculate totals
+  const totalMiles = segments.reduce((sum, seg) => sum + (seg.mileage || 0), 0);
+  const totalElevation = segments.reduce((sum, seg) => sum + (seg.elevationGainFt || 0), 0);
+
+  // Day split preview: same logic as RouteDetail — days break at campsites
+  
+
 
   const getNextInstruction = () => {
     if (points.length === 0) return "Click on the map to add the first point (start)";
@@ -518,6 +561,7 @@ export default function RouteEdit() {
       segments: adjustedSegments,
       notes: formData.notes.trim() || undefined,
       ageGroup: formData.ageGroup,
+      evacPoints: evacPoints.length ? evacPoints : undefined,
     };
 
     setSaving(true);
@@ -710,63 +754,45 @@ export default function RouteEdit() {
           </div>
         </div>
 
-        {/* POINT DETAILS */}
-        {startPoint && (
-          <div className="form-section">
-            <h3>🟢 Start Point Details</h3>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Latitude</label>
-                <input type="number" step="any" value={startPoint.lat} readOnly />
-              </div>
-              <div className="form-group">
-                <label>Longitude</label>
-                <input type="number" step="any" value={startPoint.lng} readOnly />
-              </div>
-              <div className="form-group">
-                <label>Label (optional)</label>
-                <input
-                  type="text"
-                  value={startPoint.label ?? ""}
-                  onChange={(e) => setPoints((prev) => prev.map((p, i) => (i === 0 ? { ...p, label: e.target.value.trim() || undefined } : p)))}
-                  placeholder="e.g., Trailhead"
-                />
-              </div>
-            </div>
-            {points.length >= 2 && (
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Distance to {stops.length > 0 ? "first stop" : "end"} (miles)</label>
-                  <input
-                    type="number"
-                    step="any"
-                    min="0"
-                    value={segments[0]?.mileage ?? ""}
-                    onChange={(e) => handleUpdateSegment(0, "mileage", e.target.value)}
-                    placeholder="0.0"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Elevation Gain (ft)</label>
-                  <input
-                    type="number"
-                    step="1"
-                    min="0"
-                    value={segments[0]?.elevationGainFt ?? ""}
-                    onChange={(e) => handleUpdateSegment(0, "elevationGainFt", e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
         {stops.length > 0 && daysWithStats.length > 0 && (
           <div className="form-section route-by-day-preview">
             <h3>Route by day</h3>
             <p className="day-preview-hint">Days are split at campsites. Edit each stop below; changing type to Campsite updates the day breakdown.</p>
-            {daysWithStats.map((day, dayIndex) => (
+            {daysWithStats.map((day, dayIndex) => {
+              const evac = evacPoints[dayIndex];
+              const evacLabel =
+                evac?.label ||
+                (startPoint
+                  ? `Lat ${evac?.lat.toFixed(4)}, Lng ${evac?.lng.toFixed(4)}`
+                  : "");
+              const allRoutePoints: { id: string; label: string; lat: number; lng: number }[] = [];
+              if (startPoint) {
+                allRoutePoints.push({
+                  id: "start",
+                  label: startPoint.label || "Start point",
+                  lat: startPoint.lat,
+                  lng: startPoint.lng,
+                });
+              }
+              stops.forEach((s, idx) => {
+                allRoutePoints.push({
+                  id: s.id || `stop-${idx}`,
+                  label: s.label || `Stop ${idx + 1}`,
+                  lat: s.lat,
+                  lng: s.lng,
+                });
+              });
+              if (endPoint) {
+                allRoutePoints.push({
+                  id: "end",
+                  label: endPoint.label || "End point",
+                  lat: endPoint.lat,
+                  lng: endPoint.lng,
+                });
+              }
+
+              return (
               <div key={dayIndex} className="stops-by-day">
                 <div className="day-summary">
                   <h4 className="day-heading">Day {dayIndex + 1}</h4>
@@ -775,11 +801,25 @@ export default function RouteEdit() {
                     <span>{day.dayElevation.toLocaleString()} ft elevation gain</span>
                   </div>
                 </div>
-                {dayIndex === 0 && (
-                  <div className="stop-details stop-details-readonly">
-                    <h4><FontAwesomeIcon icon={faSignsPost} className="icon-secondary" /> Drop off: {startPoint?.label || "Start"}{" "}({startPoint?.lat.toFixed(6)}, {startPoint?.lng.toFixed(6)})</h4>
-                  </div>
-                )}
+                {dayIndex === 0 && startPoint && (
+  <div className="stop-details stop-details-editable stop-details-special">
+    <h4 className="stop-details-title">
+      <FontAwesomeIcon icon={faSignsPost} className="icon-secondary" /> Drop off
+      {" ("}{startPoint.lat.toFixed(5)}, {startPoint.lng.toFixed(5)}{")"}
+    </h4>
+
+    {/* NO stop type radios */}
+
+    <div className="form-group">
+      <label>Label (optional)</label>
+      <input
+        type="text"
+        placeholder="e.g., Trailhead, Parking Lot"
+        value={startPoint.label || ""}
+        onChange={(e) => setPoints((prev) => prev.map((p, i) => (i === prev.length - 1 ? { ...p, label: e.target.value.trim() || undefined } : p)))}      />
+    </div>
+  </div>
+)}
                 {day.isFinalLegDay && (() => {
                   const segment = segments?.[lastCampsiteIndex + 1];
                   const lastCamp = lastCampsiteIndex >= 0 ? stops[lastCampsiteIndex] : null;
@@ -791,11 +831,20 @@ export default function RouteEdit() {
                         {endPoint?.label ? `: ${endPoint.label}` : ""}{" "}
                         ({endPoint?.lat.toFixed(6)}, {endPoint?.lng.toFixed(6)})
                       </h4>
+                      <div className="form-group">
+      <label>Label (optional)</label>
+      <input
+        type="text"
+        placeholder="e.g., Trailhead, Parking Lot"
+        value={endPoint?.label || ""}
+        onChange={(e) => setPoints((prev) => prev.map((p, i) => (i === prev.length - 1 ? { ...p, label: e.target.value.trim() || undefined } : p)))}      />
+    </div>
                       <div className="segment-info">
                         <div><strong>Distance from {lastCamp.label || "last campsite"}:</strong> {segment.mileage.toFixed(2)} mi</div>
                         <div><strong>Elevation gain:</strong> {segment.elevationGainFt.toLocaleString()} ft</div>
                       </div>
                     </div>
+                    
                   );
                 })()}
                 {day.dayStops.map((stop, indexInDay) => {
@@ -863,12 +912,93 @@ export default function RouteEdit() {
                     </div>
                   );
                 })}
+                <div className="stop-details stop-details-readonly">
+                  <h4>
+                    <FontAwesomeIcon icon={faCircleExclamation} className="icon-secondary" /> Evacuation point
+                  </h4>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Use existing point</label>
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          const selectedId = e.target.value;
+                          const match = allRoutePoints.find(p => p.id === selectedId);
+                          if (match) {
+                            setEvacPointForDay(dayIndex, {
+                              lat: match.lat,
+                              lng: match.lng,
+                              label: match.label,
+                            });
+                          }
+                        }}
+                      >
+                        <option value="">
+                          {evacLabel ? `Current: ${evacLabel}` : "Select point"}
+                        </option>
+                        {allRoutePoints.map(p => (
+                          <option key={p.id} value={p.id}>
+                            {p.label} ({p.lat.toFixed(4)}, {p.lng.toFixed(4)})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Custom evac location</label>
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label>Latitude</label>
+                          <input
+                            type="number"
+                            step="any"
+                            value={evac?.lat ?? startPoint?.lat ?? ""}
+                            onChange={(e) =>
+                              setEvacPointForDay(dayIndex, {
+                                lat: parseFloat(e.target.value) || 0,
+                                lng: evac?.lng ?? startPoint?.lng ?? 0,
+                                label: evac?.label,
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Longitude</label>
+                          <input
+                            type="number"
+                            step="any"
+                            value={evac?.lng ?? startPoint?.lng ?? ""}
+                            onChange={(e) =>
+                              setEvacPointForDay(dayIndex, {
+                                lat: evac?.lat ?? startPoint?.lat ?? 0,
+                                lng: parseFloat(e.target.value) || 0,
+                                label: evac?.label,
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Label (optional)"
+                        value={evac?.label || ""}
+                        onChange={(e) =>
+                          setEvacPointForDay(dayIndex, {
+                            lat: evac?.lat ?? startPoint?.lat ?? 0,
+                            lng: evac?.lng ?? startPoint?.lng ?? 0,
+                            label: e.target.value || undefined,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
 
-        {endPoint && (
+        {/* {endPoint && (
           <div className="form-section">
             <h3>🔴 End Point Details</h3>
             <div className="form-row">
@@ -891,7 +1021,7 @@ export default function RouteEdit() {
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
         <div className="totals-section">
           <h3>Route Totals</h3>

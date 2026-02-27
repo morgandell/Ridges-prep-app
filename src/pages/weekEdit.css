@@ -83,12 +83,13 @@
 
 .week-menu-table td {
   padding: 0.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-secondary);
 }
 
 .week-menu-table td.day {
   font-weight: 600;
-  background: #f9fafb;
+  background: var(--color-secondary);
+  color: var(--color-textOnSecondary);
 }
 
 .menu-swap-cell {
@@ -97,10 +98,10 @@
   position: relative;
 }
 
-.menu-swap-cell.overridden {
+/* .menu-swap-cell.overridden {
   background: #fef3c7;
   border: 2px solid #f59e0b;
-}
+} */
 
 .meal-swap-display {
   padding: 0.5rem;

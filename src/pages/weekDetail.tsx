@@ -4,6 +4,7 @@ import { DayOfWeek, MealSlot, Menu } from "../types/menu";
 import "./weekDetail.css";
 import { WeekStats } from "../types/weekStats";
 import { Meal } from "../types/meal";
+import { Route, RoutePoint } from "../types/route";
 
 export default function WeekDetail() {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +14,7 @@ export default function WeekDetail() {
   const [loading, setLoading] = useState(true);
   const [menu, setMenu] = useState<Menu | null>(null);
   const [meals, setMeals] = useState<Meal[]>([]);
+  const [routes, setRoutes] = useState<Route[]>([]);
   const DAYS: DayOfWeek[] = [
   "sunday",
   "monday",
@@ -32,10 +34,11 @@ const SLOTS: MealSlot[] = ["breakfast", "lunch", "dinner"];
         return;
       }
       try {
-        const [weekResult, menuData, mealsData] = await Promise.all([
+        const [weekResult, menuData, mealsData, routesResult] = await Promise.all([
           window.electronAPI.getWeekStats(),
           window.electronAPI.getMenu(),
           window.electronAPI.getMeals(),
+          window.electronAPI.getRoutes(),
         ]);
         if (weekResult.success && weekResult.weeks) {
           const found = weekResult.weeks.find(w => w.id === id);
@@ -43,6 +46,11 @@ const SLOTS: MealSlot[] = ["breakfast", "lunch", "dinner"];
         }
         setMenu(menuData);
         setMeals(mealsData);
+        if (routesResult?.success && routesResult.routes) {
+          setRoutes(routesResult.routes);
+        } else {
+          setRoutes([]);
+        }
       } catch (err) {
         console.error("Error loading week:", err);
       } finally {
@@ -86,6 +94,41 @@ function groupRestrictions(
   return Array.from(map.entries());
 }
 
+function calculateDayCountFromStops(stops: RoutePoint[] | undefined) {
+  if (!stops || stops.length === 0) return 0;
+  const days: RoutePoint[][] = [];
+  let currentDay: RoutePoint[] = [];
+
+  for (const stop of stops) {
+    currentDay.push(stop);
+    if (stop.type === "campsite") {
+      days.push([...currentDay]);
+      currentDay = [];
+    }
+  }
+
+  if (currentDay.length > 0) {
+    days.push(currentDay);
+  }
+
+  let lastCampIdx = -1;
+  for (let i = stops.length - 1; i >= 0; i--) {
+    if (stops[i].type === "campsite") {
+      lastCampIdx = i;
+      break;
+    }
+  }
+
+  if (lastCampIdx >= 0) {
+    const stopsAfterLastCamp = stops.slice(lastCampIdx + 1);
+    if (stopsAfterLastCamp.length === 0) {
+      days.push([]);
+    }
+  }
+
+  return days.length;
+}
+
 
   if (loading) {
     return <div className="week-detail">Loading...</div>;
@@ -113,6 +156,16 @@ function groupRestrictions(
     );
   }
 
+  const assignedRoute =
+    week.routeId ? routes.find(r => String(r.id) === String(week.routeId)) : null;
+  const assignedRouteTotalMiles =
+    assignedRoute?.segments?.reduce((sum, seg) => sum + (seg.mileage || 0), 0) || 0;
+  const assignedRouteTotalElevation =
+    assignedRoute?.segments?.reduce((sum, seg) => sum + (seg.elevationGainFt || 0), 0) || 0;
+  const assignedRouteDays = assignedRoute
+    ? calculateDayCountFromStops(assignedRoute.stops)
+    : 0;
+
   return (
     <div className="week-detail">
       <div className="week-detail-header">
@@ -137,6 +190,45 @@ function groupRestrictions(
       <div className="week-meta">
         <span>Campers: {week.numberOfCampers}</span>
         <span>Trail meals: {week.mealsEatingOnTrail?.length ?? 0}</span>
+      </div>
+
+      <div className="week-section">
+        <h2>Assigned Route</h2>
+        {week.routeId ? (
+          assignedRoute ? (
+            <div
+              className="assigned-route-card"
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate(`/routes/${assignedRoute.id}`)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  navigate(`/routes/${assignedRoute.id}`);
+                }
+              }}
+              title="Click to view route details"
+            >
+              <div className="assigned-route-title">
+                <strong>{assignedRoute.name}</strong>
+              </div>
+              <div className="assigned-route-meta">
+                {assignedRouteDays > 0 && <span>{assignedRouteDays} day{assignedRouteDays !== 1 ? "s" : ""}</span>}
+                {assignedRouteTotalMiles > 0 && <span>{assignedRouteTotalMiles.toFixed(1)} mi</span>}
+                {assignedRouteTotalElevation > 0 && <span>{assignedRouteTotalElevation.toLocaleString()} ft gain</span>}
+              </div>
+              <div className="hint">Click to open route</div>
+            </div>
+          ) : (
+            <div className="hint">
+              This week references a route that no longer exists. Edit the week to select a new route.
+            </div>
+          )
+        ) : (
+          <div className="hint">
+            No route assigned yet. Click <strong>Edit</strong> to add one.
+          </div>
+        )}
       </div>
 
 {week.camperRestrictions?.length > 0 && (
@@ -224,7 +316,7 @@ function groupRestrictions(
                   className={`menu-swap-cell ${hasOverride ? "overridden" : ""}`}
                 >
                   <div className="meal-swap-display">
-                    <div className="meal-name">
+                    <div className={`meal-name ${effectiveMeal ? "" : "emptymeal"}`}>
                       {effectiveMeal?.name || "Unknown meal"}
                     </div>
                     {hasOverride && originalMenuMeal && (
