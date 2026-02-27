@@ -15,7 +15,7 @@ export interface Meal {
   cookTime?: number; // in minutes
   servings?: number;
   tags?: string[];
-  mealTime: "breakfast" | "lunch" | "dinner" | "snack" | "dessert";
+  mealTime: "breakfast" | "lunch" | "dinner" | "dessert";
 }
 
 

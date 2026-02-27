@@ -31,6 +31,42 @@ export default function RoutesPage() {
     return { totalMiles, totalElevation };
   }
 
+  function calculateDayCount(route: Route) {
+    if (!route.stops || route.stops.length === 0) return 0;
+
+    const days: Route["stops"][] = [];
+    let currentDay: Route["stops"] = [];
+
+    for (const stop of route.stops) {
+      currentDay.push(stop);
+      if (stop.type === "campsite") {
+        days.push([...currentDay]);
+        currentDay = [];
+      }
+    }
+
+    if (currentDay.length > 0) {
+      days.push(currentDay);
+    }
+
+    let lastCampIdx = -1;
+    for (let i = route.stops.length - 1; i >= 0; i--) {
+      if (route.stops[i].type === "campsite") {
+        lastCampIdx = i;
+        break;
+      }
+    }
+
+    if (lastCampIdx >= 0) {
+      const stopsAfterLastCamp = route.stops.slice(lastCampIdx + 1);
+      if (stopsAfterLastCamp.length === 0) {
+        days.push([]);
+      }
+    }
+
+    return days.length;
+  }
+
   return (
     <div className="routes-page">
       <div className="routes-header">
@@ -53,10 +89,11 @@ export default function RoutesPage() {
         <div className="routes-grid">
           {routes.map(route => {
             const { totalMiles, totalElevation } = calculateTotals(route);
+            const dayCount = calculateDayCount(route);
             return (
               <div
                 key={route.id}
-                className="route-card"
+                className={`route-card ${route.ageGroup || 'default'}`}
                 onClick={() => navigate(`/routes/${route.id}`)}
               >
                 <div className="route-card-header">
@@ -73,9 +110,9 @@ export default function RoutesPage() {
                       <strong>Elevation:</strong> {totalElevation} ft
                     </div>
                   )}
-                  {route.stops && route.stops.length > 0 && (
+                  {dayCount > 0 && (
                     <div className="route-stat">
-                      <strong>Stops:</strong> {route.stops.length}
+                      <strong>Days:</strong> {dayCount}
                     </div>
                   )}
                   <div className="route-stat">

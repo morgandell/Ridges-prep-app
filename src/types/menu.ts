@@ -6,7 +6,7 @@ export type DayOfWeek =
   | "thursday"
   | "friday";
 
-export type MealSlot = "breakfast" | "lunch" | "dinner" | "dessert" | "snack";
+export type MealSlot = "breakfast" | "lunch" | "dinner" | "dessert";
 
 export type Menu = {
   days: {

@@ -181,46 +181,8 @@ function groupRestrictions(
 
      {week.mealsEatingOnTrail?.length > 0 && (
   <div className="week-section">
-    <h2>Meals Included This Week</h2>
-
-    <table className="week-grid read-only">
-      <thead>
-        <tr>
-          <th />
-          {SLOTS.map(slot => (
-            <th key={slot}>{slot.toUpperCase()}</th>
-          ))}
-        </tr>
-      </thead>
-
-      <tbody>
-        {DAYS.map(day => (
-          <tr key={day}>
-            <td className="day">{day.toUpperCase()}</td>
-
-            {SLOTS.map(slot => {
-              const active = isIncluded(day, slot);
-
-              return (
-                <td
-                  key={slot}
-                  className={`week-grid-cell ${active ? "active" : ""}`}
-                >
-                  {active ? "✓" : ""}
-                </td>
-              );
-            })}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-)}
-
-{menu && week.mealOverrides && Object.keys(week.mealOverrides).length > 0 && (
-  <div className="week-section">
-    <h2>Week-Specific Meal Swaps</h2>
-    <p className="hint">These meals have been swapped from the main menu for this week only.</p>
+    <h2>Meals Eating on Trail</h2>
+    <p className="hint">Shows all meals for the selected trail days, including any week-specific swaps.</p>
     <table className="week-menu-table">
       <thead>
         <tr>
@@ -235,23 +197,39 @@ function groupRestrictions(
           <tr key={day}>
             <td className="day">{day.charAt(0).toUpperCase() + day.slice(1)}</td>
             {SLOTS.map(slot => {
+              const isMealIncluded = isIncluded(day, slot);
+
+              if (!isMealIncluded) {
+                return <td key={slot}></td>;
+              }
+
               const overrideMealId = week.mealOverrides?.[day]?.[slot];
-              const menuMealId = menu.days[day]?.[slot];
-              const overrideMeal = overrideMealId ? meals.find(m => m.id === overrideMealId) : null;
-              const menuMeal = menuMealId ? meals.find(m => m.id === menuMealId) : null;
+              const menuMealId = menu?.days?.[day]?.[slot];
+
+              const effectiveMealId = overrideMealId || menuMealId;
+              const effectiveMeal = effectiveMealId
+                ? meals.find(m => m.id === effectiveMealId)
+                : null;
+
+              const originalMenuMeal =
+                overrideMealId && menuMealId && overrideMealId !== menuMealId
+                  ? meals.find(m => m.id === menuMealId)
+                  : null;
+
               const hasOverride = !!overrideMealId;
 
-              if (!hasOverride) return <td key={slot}></td>;
-
               return (
-                <td key={slot} className="menu-swap-cell overridden">
+                <td
+                  key={slot}
+                  className={`menu-swap-cell ${hasOverride ? "overridden" : ""}`}
+                >
                   <div className="meal-swap-display">
-                    <div>
-                      <strong>Swapped:</strong> {overrideMeal?.name || "Unknown"}
+                    <div className="meal-name">
+                      {effectiveMeal?.name || "Unknown meal"}
                     </div>
-                    {menuMeal && (
+                    {hasOverride && originalMenuMeal && (
                       <div className="original-meal">
-                        <small>Original: {menuMeal.name}</small>
+                        <small>Swapped from: {originalMenuMeal.name}</small>
                       </div>
                     )}
                   </div>

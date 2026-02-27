@@ -180,7 +180,7 @@ export default function WeeklyMenuPage() {
             <div className="recipe-list">
                     <h3>Meals</h3>
                     <div className="meal-filters">
-                        {["all", "breakfast", "lunch", "dinner", "snack", "dessert"].map(type => (
+                        {["all", "breakfast", "lunch", "dinner", "dessert"].map(type => (
                             <button
                             key={type}
                             className={filterMealTime === type ? "active" : ""}
@@ -434,6 +434,6 @@ const MEAL_TIME_ORDER: Record<Meal["mealTime"], number> = {
   breakfast: 1,
   lunch: 2,
   dinner: 3,
-  snack: 4,
-  dessert: 5,
+  // snack: 4,
+  dessert: 4,
 };

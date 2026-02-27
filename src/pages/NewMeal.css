@@ -172,7 +172,7 @@
 
 .submit-button {
   background: var(--color-primary);
-  color: var(--color-backgroundLight);
+  color: var(--color-textOnPrimary);
 }
 
 .submit-button:hover:not(:disabled) {

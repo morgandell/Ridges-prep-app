@@ -13,7 +13,7 @@ import "./RouteEdit.css";
 const startIcon = divIcon({
   className: 'custom-marker',
   html: `<div style="
-    background-color: var(--color-breakfast);
+    background-color: var(--color-dessert);
     width: 30px;
     height: 30px;
     border-radius: 50% 50% 50% 0;
@@ -29,7 +29,7 @@ const startIcon = divIcon({
 const endIcon = divIcon({
   className: 'custom-marker',
   html: `<div style="
-    background-color: #ef4444;
+    background-color: var(--color-snack);
     width: 30px;
     height: 30px;
     border-radius: 50% 50% 50% 0;
@@ -58,7 +58,7 @@ const stopIcon = divIcon({
   popupAnchor: [0, -30],
 });
 
-function makeStopIcon(iconClass: string, color = "#3b82f6") {
+function makeStopIcon(iconClass: string, color = "var(--color-breakfast)") {
   return divIcon({
     className: "custom-marker",
     html: `
@@ -655,7 +655,7 @@ export default function RouteEdit() {
               {allPoints.length > 1 && routeGeometry.length > 0 && (
                 <Polyline
                   positions={routeGeometry}
-                  color="#3b82f6"
+                  color="var(--color-tagText)"
                   weight={4}
                   opacity={0.8}
                 />

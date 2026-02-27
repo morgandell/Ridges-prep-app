@@ -226,28 +226,65 @@ export default function PastMenus() {
         </div>
       ) : (
         <div className="past-menus-list">
-          {pastMenus
-            .sort((a, b) => b.date.localeCompare(a.date))
-            .map(pastMenu => (
-              <div key={pastMenu.id} className="past-menu-card">
-                <div className="card-header">
-                  <h3>{pastMenu.name}</h3>
-                  <span className="past-menu-date">{formatDate(pastMenu.date)}</span>
-                </div>
-                <div className="card-actions">
-                  <button className="view-button" onClick={() => setViewingMenu(pastMenu)}>
-                    View
-                  </button>
-                  <button className="import-button" onClick={() => handleImportMenu(pastMenu)}>
-                    Import
-                  </button>
-                  <button className="delete-button" onClick={() => handleDeleteMenu(pastMenu.id, pastMenu.name)}>
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
+  {pastMenus
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(pastMenu => (
+      <div
+        key={pastMenu.id}
+        className="past-menu-card"
+        onClick={() => setViewingMenu(pastMenu)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            setViewingMenu(pastMenu);
+          }
+        }}
+      >
+        <div className="past-menu-card-header">
+          <h3>{pastMenu.name}</h3>
+          <span className="past-menu-date">
+            {formatDate(pastMenu.date)}
+          </span>
         </div>
+
+        <div className="past-menu-actions">
+          <button
+            className="import-button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleImportMenu(pastMenu);
+            }}
+          >
+            Import
+          </button>
+        </div>
+      </div>
+    ))}
+</div>
+        // <div className="past-menus-list">
+        //   {pastMenus
+        //     .sort((a, b) => b.date.localeCompare(a.date))
+        //     .map(pastMenu => (
+        //       <div key={pastMenu.id} className="past-menu-card">
+        //         <div className="card-header">
+        //           <h3>{pastMenu.name}</h3>
+        //           <span className="past-menu-date">{formatDate(pastMenu.date)}</span>
+        //         </div>
+        //         <div className="card-actions">
+        //           <button className="view-button" onClick={() => setViewingMenu(pastMenu)}>
+        //             View
+        //           </button>
+        //           <button className="import-button" onClick={() => handleImportMenu(pastMenu)}>
+        //             Import
+        //           </button>
+        //           <button className="delete-button" onClick={() => handleDeleteMenu(pastMenu.id, pastMenu.name)}>
+        //             Delete
+        //           </button>
+        //         </div>
+        //       </div>
+        //     ))}
+        // </div>
       )}
     </div>
   );
