@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from "react-leaflet";
 import { Icon, LatLngBounds, divIcon } from "leaflet";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBinoculars, faCampground, faSignsPost } from "@fortawesome/free-solid-svg-icons";
+import { faBinoculars, faCampground, faSignsPost, faCircleExclamation} from "@fortawesome/free-solid-svg-icons";
 import "leaflet/dist/leaflet.css";
 import { Route, RoutePoint, EvacPoint } from "../types/route";
 import { WeekStats } from "../types/weekStats";
@@ -624,7 +624,7 @@ const lastCampsiteIndex = useMemo(() => {
                 return (
                   <div className="stop-details">
                     <h4>
-                      <FontAwesomeIcon icon={faSignsPost} className="icon-secondary" /> Evacuation point
+                        <FontAwesomeIcon icon={faCircleExclamation} className="icon-evac" /> Evacuation point
                     </h4>
                     <div className="coordinate-display coordinate-compact">
                       <div>
@@ -643,6 +643,9 @@ const lastCampsiteIndex = useMemo(() => {
                 <div className="stop-details">
                   <h4><FontAwesomeIcon icon={faSignsPost} className="icon-secondary" /> Drop Off: {route.startPoint?.label ? `: ${route.startPoint.label}` : ""}
                       {" "} {"("} {route.startPoint?.lat?.toFixed(6)}, {route.startPoint?.lng?.toFixed(6)} {")"} </h4>
+                  {route.startPoint?.note && (
+                    <p className="point-note"><strong>Note:</strong> {route.startPoint.note}</p>
+                  )}
                 </div>
               )}
               {/* {dayIndex > 0 && !day.isFinalLegDay && (
@@ -703,7 +706,9 @@ const lastCampsiteIndex = useMemo(() => {
         {route.endPoint?.lng?.toFixed(6)}
         )
       </h4>
-
+      {route.endPoint?.note && (
+        <p className="point-note"><strong>Note:</strong> {route.endPoint.note}</p>
+      )}
       <div className="segment-info">
         <div>
           <strong>

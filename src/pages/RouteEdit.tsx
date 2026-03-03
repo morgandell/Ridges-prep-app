@@ -154,8 +154,8 @@ export default function RouteEdit() {
           notes: route.notes || "",
           ageGroup: route.ageGroup || "Middle School",
         });
-        const start = route.startPoint ? { id: route.startPoint.id || "start", lat: route.startPoint.lat, lng: route.startPoint.lng, label: route.startPoint.label } : null;
-        const end = route.endPoint ? { id: route.endPoint.id || "end", lat: route.endPoint.lat, lng: route.endPoint.lng, label: route.endPoint.label } : null;
+        const start = route.startPoint ? { id: route.startPoint.id || "start", lat: route.startPoint.lat, lng: route.startPoint.lng, label: route.startPoint.label, note: route.startPoint.note } : null;
+        const end = route.endPoint ? { id: route.endPoint.id || "end", lat: route.endPoint.lat, lng: route.endPoint.lng, label: route.endPoint.label, note: route.endPoint.note } : null;
         const midStops = (route.stops || [])
           .filter((s): s is RoutePoint & { stopType?: string } => s != null && typeof s === "object")
           .map((s) => {
@@ -550,12 +550,14 @@ export default function RouteEdit() {
         lat: startLat,
         lng: startLng,
         label: start.label?.trim() || undefined,
+        note: start.note?.trim() || undefined,
       },
       endPoint: {
         id: "end",
         lat: endLat,
         lng: endLng,
         label: end.label?.trim() || undefined,
+        note: end.note?.trim() || undefined,
       },
       stops: routeStops,
       segments: adjustedSegments,
@@ -815,8 +817,18 @@ export default function RouteEdit() {
       <input
         type="text"
         placeholder="e.g., Trailhead, Parking Lot"
-        value={startPoint.label || ""}
-        onChange={(e) => setPoints((prev) => prev.map((p, i) => (i === prev.length - 1 ? { ...p, label: e.target.value.trim() || undefined } : p)))}      />
+        value={startPoint.label ?? ""}
+        onChange={(e) => setPoints((prev) => prev.map((p, i) => (i === 0 ? { ...p, label: e.target.value || undefined } : p)))}
+      />
+    </div>
+    <div className="form-group">
+      <label>Note (optional)</label>
+      <textarea
+        rows={2}
+        placeholder="e.g., Meet at north lot, ranger station hours"
+        value={startPoint.note ?? ""}
+        onChange={(e) => setPoints((prev) => prev.map((p, i) => (i === 0 ? { ...p, note: e.target.value || undefined } : p)))}
+      />
     </div>
   </div>
 )}
@@ -825,20 +837,30 @@ export default function RouteEdit() {
                   const lastCamp = lastCampsiteIndex >= 0 ? stops[lastCampsiteIndex] : null;
                   if (!segment || !lastCamp) return null;
                   return (
-                    <div className="stop-details stop-details-readonly">
+                    <div className="stop-details stop-details-editable">
                       <h4>
                         <FontAwesomeIcon icon={faSignsPost} className="icon-secondary" /> Pick up
                         {endPoint?.label ? `: ${endPoint.label}` : ""}{" "}
                         ({endPoint?.lat.toFixed(6)}, {endPoint?.lng.toFixed(6)})
                       </h4>
                       <div className="form-group">
-      <label>Label (optional)</label>
-      <input
-        type="text"
-        placeholder="e.g., Trailhead, Parking Lot"
-        value={endPoint?.label || ""}
-        onChange={(e) => setPoints((prev) => prev.map((p, i) => (i === prev.length - 1 ? { ...p, label: e.target.value.trim() || undefined } : p)))}      />
-    </div>
+                        <label>Label (optional)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g., Summit, Parking Lot"
+                          value={endPoint?.label ?? ""}
+                          onChange={(e) => setPoints((prev) => prev.map((p, i) => (i === prev.length - 1 ? { ...p, label: e.target.value || undefined } : p)))}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Note (optional)</label>
+                        <textarea
+                          rows={2}
+                          placeholder="e.g., Pick-up time, contact at ranger station"
+                          value={endPoint?.note ?? ""}
+                          onChange={(e) => setPoints((prev) => prev.map((p, i) => (i === prev.length - 1 ? { ...p, note: e.target.value || undefined } : p)))}
+                        />
+                      </div>
                       <div className="segment-info">
                         <div><strong>Distance from {lastCamp.label || "last campsite"}:</strong> {segment.mileage.toFixed(2)} mi</div>
                         <div><strong>Elevation gain:</strong> {segment.elevationGainFt.toLocaleString()} ft</div>
@@ -890,8 +912,8 @@ export default function RouteEdit() {
                         <input
                           type="text"
                           placeholder="e.g., Lake Camp, Summit View"
-                          value={stop.label || ""}
-                          onChange={(e) => setPoints((prev) => prev.map((p) => (p.id === stop.id ? { ...p, label: e.target.value.trim() || undefined } : p)))}
+                          value={stop.label ?? ""}
+                          onChange={(e) => setPoints((prev) => prev.map((p) => (p.id === stop.id ? { ...p, label: e.target.value || undefined } : p)))}
                         />
                       </div>
                       {segment && (
@@ -914,7 +936,7 @@ export default function RouteEdit() {
                 })}
                 <div className="stop-details stop-details-readonly">
                   <h4>
-                    <FontAwesomeIcon icon={faCircleExclamation} className="icon-secondary" /> Evacuation point
+                    <FontAwesomeIcon icon={faCircleExclamation} className="icon-evac" /> Evacuation point
                   </h4>
                   <div className="form-row">
                     <div className="form-group">
@@ -1015,7 +1037,7 @@ export default function RouteEdit() {
                 <input
                   type="text"
                   value={endPoint.label ?? ""}
-                  onChange={(e) => setPoints((prev) => prev.map((p, i) => (i === prev.length - 1 ? { ...p, label: e.target.value.trim() || undefined } : p)))}
+                  onChange={(e) => setPoints((prev) => prev.map((p, i) => (i === prev.length - 1 ? { ...p, label: e.target.value || undefined } : p)))}
                   placeholder="e.g., Summit"
                 />
               </div>

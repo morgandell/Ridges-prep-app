@@ -218,6 +218,12 @@
   color: var(--color-text);
 }
 
+.point-note {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
 .segment-info {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
@@ -257,6 +263,11 @@
 
 .icon-secondary {
   color: var(--color-secondary); 
+  font-size: 24px;
+}
+
+.icon-evac {
+  color: var(--color-breakfast);
   font-size: 24px;
 }
 
