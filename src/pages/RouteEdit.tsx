@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBinoculars, faCampground, faSignsPost, faCircleExclamation } from "@fortawesome/free-solid-svg-icons";
 import "leaflet/dist/leaflet.css";
 import { Route, RoutePoint, RouteSegment, EvacPoint } from "../types/route";
+import { calculateDriveMileage } from "../utils/driveMileage";
 import "./RouteEdit.css";
 
 
@@ -121,6 +122,7 @@ export default function RouteEdit() {
     name: "",
     notes: "",
     ageGroup: "" as "Intro" | "Middle School" | "High School",
+    transportMode: "park" as "park" | "dropOff",
   });
   // Single ordered list: first = start, last = end, middle = stops. Add by clicking in order; reorder any point.
   const [points, setPoints] = useState<RoutePoint[]>([]);
@@ -135,6 +137,9 @@ export default function RouteEdit() {
   const [fetchingRoute, setFetchingRoute] = useState(false);
   const [draggedPoint, setDraggedPoint] = useState<number | null>(null);
   const [evacPoints, setEvacPoints] = useState<EvacPoint[]>([]);
+  const [driveMileage, setDriveMileage] = useState<number | null>(null);
+  const [driveMileageLoading, setDriveMileageLoading] = useState(false);
+  const [driveMileageError, setDriveMileageError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isEditing && id) {
@@ -153,6 +158,7 @@ export default function RouteEdit() {
           name: route.name,
           notes: route.notes || "",
           ageGroup: route.ageGroup || "Middle School",
+          transportMode: route.transportMode || "park",
         });
         const start = route.startPoint ? { id: route.startPoint.id || "start", lat: route.startPoint.lat, lng: route.startPoint.lng, label: route.startPoint.label, note: route.startPoint.note } : null;
         const end = route.endPoint ? { id: route.endPoint.id || "end", lat: route.endPoint.lat, lng: route.endPoint.lng, label: route.endPoint.label, note: route.endPoint.note } : null;
@@ -392,6 +398,76 @@ export default function RouteEdit() {
     fetchRouteGeometry();
   }, [allPoints]);
 
+/** Base location for all drives (camp/office). */
+ const BASE_LAT = 43.9281;
+ const BASE_LNG = -114.8402;
+
+// const ORS_API_KEY =
+//   "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjgzMGYzYWU5NmNkYjQxYjJiNmYwZWQxMmUzYTFhNzYwIiwiaCI6Im11cm11cjY0In0=";
+const ORS_API_KEY = atob(
+  "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjgzMGYzYWU5NmNkYjQxYjJiNmYwZWQxMmUzYTFhNzYwIiwiaCI6Im11cm11cjY0In0="
+);
+
+async function fetchDrivingDistanceMiles(
+  fromLat: number,
+  fromLng: number,
+  toLat: number,
+  toLng: number
+): Promise<number> {
+  const url = "https://api.openrouteservice.org/v2/directions/driving-car/geojson";
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8",
+      Authorization: "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjgzMGYzYWU5NmNkYjQxYjJiNmYwZWQxMmUzYTFhNzYwIiwiaCI6Im11cm11cjY0In0=",
+    },
+    body: JSON.stringify({
+      coordinates: [
+        [fromLng, fromLat],
+        [toLng, toLat],
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Drive distance API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const distanceMeters =
+    data?.features?.[0]?.properties?.segments?.[0]?.distance ??
+    data?.features?.[0]?.properties?.summary?.distance ??
+    0;
+  return distanceMeters / 1609.344; // meters to miles
+}
+
+/**
+ * Calculates total driving mileage from base to route points and back.
+ * Base: 43.9281° N, 114.8402° W
+ * - park: round trip base ↔ start point
+ * - dropOff: round trip base ↔ start + round trip base ↔ end
+ */
+ async function calculateDriveMileage(
+  transportMode: "park" | "dropOff",
+  startLat: number,
+  startLng: number,
+  endLat: number,
+  endLng: number
+): Promise<number> {
+  const baseToStart = await fetchDrivingDistanceMiles(BASE_LAT, BASE_LNG, startLat, startLng);
+  const roundTripStart = baseToStart * 2;
+
+  if (transportMode === "park") {
+    return Math.round(roundTripStart * 10) / 10;
+  }
+
+  const baseToEnd = await fetchDrivingDistanceMiles(BASE_LAT, BASE_LNG, endLat, endLng);
+  const roundTripEnd = baseToEnd * 2;
+  return Math.round((roundTripStart + roundTripEnd) * 10) / 10;
+}
+
+
   function handleUpdateSegment(index: number, field: "mileage" | "elevationGainFt", value: string) {
     const updated = [...segments];
     if (!updated[index]) {
@@ -488,6 +564,38 @@ export default function RouteEdit() {
     });
   }, [daysWithStats.length, startPoint?.lat, startPoint?.lng, startPoint?.label]);
 
+  // Fetch drive mileage when start/end points and transport mode are set
+  useEffect(() => {
+    if (!startPoint || !endPoint) {
+      setDriveMileage(null);
+      setDriveMileageError(null);
+      return;
+    }
+    let cancelled = false;
+    setDriveMileageLoading(true);
+    setDriveMileageError(null);
+    calculateDriveMileage(
+      formData.transportMode,
+      startPoint.lat,
+      startPoint.lng,
+      endPoint.lat,
+      endPoint.lng
+    )
+      .then((miles) => {
+        if (!cancelled) setDriveMileage(miles);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setDriveMileageError(err?.message || "Failed to fetch drive distance");
+          setDriveMileage(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setDriveMileageLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [startPoint?.lat, startPoint?.lng, endPoint?.lat, endPoint?.lng, formData.transportMode]);
+
   function setEvacPointForDay(dayIndex: number, point: EvacPoint) {
     setEvacPoints(prev => {
       const next = [...prev];
@@ -564,6 +672,8 @@ export default function RouteEdit() {
       notes: formData.notes.trim() || undefined,
       ageGroup: formData.ageGroup,
       evacPoints: evacPoints.length ? evacPoints : undefined,
+      transportMode: formData.transportMode,
+      driveMileage: driveMileage != null ? driveMileage : undefined,
     };
 
     setSaving(true);
@@ -648,6 +758,29 @@ export default function RouteEdit() {
         />
         🎓 High School
       </label>
+          </div>
+
+          <div className="radio-group">
+            <label>
+              <input
+                type="radio"
+                name="transport-mode"
+                value="park"
+                checked={formData.transportMode === "park"}
+                onChange={() => setFormData((prev) => ({ ...prev, transportMode: "park" }))}
+              />
+              Park van at trailhead (drive to start & back)
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="transport-mode"
+                value="dropOff"
+                checked={formData.transportMode === "dropOff"}
+                onChange={() => setFormData((prev) => ({ ...prev, transportMode: "dropOff" }))}
+              />
+              Drop off & pick up (drive to start and end)
+            </label>
           </div>
 
         {/* MAP SECTION AT TOP */}
@@ -1056,6 +1189,29 @@ export default function RouteEdit() {
               <span className="total-label">Total Elevation Gain:</span>
               <span className="total-value">{totalElevation} ft</span>
             </div>
+            {driveMileageLoading && (
+              <div className="total-item">
+                <span className="total-label">Drive mileage:</span>
+                <span className="total-value">Calculating...</span>
+              </div>
+            )}
+            {!driveMileageLoading && driveMileage != null && (
+              <div className="total-item">
+                <span className="total-label">Drive mileage:</span>
+                <span>
+                  <span className="total-value">{driveMileage.toFixed(1)} mi</span>
+                  <span className="total-hint">
+                    {" "}({formData.transportMode === "park" ? "base → start & back" : "base → start & end"})
+                  </span>
+                </span>
+              </div>
+            )}
+            {!driveMileageLoading && driveMileageError && (
+              <div className="total-item total-error">
+                <span className="total-label">Drive mileage:</span>
+                <span className="total-value">{driveMileageError}</span>
+              </div>
+            )}
           </div>
         </div>
 

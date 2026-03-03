@@ -1,0 +1,282 @@
+.routes-print-page {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.routes-print-loading {
+  padding: 3rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.print-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.back-button,
+.print-button,
+.refresh-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.refresh-button {
+  background: var(--color-secondary);
+  color: var(--color-textOnSecondary);
+}
+
+.refresh-button:hover:not(:disabled) {
+  background: var(--color-secondaryHover);
+}
+
+.refresh-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.back-button {
+  background: var(--color-secondary);
+  color: var(--color-textOnSecondary);
+}
+
+.back-button:hover {
+  background: var(--color-secondaryHover);
+}
+
+.print-button {
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
+}
+
+.print-button:hover {
+  background: var(--color-primaryHover);
+}
+
+.print-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+}
+
+.print-section {
+  margin-bottom: 3rem;
+}
+
+.print-section h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  color: #1f2937;
+}
+
+.print-section h2 {
+  font-size: 1.5rem;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  color: #374151;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
+
+.print-section h3 {
+  font-size: 1.25rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: #4b5563;
+}
+
+.print-section h4 {
+  font-size: 1.1rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: #6b7280;
+}
+
+.print-meta {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.print-meta span {
+  margin-right: 0.5rem;
+}
+
+.print-empty {
+  color: #6b7280;
+  font-style: italic;
+  padding: 2rem 0;
+}
+
+.weeks-list {
+  margin: 0 0 1.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.weeks-list li {
+  margin-bottom: 0.25rem;
+}
+
+.route-days-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.route-days-table th,
+.route-days-table td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  text-align: left;
+  vertical-align: top;
+}
+
+.route-days-table th {
+  background: #f3f4f6;
+  font-weight: 600;
+  color: #374151;
+}
+
+.route-days-table tbody tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+.route-days-table td:first-child {
+  font-weight: 600;
+  width: 3em;
+}
+
+.route-simple-points .point-block {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.point-note {
+  font-size: 0.85rem;
+  color: #4b5563;
+  margin-top: 0.25rem;
+  margin-left: 1rem;
+  font-style: italic;
+}
+
+.route-notes-print {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f0f9ff;
+  border-left: 4px solid #3b82f6;
+  border-radius: 4px;
+}
+
+.route-notes-print p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* Print styles */
+@media print {
+  .sidebar {
+    display: none !important;
+  }
+
+  .content {
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  html, body {
+    height: auto !important;
+    width: 100% !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .routes-print-page {
+    padding: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .print-header {
+    display: none !important;
+  }
+
+  .print-content {
+    padding: 0 !important;
+    background: white !important;
+    border-radius: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .print-section {
+    margin-bottom: 2rem;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
+
+  .page-break:first-child {
+    page-break-before: auto;
+  }
+
+  .route-days-table {
+    font-size: 0.85rem;
+  }
+
+  .route-days-table th,
+  .route-days-table td {
+    padding: 0.35rem 0.5rem;
+    border: 1px solid #000 !important;
+  }
+
+  .route-days-table th {
+    background: #e5e5e5 !important;
+  }
+
+  .route-days-table tbody tr {
+    page-break-inside: avoid;
+  }
+
+  .print-section h1,
+  .print-section h2,
+  .print-section h3 {
+    page-break-after: avoid;
+    color: #000 !important;
+  }
+
+  .print-meta,
+  .point-block,
+  .point-note,
+  .weeks-list li {
+    color: #000 !important;
+  }
+
+  .route-notes-print {
+    background: white !important;
+    border: 1px solid #000 !important;
+  }
+
+  .route-notes-print p {
+    color: #000 !important;
+  }
+}

@@ -15,8 +15,8 @@ import WeekSchedule from "./pages/weekSchedule";
 import WeekDetail from "./pages/weekDetail";
 import WeekEdit from "./pages/weekEdit";
 import FoodPrint from "./pages/foodPrint";
+import RoutesPrint from "./pages/routesPrint";
 import PastMenus from "./pages/pastMenus";
-
 
 export default function App() {
   return (
@@ -40,6 +40,7 @@ export default function App() {
           <Route path="/weeks/:id" element={<WeekDetail />} />
           <Route path="/weeks/:id/edit" element={<WeekEdit />} />
           <Route path="/food-print" element={<FoodPrint />} />
+          <Route path="/routes-print" element={<RoutesPrint />} />
           <Route path="/past-menus" element={<PastMenus />} />
         </Route>
       </Routes>

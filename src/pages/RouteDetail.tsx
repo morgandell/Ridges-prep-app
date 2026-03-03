@@ -7,6 +7,7 @@ import { faBinoculars, faCampground, faSignsPost, faCircleExclamation} from "@fo
 import "leaflet/dist/leaflet.css";
 import { Route, RoutePoint, EvacPoint } from "../types/route";
 import { WeekStats } from "../types/weekStats";
+import { calculateDriveMileage } from "../utils/driveMileage";
 import "./RouteDetail.css";
 
 // Fix for default marker icons in React-Leaflet
@@ -80,6 +81,9 @@ export default function RouteDetail() {
   const [selectedWeekId, setSelectedWeekId] = useState("");
   const [assignSaving, setAssignSaving] = useState(false);
   const [assignError, setAssignError] = useState<string | null>(null);
+  const [driveMileage, setDriveMileage] = useState<number | null>(null);
+  const [driveMileageLoading, setDriveMileageLoading] = useState(false);
+  const [driveMileageError, setDriveMileageError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadRoute() {
@@ -104,6 +108,56 @@ export default function RouteDetail() {
 
     loadRoute();
   }, [id]);
+
+  // Use saved driveMileage when available; otherwise fetch from API
+  useEffect(() => {
+    if (
+      !route?.startPoint?.lat ||
+      !route?.startPoint?.lng ||
+      !route?.endPoint?.lat ||
+      !route?.endPoint?.lng ||
+      !route.transportMode
+    ) {
+      setDriveMileage(null);
+      setDriveMileageError(null);
+      setDriveMileageLoading(false);
+      return;
+    }
+    if (typeof route.driveMileage === "number") {
+      setDriveMileage(route.driveMileage);
+      setDriveMileageError(null);
+      setDriveMileageLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setDriveMileageLoading(true);
+    setDriveMileageError(null);
+    calculateDriveMileage(
+      route.transportMode,
+      route.startPoint.lat,
+      route.startPoint.lng,
+      route.endPoint.lat,
+      route.endPoint.lng
+    )
+      .then((mi) => {
+        if (!cancelled) setDriveMileage(mi);
+      })
+      .catch((err) => {
+        if (!cancelled) setDriveMileageError(err?.message || "Failed to load drive mileage");
+      })
+      .finally(() => {
+        if (!cancelled) setDriveMileageLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [
+    route?.id,
+    route?.driveMileage,
+    route?.transportMode,
+    route?.startPoint?.lat,
+    route?.startPoint?.lng,
+    route?.endPoint?.lat,
+    route?.endPoint?.lng,
+  ]);
 
   const handleBack = () => {
     if (location.state?.fromEdit) {
@@ -530,6 +584,25 @@ const lastCampsiteIndex = useMemo(() => {
             <span className="total-value">{route.ageGroup}</span>
           </div>
         {/* )} */}
+        {route.transportMode && (
+          <div className={`total-item${driveMileageError ? " total-error" : ""}`}>
+            <span className="total-label">Drive mileage:</span>
+            <span>
+              {driveMileageLoading && <span className="total-hint">Loading…</span>}
+              {!driveMileageLoading && driveMileage != null && (
+                <span className="total-value">{driveMileage.toFixed(1)} mi</span>
+              )}
+              {!driveMileageLoading && driveMileageError && (
+                <span className="total-value">{driveMileageError}</span>
+              )}
+              {!driveMileageLoading && driveMileage != null && (
+                <span className="total-hint">
+                  {" "}({route.transportMode === "park" ? "base → start & back" : "base → start & end"})
+                </span>
+              )}
+            </span>
+          </div>
+        )}
       </div>
 
       {allPoints.length > 0 && (

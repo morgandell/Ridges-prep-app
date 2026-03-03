@@ -467,6 +467,8 @@ ipcMain.handle("save-route", async (_event, route) => {
         : undefined,
       notes: route.notes || undefined,
       ageGroup: route.ageGroup || undefined,
+      transportMode: route.transportMode || undefined,
+      driveMileage: typeof route.driveMileage === "number" ? route.driveMileage : undefined,
     };
 
     const idx = routes.findIndex(r => r.id === cleanRoute.id);

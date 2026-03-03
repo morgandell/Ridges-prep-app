@@ -196,6 +196,19 @@
   color: var(--color-primary);
 }
 
+.total-hint {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #6b7280;
+  margin-left: 0.25rem;
+}
+
+.total-item.total-error .total-value {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #b91c1c;
+}
+
 .form-actions {
   display: flex;
   gap: 0.5rem;
@@ -524,6 +537,7 @@
   color: var(--color-primary);
   margin-right: 0.25rem;
 }
+
 
 .radio-group {
   display: flex;

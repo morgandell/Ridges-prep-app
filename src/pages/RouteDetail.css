@@ -110,6 +110,19 @@
   color: var(--color-text);
 }
 
+.total-hint {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #6b7280;
+  margin-left: 0.25rem;
+}
+
+.total-item.total-error .total-value {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #b91c1c;
+}
+
 .route-section {
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
@@ -267,7 +280,7 @@
 }
 
 .icon-evac {
-  color: var(--color-breakfast);
+  color: var(--color-lunch);
   font-size: 24px;
 }
 

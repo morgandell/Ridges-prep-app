@@ -35,5 +35,9 @@ export interface Route {
    * Index corresponds to day index in the "route by day" breakdown.
    */
   evacPoints?: EvacPoint[];
+  /** How the group gets to/from the trail: van parked at start, or dropped off & picked up */
+  transportMode?: "park" | "dropOff";
+  /** Cached drive mileage (round trip from base). Persisted on save to avoid refetching. */
+  driveMileage?: number;
 }
 

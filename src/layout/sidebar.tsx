@@ -27,7 +27,7 @@ export default function Sidebar() {
     <div className="sidebar-section">
     <h2 className="logo">Print Outs</h2>
         <NavLink to="/food-print">Food Print</NavLink>
-        <NavLink to="/routes">Routes Print</NavLink>
+        <NavLink to="/routes-print">Routes Print</NavLink>
     </div>
     </nav>
   );
