@@ -277,12 +277,33 @@
   max-width: 95vw;
 }
 
+.menu-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.save-to-past-btn {
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.save-to-past-btn:hover {
+  background: var(--color-primaryHover);
+}
+
 .clear-menu-btn {
   background: var(--color-delete);
   color: var(--color-textOnDelete);
-  padding: 0.5rem;
+  padding: 0.5rem 1rem;
   border-radius: 6px;
   border: none;
+  cursor: pointer;
 }
 
 .clear-menu-btn:hover {

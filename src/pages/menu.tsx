@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Meal } from "../types/meal";
 import { DayOfWeek, MealSlot, Menu } from "../types/menu";
-import "./menu.css";
 import RecipeCard from "../components/RecipeCard";
+import SaveToPastMenuForm from "../components/SaveToPastMenuForm";
+import "./menu.css";
 
 const DAYS: DayOfWeek[] = [
   "sunday", "monday","tuesday","wednesday",
@@ -39,6 +40,7 @@ export default function WeeklyMenuPage() {
   const [menu, setMenu] = useState<Menu | null>(null);
   const [dragOverCell, setDragOverCell] = useState<{ day: DayOfWeek; slot: MealSlot } | null>(null);
   const [filterMealTime, setFilterMealTime] = useState<Meal["mealTime"] | "all">("all");
+  const [showSaveToPastForm, setShowSaveToPastForm] = useState(false);
   
   useEffect(() => {
     loadData();
@@ -171,11 +173,25 @@ export default function WeeklyMenuPage() {
         <div className="menu-header">
         <h1>Weekly Menu</h1>
          <div className="menu-actions">
+            <button
+              className="save-to-past-btn"
+              onClick={() => setShowSaveToPastForm(true)}
+            >
+              📥 Save to Past Menus
+            </button>
             <button className="clear-menu-btn" onClick={clearMenu}>
              🗑 Clear Menu
             </button>
         </div>
         </div>
+
+        {showSaveToPastForm && (
+          <SaveToPastMenuForm
+            getMenu={() => menu!}
+            onCancel={() => setShowSaveToPastForm(false)}
+          />
+        )}
+
         <div className="menu-page">
             <div className="recipe-list">
                     <h3>Meals</h3>

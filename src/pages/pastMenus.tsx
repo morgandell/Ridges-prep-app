@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { PastMenu } from "../types/pastMenu";
 import { Menu, DayOfWeek, MealSlot } from "../types/menu";
 import { Meal } from "../types/meal";
+import SaveToPastMenuForm from "../components/SaveToPastMenuForm";
 import "./pastMenus.css";
 
 const DAYS: DayOfWeek[] = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday"];
@@ -14,7 +15,6 @@ export default function PastMenus() {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newMenuName, setNewMenuName] = useState("");
   const [viewingMenu, setViewingMenu] = useState<PastMenu | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,36 +39,6 @@ export default function PastMenus() {
       setError("Failed to load past menus");
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function handleSaveCurrentMenu() {
-    if (!newMenuName.trim()) {
-      setError("Please enter a menu name");
-      return;
-    }
-
-    try {
-      const currentMenu = await window.electronAPI.getMenu();
-      const newPastMenu: PastMenu = {
-        id: Date.now().toString(),
-        name: newMenuName.trim(),
-        date: new Date().toISOString().split("T")[0],
-        menu: currentMenu,
-      };
-
-      const result = await window.electronAPI.savePastMenu(newPastMenu);
-      if (result.success && result.pastMenu) {
-        setPastMenus(prev => [...prev, result.pastMenu!]);
-        setNewMenuName("");
-        setShowAddForm(false);
-        setError(null);
-      } else {
-        setError(result.error || "Failed to save menu");
-      }
-    } catch (err) {
-      console.error("Error saving menu:", err);
-      setError("Failed to save menu");
     }
   }
 
@@ -188,35 +158,14 @@ export default function PastMenus() {
       {error && <div className="error-message">{error}</div>}
 
       {showAddForm && (
-        <div className="add-menu-form">
-          <h3>Save Current Menu</h3>
-          <input
-            type="text"
-            placeholder="Menu name (e.g., 'Week 1 - Summer 2024')"
-            value={newMenuName}
-            onChange={(e) => setNewMenuName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleSaveCurrentMenu();
-              } else if (e.key === "Escape") {
-                setShowAddForm(false);
-                setNewMenuName("");
-              }
-            }}
-            autoFocus
-          />
-          <div className="form-actions">
-            <button className="save-button" onClick={handleSaveCurrentMenu}>
-              Save
-            </button>
-            <button className="cancel-button" onClick={() => {
-              setShowAddForm(false);
-              setNewMenuName("");
-            }}>
-              Cancel
-            </button>
-          </div>
-        </div>
+        <SaveToPastMenuForm
+          getMenu={() => window.electronAPI.getMenu()}
+          onSaved={(pastMenu) => {
+            setPastMenus(prev => [...prev, pastMenu]);
+            setError(null);
+          }}
+          onCancel={() => setShowAddForm(false)}
+        />
       )}
 
       {pastMenus.length === 0 ? (
@@ -248,7 +197,7 @@ export default function PastMenus() {
           </span>
         </div>
 
-        <div className="past-menu-actions">
+        {/* <div className="past-menu-actions">
           <button
             className="import-button"
             onClick={(e) => {
@@ -258,7 +207,7 @@ export default function PastMenus() {
           >
             Import
           </button>
-        </div>
+        </div> */}
       </div>
     ))}
 </div>
