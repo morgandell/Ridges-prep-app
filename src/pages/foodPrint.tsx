@@ -44,6 +44,9 @@ export default function FoodPrint() {
   const [totalIngredients, setTotalIngredients] = useState<Map<string, IngredientTotal>>(new Map());
   const [editingNote, setEditingNote] = useState<{ weekId: string; day: DayOfWeek; slot: MealSlot } | null>(null);
   const [mealNotes, setMealNotes] = useState<{ [key: string]: string }>({});
+  const [showTotalGrocery, setShowTotalGrocery] = useState(true);
+  const [showWeeklyGrocery, setShowWeeklyGrocery] = useState(true);
+  const [showMealBreakdowns, setShowMealBreakdowns] = useState(true);
 
   useEffect(() => {
     loadData();
@@ -435,6 +438,33 @@ export default function FoodPrint() {
           ← Back
         </button>
         <div className="header-actions">
+          <div className="section-selectors no-print">
+            <span className="section-selectors-label">Sections to include:</span>
+            <label className="section-checkbox">
+              <input
+                type="checkbox"
+                checked={showTotalGrocery}
+                onChange={(e) => setShowTotalGrocery(e.target.checked)}
+              />
+              Total grocery list
+            </label>
+            <label className="section-checkbox">
+              <input
+                type="checkbox"
+                checked={showWeeklyGrocery}
+                onChange={(e) => setShowWeeklyGrocery(e.target.checked)}
+              />
+              Weekly grocery lists
+            </label>
+            <label className="section-checkbox">
+              <input
+                type="checkbox"
+                checked={showMealBreakdowns}
+                onChange={(e) => setShowMealBreakdowns(e.target.checked)}
+              />
+              Meal breakdowns
+            </label>
+          </div>
           <button 
             className="refresh-button" 
             onClick={handleRefresh}
@@ -451,6 +481,7 @@ export default function FoodPrint() {
 
       <div className="print-content">
         {/* Total Ingredients Summary */}
+        {showTotalGrocery && (
         <div className="print-section">
           <h1>Total Food Requirements for Summer</h1>
           <p className="print-meta">
@@ -476,9 +507,10 @@ export default function FoodPrint() {
             </tbody>
           </table>
         </div>
+        )}
 
-        {/* Per-Week Breakdown */}
-        {weekMealData.map((weekData, weekIdx) => {
+        {/* Per-Week Breakdown - only show if at least one section is selected */}
+        {(showWeeklyGrocery || showMealBreakdowns) && weekMealData.map((weekData, weekIdx) => {
           const weekIngredients = getWeekIngredients(weekData);
           const multiplier = weekData.week.ageGroup === "high school" ? 2 : 1.5;
 
@@ -491,6 +523,8 @@ export default function FoodPrint() {
                 Total Campers: {weekData.week.numberOfCampers} | Servings calculated per meal based on dietary restrictions
               </p>
 
+              {showWeeklyGrocery && (
+              <>
               <h3>Meals This Week</h3>
               <table className="meals-table">
                 <thead>
@@ -633,8 +667,12 @@ export default function FoodPrint() {
                   ))}
                 </tbody>
               </table>
+              </>
+              )}
 
               {/* Meal Details */}
+              {showMealBreakdowns && (
+              <>
               <h3>Meal Details</h3>
               {weekData.mealSelections.map((selection, idx) => {
                 if (!selection.meal) return null;
@@ -690,13 +728,15 @@ export default function FoodPrint() {
                               </td>
                               <td>{notes}</td>
                             </tr>
-                          );
-                        })}
-                      </tbody>
+                        );
+                      })}
+                    </tbody>
                     </table>
                   </div>
                 );
               })}
+              </>
+              )}
             </div>
           );
         })}

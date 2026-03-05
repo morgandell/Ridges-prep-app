@@ -123,6 +123,7 @@ export default function PastMenus() {
                 {SLOTS.map(slot => (
                   <th key={slot}>{slot.charAt(0).toUpperCase() + slot.slice(1)}</th>
                 ))}
+                <th>Dessert</th>
               </tr>
             </thead>
             <tbody>
@@ -137,6 +138,9 @@ export default function PastMenus() {
                       </td>
                     );
                   })}
+                  <td className={viewingMenu.menu.days[day]?.dessert ? "filled" : "empty"}>
+                    {getMealName(viewingMenu.menu.days[day]?.dessert)}
+                  </td>
                 </tr>
               ))}
             </tbody>
