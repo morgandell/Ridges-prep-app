@@ -86,3 +86,9 @@
   line-height: 1.55;
 }
 
+.dashboard-general-content{
+  gap: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}

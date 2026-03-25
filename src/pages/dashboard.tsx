@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import "./dashboard.css";
-
+import welcomeImg from "../assets/IMG-selfie.jpg";
 type DashboardTab = "general" | "menu" | "routes";
 
 // Image comes from your repo's picture folder.
-const WELCOME_IMG_SRC =
-  "file:///C:/Users/morga/OneDrive/Documents/college/Ridges/ridges-prep-app/src/pictures/IMG-7701.JPG";
+
+
+const WELCOME_IMG_SRC = welcomeImg;
+
 
 export default function Dashboard() {
   const [tab, setTab] = useState<DashboardTab>("general");
@@ -21,7 +23,7 @@ export default function Dashboard() {
 
           <div className="dashboard-intro-text">
             <p>
-              To start you have the coolest job at camp (I know because I had almost all of the
+              To start, you have the coolest job at camp (I know because I had almost all of the
               jobs)! Ridges is such a cool experience and such a great opportunity for the kids,
               but before you can get on the trail there is lots of planning to do. Thats why I
               made this app. The goal is to have resources from past years all in one spot, and
@@ -30,7 +32,7 @@ export default function Dashboard() {
             </p>
 
             <p className="dashboard-intro-subtitle">
-              Now to get you some help on how to use this app to help you plan!
+              Now, to get you some help on how to use this app to help you plan!
             </p>
           </div>
         </div>
@@ -59,11 +61,28 @@ export default function Dashboard() {
 
       <div className="dashboard-tab-content">
         {tab === "general" && (
-          <p>
-            The resources pages should have info from many years! Make sure to get a look at
-            what past ridges counselors might have to say and feel free to add things that worked
-            great for you!
-          </p>
+          <div className="dashboard-general-content">
+            <p>
+              The resources pages should have info from many years! Make sure to get a look at
+              what past ridges counselors might have to say and feel free to add things that worked
+              great for you!
+            </p>
+            <p>
+              The <strong>Gear, Sundays, </strong> and <strong>Tips &amp; Tricks</strong> pages are all
+              basic information that should be helpful before you make it to the trail. These pages are
+              not as necessary in the process of planning out your summer.
+            </p><p>
+              For <strong>Gear</strong> the most important thing is to make sure you are comfortable with
+              all of the gear and you know how to use it and fix it if something were to happen.
+            </p><p>
+              For <strong>Sundays</strong> the most important thing is to make sure you have a good idea of
+              what you want to do for your Sundays and have a plan for how to get everyone ready to start hiking.
+            </p><p>
+              <strong>Tips &amp; Tricks</strong> is a collection of advice from past counselors. It has a lot of good info,
+              and if there is anything that made your life easier over your time as a ridges counselor, please add it to the list!
+            </p>
+            </div>
+          
         )}
 
         {tab === "menu" && (

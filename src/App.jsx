@@ -49,6 +49,7 @@ export default function App() {
           <Route path="/tips/new" element={<TipEdit />} />
           <Route path="/tips/:id/edit" element={<TipEdit />} />
           <Route path="/tips/:id" element={<TipDetail />} />
+          <Route path="/aboutCoder" element={<AboutCoder />} />
         </Route>
       </Routes>
     </HashRouter>
