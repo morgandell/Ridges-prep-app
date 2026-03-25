@@ -1,5 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
+import { faMountainCity } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 export default function Sidebar() {
   return (
@@ -29,7 +31,7 @@ export default function Sidebar() {
         <NavLink to="/food-print">Food Print</NavLink>
         <NavLink to="/routes-print">Routes Print</NavLink>
     </div>
-      <NavLink to="/aboutCoder">M</NavLink>
+      <NavLink to="/aboutCoder"><FontAwesomeIcon icon={faMountainCity} className="icon-secondary" /></NavLink>
     </nav>
   );
 }

@@ -20,6 +20,7 @@ import PastMenus from "./pages/pastMenus";
 import TipsAndTricks from "./pages/tipsAndTricks";
 import TipDetail from "./pages/tipDetail";
 import TipEdit from "./pages/tipEdit";
+import AboutCoder from "./pages/aboutCoder";
 
 export default function App() {
   return (
