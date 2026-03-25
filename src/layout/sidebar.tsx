@@ -13,6 +13,7 @@ export default function Sidebar() {
         <NavLink to="/meals">Meals</NavLink>
         <NavLink to="/past-menus">Past Menus</NavLink>
         <NavLink to="/routes">Routes</NavLink>
+        <NavLink to="/tips">Tips &amp; Tricks</NavLink>
         </div>
         <br></br>
         <br></br>

@@ -25,6 +25,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getRoute: (id) => ipcRenderer.invoke("get-route", id),
   saveRoute: (route) => ipcRenderer.invoke("save-route", route),
   deleteRoute: (id) => ipcRenderer.invoke("delete-route", id),
+
+  // Tips & tricks
+  getTips: () => ipcRenderer.invoke("get-tips"),
+  getTip: (id) => ipcRenderer.invoke("get-tip", id),
+  saveTip: (tip) => ipcRenderer.invoke("save-tip", tip),
+  deleteTip: (id) => ipcRenderer.invoke("delete-tip", id),
 });
 
 

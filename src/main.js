@@ -35,6 +35,9 @@ const createWindow = () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  ensureMealsFile();
+  ensureTipsFile();
+  registerTipsIpcHandlers();
 
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
@@ -83,10 +86,111 @@ async function ensureMealsFile() {
   }
 }
 
-// Initialize meals file on app ready
-app.whenReady().then(() => {
-  ensureMealsFile();
-});
+const tipsFilePath = path.join(app.getPath('userData'), 'tips-and-tricks.json');
+
+async function ensureTipsFile() {
+  try {
+    await fsPromises.access(tipsFilePath);
+  } catch {
+    await fsPromises.writeFile(tipsFilePath, JSON.stringify([], null, 2));
+  }
+}
+
+function registerTipsIpcHandlers() {
+  for (const channel of ['get-tips', 'get-tip', 'save-tip', 'delete-tip']) {
+    ipcMain.removeHandler(channel);
+  }
+
+  ipcMain.handle('get-tips', async () => {
+    try {
+      await ensureTipsFile();
+      const data = await fsPromises.readFile(tipsFilePath, 'utf-8');
+      const tips = JSON.parse(data);
+      return Array.isArray(tips) ? tips : [];
+    } catch (error) {
+      console.error('Error reading tips:', error);
+      return [];
+    }
+  });
+
+  ipcMain.handle('get-tip', async (event, id) => {
+    try {
+      if (!id) {
+        return { success: false, error: 'Tip ID is required' };
+      }
+      await ensureTipsFile();
+      const data = await fsPromises.readFile(tipsFilePath, 'utf-8');
+      const tips = JSON.parse(data);
+      if (!Array.isArray(tips)) {
+        return { success: false, error: 'Invalid tips data format' };
+      }
+      const tip = tips.find(t => t.id === id);
+      if (!tip) {
+        return { success: false, error: 'Tip not found' };
+      }
+      return { success: true, tip };
+    } catch (error) {
+      console.error('Error reading tip:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('save-tip', async (event, tip) => {
+    try {
+      if (!tip) {
+        return { success: false, error: 'No tip data provided' };
+      }
+      if (!tip.summary || String(tip.summary).trim() === '') {
+        return { success: false, error: 'Summary is required' };
+      }
+      const now = new Date().toISOString();
+      const cleanTip = {
+        id: tip.id || Date.now().toString(),
+        summary: String(tip.summary).trim(),
+        body: typeof tip.body === 'string' ? tip.body : '',
+        updatedAt: now,
+      };
+      await ensureTipsFile();
+      const data = await fsPromises.readFile(tipsFilePath, 'utf-8');
+      let tips = [];
+      try {
+        tips = JSON.parse(data);
+        if (!Array.isArray(tips)) tips = [];
+      } catch (parseError) {
+        console.error('Error parsing tips file, resetting:', parseError);
+        tips = [];
+      }
+      if (cleanTip.id && tips.some(t => t.id === cleanTip.id)) {
+        const index = tips.findIndex(t => t.id === cleanTip.id);
+        tips[index] = { ...tips[index], ...cleanTip };
+      } else {
+        if (!cleanTip.id) {
+          cleanTip.id = Date.now().toString();
+        }
+        tips.push(cleanTip);
+      }
+      await fsPromises.writeFile(tipsFilePath, JSON.stringify(tips, null, 2), 'utf-8');
+      return { success: true, tip: cleanTip };
+    } catch (error) {
+      console.error('Error saving tip:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('delete-tip', async (event, id) => {
+    try {
+      await ensureTipsFile();
+      const data = await fsPromises.readFile(tipsFilePath, 'utf-8');
+      const tips = JSON.parse(data);
+      const filtered = tips.filter(t => t.id !== id);
+      await fsPromises.writeFile(tipsFilePath, JSON.stringify(filtered, null, 2));
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting tip:', error);
+      return { success: false, error: error.message };
+    }
+  });
+}
 
 // IPC handlers for meals
 ipcMain.handle('get-meals', async () => {

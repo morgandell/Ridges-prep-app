@@ -17,6 +17,9 @@ import WeekEdit from "./pages/weekEdit";
 import FoodPrint from "./pages/foodPrint";
 import RoutesPrint from "./pages/routesPrint";
 import PastMenus from "./pages/pastMenus";
+import TipsAndTricks from "./pages/tipsAndTricks";
+import TipDetail from "./pages/tipDetail";
+import TipEdit from "./pages/tipEdit";
 
 export default function App() {
   return (
@@ -42,6 +45,10 @@ export default function App() {
           <Route path="/food-print" element={<FoodPrint />} />
           <Route path="/routes-print" element={<RoutesPrint />} />
           <Route path="/past-menus" element={<PastMenus />} />
+          <Route path="/tips" element={<TipsAndTricks />} />
+          <Route path="/tips/new" element={<TipEdit />} />
+          <Route path="/tips/:id/edit" element={<TipEdit />} />
+          <Route path="/tips/:id" element={<TipDetail />} />
         </Route>
       </Routes>
     </HashRouter>

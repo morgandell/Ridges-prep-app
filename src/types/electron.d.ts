@@ -3,6 +3,7 @@ import { WeekStats } from "./weekStats";
 import { Menu } from "./menu";
 import { PastMenu } from "./pastMenu";
 import { Route } from "./route";
+import { Tip } from "./tip";
 
 export interface ElectronAPI {
   getMeals: () => Promise<Meal[]>;
@@ -28,6 +29,12 @@ export interface ElectronAPI {
   getRoute: (id: string) => Promise<{ success: boolean; route?: Route; error?: string }>;
   saveRoute: (route: Route) => Promise<{ success: boolean; route?: Route; error?: string }>;
   deleteRoute: (id: string) => Promise<{ success: boolean; error?: string }>;
+
+  // Tips & tricks
+  getTips: () => Promise<Tip[]>;
+  getTip: (id: string) => Promise<{ success: boolean; tip?: Tip; error?: string }>;
+  saveTip: (tip: Partial<Tip> & { summary: string }) => Promise<{ success: boolean; tip?: Tip; error?: string }>;
+  deleteTip: (id: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 declare global {
