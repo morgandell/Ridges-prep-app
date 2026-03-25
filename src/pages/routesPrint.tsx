@@ -16,10 +16,56 @@ export default function RoutesPrint() {
   const [routeData, setRouteData] = useState<RouteWithWeeks[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [driveMilesByRouteId, setDriveMilesByRouteId] = useState<
+    Record<string, number | null | undefined>
+  >({});
 
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const next: Record<string, number | null | undefined> = {};
+
+    for (const { route } of routeData) {
+      const hasCoords =
+        route.startPoint?.lat != null &&
+        route.startPoint?.lng != null &&
+        route.endPoint?.lat != null &&
+        route.endPoint?.lng != null;
+      if (!route.transportMode || !hasCoords) {
+        next[route.id] = null;
+      } else if (typeof route.driveMileage === "number") {
+        next[route.id] = route.driveMileage;
+      } else {
+        next[route.id] = undefined;
+      }
+    }
+    setDriveMilesByRouteId(next);
+
+    for (const { route } of routeData) {
+      const v = next[route.id];
+      if (v === null || typeof v === "number") continue;
+      calculateDriveMileage(
+        route.transportMode!,
+        route.startPoint.lat,
+        route.startPoint.lng,
+        route.endPoint.lat,
+        route.endPoint.lng
+      )
+        .then((mi) => {
+          if (!cancelled) setDriveMilesByRouteId((prev) => ({ ...prev, [route.id]: mi }));
+        })
+        .catch(() => {
+          if (!cancelled) setDriveMilesByRouteId((prev) => ({ ...prev, [route.id]: null }));
+        });
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [routeData]);
 
   async function loadData(showRefreshing = false) {
     if (showRefreshing) setRefreshing(true);
@@ -77,6 +123,17 @@ export default function RoutesPrint() {
     }
   };
 
+  let totalDriveMiles = 0;
+  let driveMilesPending = false;
+  let anyRouteWithTransport = false;
+  for (const { route } of routeData) {
+    if (!route.transportMode) continue;
+    anyRouteWithTransport = true;
+    const v = driveMilesByRouteId[route.id];
+    if (v === undefined) driveMilesPending = true;
+    else if (typeof v === "number") totalDriveMiles += v;
+  }
+
   if (loading) {
     return (
       <div className="routes-print-page">
@@ -113,6 +170,12 @@ export default function RoutesPrint() {
       <div className="print-content">
         <div className="print-section">
           <h1>Routes Used by Weeks</h1>
+          {routeData.length > 0 && anyRouteWithTransport && (
+            <p className="print-meta print-totals">
+              <strong>Total drive mileage (all routes):</strong>{" "}
+              {driveMilesPending ? "…" : `${totalDriveMiles.toFixed(1)} mi`}
+            </p>
+          )}
           <p className="print-meta">
             Details for each route assigned to at least one week. Use Print / Save as PDF to generate a printable document.
           </p>
@@ -131,6 +194,7 @@ export default function RoutesPrint() {
               route={route}
               weeks={weeks}
               formatDate={formatDate}
+              driveMileageResolved={driveMilesByRouteId[route.id]}
             />
           ))
         )}
@@ -143,54 +207,20 @@ function RoutePrintSection({
   route,
   weeks,
   formatDate,
+  driveMileageResolved,
 }: {
   route: Route;
   weeks: WeekStats[];
   formatDate: (iso?: string) => string;
+  driveMileageResolved?: number | null;
 }) {
   const totalMiles = route.segments?.reduce((sum, seg) => sum + (seg.mileage || 0), 0) || 0;
   const totalElevation =
     route.segments?.reduce((sum, seg) => sum + (seg.elevationGainFt || 0), 0) || 0;
   const daysWithStats = getDaysWithStats(route);
   const evacPoints: EvacPoint[] = route.evacPoints || [];
-  const [driveMileageFetched, setDriveMileageFetched] = useState<number | null>(null);
   const driveMileage =
-    typeof route.driveMileage === "number" ? route.driveMileage : driveMileageFetched;
-
-  useEffect(() => {
-    if (typeof route.driveMileage === "number") return;
-    if (
-      !route.transportMode ||
-      !route.startPoint?.lat ||
-      !route.startPoint?.lng ||
-      !route.endPoint?.lat ||
-      !route.endPoint?.lng
-    ) {
-      setDriveMileageFetched(null);
-      return;
-    }
-    let cancelled = false;
-    calculateDriveMileage(
-      route.transportMode,
-      route.startPoint.lat,
-      route.startPoint.lng,
-      route.endPoint.lat,
-      route.endPoint.lng
-    )
-      .then((mi) => {
-        if (!cancelled) setDriveMileageFetched(mi);
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [
-    route.id,
-    route.driveMileage,
-    route.transportMode,
-    route.startPoint?.lat,
-    route.startPoint?.lng,
-    route.endPoint?.lat,
-    route.endPoint?.lng,
-  ]);
+    typeof route.driveMileage === "number" ? route.driveMileage : driveMileageResolved;
 
   return (
     <div className="print-section page-break">

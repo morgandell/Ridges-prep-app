@@ -106,6 +106,10 @@
   color: #6b7280;
 }
 
+.print-totals {
+  margin-bottom: 0.5rem;
+}
+
 .print-meta {
   color: #6b7280;
   font-size: 0.9rem;
