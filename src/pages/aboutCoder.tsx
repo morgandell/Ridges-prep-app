@@ -12,7 +12,7 @@ export default function AboutCoder() {
       <img className="found-me-image" src={GOOF_IMG_SRC} alt="Pic of me" />
       <p>
         My name is Nessy or Morgan and I wrote this program between my two years as a ridges counselor. 
-        I did ridges for 4 years as a camper and then went on to work at camp for 7 summers, and only the last 
+        I did ridges for 4 years as a camper and then went on to work at camp for 7 summers (2020-2026), and only the last 
         two as ridges. I also graduated with a bachelors in computer science, leading to this app. 
         Ridges means so much to me and I hope that it continues to grow. My time on ridges was
         some of the best of my life.
