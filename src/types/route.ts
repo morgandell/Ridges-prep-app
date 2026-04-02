@@ -1,3 +1,5 @@
+import { ItemComment } from "./itemComment";
+
 export type StopType = "campsite" | "view";
 export type AgeGroup = "Intro" | "Middle School" | "High School";
 
@@ -39,5 +41,6 @@ export interface Route {
   transportMode?: "park" | "dropOff";
   /** Cached drive mileage (round trip from base). Persisted on save to avoid refetching. */
   driveMileage?: number;
+  comments?: ItemComment[];
 }
 

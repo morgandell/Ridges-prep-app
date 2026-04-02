@@ -96,6 +96,25 @@ async function ensureTipsFile() {
   }
 }
 
+/** Name + text comments on meals, routes, tips */
+function sanitizeItemComments(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(
+      (c) =>
+        c &&
+        typeof c === 'object' &&
+        String(c.authorName || '').trim() &&
+        String(c.text || '').trim()
+    )
+    .map((c) => ({
+      id: String(c.id || `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`),
+      authorName: String(c.authorName).trim(),
+      text: String(c.text).trim(),
+      createdAt: c.createdAt || new Date().toISOString(),
+    }));
+}
+
 function registerTipsIpcHandlers() {
   for (const channel of ['get-tips', 'get-tip', 'save-tip', 'delete-tip']) {
     ipcMain.removeHandler(channel);
@@ -163,14 +182,21 @@ function registerTipsIpcHandlers() {
       if (cleanTip.id && tips.some(t => t.id === cleanTip.id)) {
         const index = tips.findIndex(t => t.id === cleanTip.id);
         tips[index] = { ...tips[index], ...cleanTip };
+        if (tip.comments !== undefined) {
+          tips[index].comments = sanitizeItemComments(tip.comments);
+        }
       } else {
         if (!cleanTip.id) {
           cleanTip.id = Date.now().toString();
         }
+        if (tip.comments !== undefined) {
+          cleanTip.comments = sanitizeItemComments(tip.comments);
+        }
         tips.push(cleanTip);
       }
+      const savedTip = tips.find(t => t.id === cleanTip.id) || cleanTip;
       await fsPromises.writeFile(tipsFilePath, JSON.stringify(tips, null, 2), 'utf-8');
-      return { success: true, tip: cleanTip };
+      return { success: true, tip: savedTip };
     } catch (error) {
       console.error('Error saving tip:', error);
       return { success: false, error: error.message };
@@ -292,18 +318,26 @@ try {
 if (cleanMeal.id && meals.some(m => m.id === cleanMeal.id)) {
   const index = meals.findIndex(m => m.id === cleanMeal.id);
   meals[index] = { ...meals[index], ...cleanMeal };
+  if (meal.comments !== undefined) {
+    meals[index].comments = sanitizeItemComments(meal.comments);
+  }
 } else {
   // Generate new ID if not provided
   if (!cleanMeal.id) {
     cleanMeal.id = Date.now().toString();
   }
+  if (meal.comments !== undefined) {
+    cleanMeal.comments = sanitizeItemComments(meal.comments);
+  }
   meals.push(cleanMeal);
 }
+
+    const savedMeal = meals.find(m => m.id === cleanMeal.id) || cleanMeal;
     
     // Write to file with error handling
     try {
       await fsPromises.writeFile(mealsFilePath, JSON.stringify(meals, null, 2), 'utf-8');
-      return { success: true, meal: cleanMeal };
+      return { success: true, meal: savedMeal };
     } catch (writeError) {
       console.error('Error writing meals file:', writeError);
       return { 
@@ -577,12 +611,20 @@ ipcMain.handle("save-route", async (_event, route) => {
 
     const idx = routes.findIndex(r => r.id === cleanRoute.id);
     if (idx >= 0) {
-      routes[idx] = cleanRoute;
+      routes[idx] = { ...routes[idx], ...cleanRoute };
+      if (route.comments !== undefined) {
+        routes[idx].comments = sanitizeItemComments(route.comments);
+      }
     } else {
-      routes.push(cleanRoute);
+      const toPush = { ...cleanRoute };
+      if (route.comments !== undefined) {
+        toPush.comments = sanitizeItemComments(route.comments);
+      }
+      routes.push(toPush);
     }
+    const savedRoute = routes.find(r => r.id === cleanRoute.id) || cleanRoute;
     writeRoutes(routes);
-    return { success: true, route: cleanRoute };
+    return { success: true, route: savedRoute };
   } catch (err) {
     console.error("Failed to save route:", err);
     return { success: false, error: "Failed to save route" };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Ingredient, Meal } from "../types/meal";
+import CommentsSection from "../components/CommentsSection";
 import "./NewMeal.css";
 import { PRESET_TAGS } from "../constants/tags"; // adjust path as needed
 
@@ -173,6 +174,10 @@ export default function NewMeal() {
         instructions: formData.instructions || [],
         tags: formData.tags || [],
         mealTime: formData.mealTime || "dinner",
+        prepTime: formData.prepTime,
+        cookTime: formData.cookTime,
+        servings: formData.servings,
+        comments: formData.comments,
       };
       console.log(meal.mealTime)
       const result = await window.electronAPI.saveMeal(meal);
@@ -474,6 +479,36 @@ export default function NewMeal() {
           </button>
         </div>
       </form>
+
+      {isEditing && id && (
+        <div className="new-meal-comments">
+          <CommentsSection
+            comments={formData.comments ?? []}
+            onAdd={async (comment) => {
+              const next = [...(formData.comments ?? []), comment];
+              const meal: Meal = {
+                id: id,
+                name: formData.name?.trim() || "",
+                description: formData.description?.trim() || "",
+                ingredients: formData.ingredients || [],
+                instructions: formData.instructions || [],
+                tags: formData.tags || [],
+                mealTime: formData.mealTime || "dinner",
+                prepTime: formData.prepTime,
+                cookTime: formData.cookTime,
+                servings: formData.servings,
+                comments: next,
+              };
+              const res = await window.electronAPI.saveMeal(meal);
+              if (res.success && res.meal) {
+                setFormData((prev) => ({ ...prev, ...res.meal }));
+              } else {
+                alert(res.error || "Could not save comment");
+              }
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

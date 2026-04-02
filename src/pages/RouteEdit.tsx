@@ -6,6 +6,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBinoculars, faCampground, faSignsPost, faCircleExclamation } from "@fortawesome/free-solid-svg-icons";
 import "leaflet/dist/leaflet.css";
 import { Route, RoutePoint, RouteSegment, EvacPoint } from "../types/route";
+import { ItemComment } from "../types/itemComment";
+import CommentsSection from "../components/CommentsSection";
 import { calculateDriveMileage } from "../utils/driveMileage";
 import "./RouteEdit.css";
 
@@ -140,6 +142,7 @@ export default function RouteEdit() {
   const [driveMileage, setDriveMileage] = useState<number | null>(null);
   const [driveMileageLoading, setDriveMileageLoading] = useState(false);
   const [driveMileageError, setDriveMileageError] = useState<string | null>(null);
+  const [routeComments, setRouteComments] = useState<ItemComment[]>([]);
 
   useEffect(() => {
     if (isEditing && id) {
@@ -178,6 +181,7 @@ export default function RouteEdit() {
         }
         setSegments(route.segments || []);
         setEvacPoints(route.evacPoints || []);
+        setRouteComments(Array.isArray(route.comments) ? route.comments : []);
       }
     } catch (error) {
       console.error("Error loading route:", error);
@@ -653,6 +657,7 @@ async function fetchDrivingDistanceMiles(
     const route: Route = {
       id: id || `route-${Date.now()}`,
       name: formData.name.trim(),
+      comments: routeComments.length > 0 ? routeComments : undefined,
       startPoint: {
         id: "start",
         lat: startLat,
@@ -720,68 +725,66 @@ async function fetchDrivingDistanceMiles(
           />
         </div>
 
-        <div className="radio-group">
-      <label>
-        <input
-          type="radio"
-          name={`age-group${formData.name}`}
-      
-          value="Intro"
-          checked={formData.ageGroup === "Intro"}
-          onChange={() => setFormData((prev) => ({ ...prev, ageGroup: "Intro" }))}
-        />
-        🧒 Intro
-      </label>
+        <div className="radio-toggle">
+  <label className={`radio-btn ${formData.ageGroup === "Intro" ? "active" : ""}`}>
+    <input
+      type="radio"
+      name={`age-group${formData.name}`}
+      value="Intro"
+      checked={formData.ageGroup === "Intro"}
+      onChange={() =>
+        setFormData((prev) => ({ ...prev, ageGroup: "Intro" }))
+      }
+    />
+     Intro
+  </label>
 
-      <label>
-        <input
-          type="radio"
-          name={`age-group${formData.name}`}
-          value="Middle School"
-          checked={formData.ageGroup === "Middle School"}
-          onChange={() => {
-            setFormData((prev) => ({ ...prev, ageGroup: "Middle School" }));
-          }}
-        />
-        👨‍🎓 Middle School
-      </label>
+  <label className={`radio-btn ${formData.ageGroup === "Middle School" ? "active" : ""}`}>
+    <input
+      type="radio"
+      name={`age-group${formData.name}`}
+      value="Middle School"
+      checked={formData.ageGroup === "Middle School"}
+      onChange={() =>
+        setFormData((prev) => ({ ...prev, ageGroup: "Middle School" }))
+      }
+    />
+     Middle School
+  </label>
 
-      <label>
-        <input
-          type="radio"
-          name={`age-group${formData.name}`}
-          value="High School"
-          checked={formData.ageGroup === "High School"}
-          onChange={() => {
-            setFormData((prev) => ({ ...prev, ageGroup: "High School" }));
-          }}
-        />
-        🎓 High School
-      </label>
-          </div>
+  <label className={`radio-btn ${formData.ageGroup === "High School" ? "active" : ""}`}>
+    <input
+      type="radio"
+      name={`age-group${formData.name}`}
+      value="High School"
+      checked={formData.ageGroup === "High School"}
+      onChange={() =>
+        setFormData((prev) => ({ ...prev, ageGroup: "High School" }))
+      }
+    />
+     High School
+  </label>
+</div>
 
-          <div className="radio-group">
-            <label>
-              <input
-                type="radio"
-                name="transport-mode"
-                value="park"
-                checked={formData.transportMode === "park"}
-                onChange={() => setFormData((prev) => ({ ...prev, transportMode: "park" }))}
-              />
-              Park van at trailhead (drive to start & back)
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="transport-mode"
-                value="dropOff"
-                checked={formData.transportMode === "dropOff"}
-                onChange={() => setFormData((prev) => ({ ...prev, transportMode: "dropOff" }))}
-              />
-              Drop off & pick up (drive to start and end)
-            </label>
-          </div>
+         <div className="radio-toggle">
+  <div
+    className={`radio-btn ${formData.transportMode === "park" ? "active" : ""}`}
+    onClick={() =>
+      setFormData((prev) => ({ ...prev, transportMode: "park" }))
+    }
+  >
+    Park van at trailhead
+  </div>
+
+  <div
+    className={`radio-btn ${formData.transportMode === "dropOff" ? "active" : ""}`}
+    onClick={() =>
+      setFormData((prev) => ({ ...prev, transportMode: "dropOff" }))
+    }
+  >
+    Drop off & pick up
+  </div>
+</div>
 
         {/* MAP SECTION AT TOP */}
         <div className="map-section-top">
@@ -1225,6 +1228,64 @@ async function fetchDrivingDistanceMiles(
             rows={4}
           />
         </div>
+
+        {isEditing && id && (
+          <div className="route-edit-comments">
+            <CommentsSection
+              comments={routeComments}
+              onAdd={async (comment) => {
+                const next = [...routeComments, comment];
+                const start = points[0];
+                const end = points.length > 1 ? points[points.length - 1] : null;
+                if (!start || !end) {
+                  alert("Add start and end points before saving a comment.");
+                  return;
+                }
+                const routeStops = points.slice(1, -1);
+                const numSegmentsNeeded = points.length - 1;
+                const adjustedSegments = [...segments];
+                while (adjustedSegments.length < numSegmentsNeeded) {
+                  adjustedSegments.push({ mileage: 0, elevationGainFt: 0 });
+                }
+                if (adjustedSegments.length > numSegmentsNeeded) {
+                  adjustedSegments.splice(numSegmentsNeeded);
+                }
+                const routePayload: Route = {
+                  id,
+                  name: formData.name.trim(),
+                  comments: next,
+                  startPoint: {
+                    id: "start",
+                    lat: start.lat,
+                    lng: start.lng,
+                    label: start.label?.trim() || undefined,
+                    note: start.note?.trim() || undefined,
+                  },
+                  endPoint: {
+                    id: "end",
+                    lat: end.lat,
+                    lng: end.lng,
+                    label: end.label?.trim() || undefined,
+                    note: end.note?.trim() || undefined,
+                  },
+                  stops: routeStops,
+                  segments: adjustedSegments,
+                  notes: formData.notes.trim() || undefined,
+                  ageGroup: formData.ageGroup,
+                  evacPoints: evacPoints.length ? evacPoints : undefined,
+                  transportMode: formData.transportMode,
+                  driveMileage: driveMileage != null ? driveMileage : undefined,
+                };
+                const res = await window.electronAPI.saveRoute(routePayload);
+                if (res.success && res.route) {
+                  setRouteComments(res.route.comments ?? next);
+                } else {
+                  alert(res.error || "Could not save comment");
+                }
+              }}
+            />
+          </div>
+        )}
 
         <div className="form-actions">
           <button

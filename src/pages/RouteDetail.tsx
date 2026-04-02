@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBinoculars, faCampground, faSignsPost, faCircleExclamation} from "@fortawesome/free-solid-svg-icons";
 import "leaflet/dist/leaflet.css";
 import { Route, RoutePoint, EvacPoint } from "../types/route";
+import CommentsSection from "../components/CommentsSection";
 import { WeekStats } from "../types/weekStats";
 import { calculateDriveMileage } from "../utils/driveMileage";
 import "./RouteDetail.css";
@@ -888,6 +889,21 @@ const lastCampsiteIndex = useMemo(() => {
           <p className="route-notes">{route.notes}</p>
         </div>
       )}
+
+      <div className="route-section">
+        <CommentsSection
+          comments={route.comments ?? []}
+          onAdd={async (comment) => {
+            const next = [...(route.comments ?? []), comment];
+            const res = await window.electronAPI.saveRoute({ ...route, comments: next });
+            if (res.success && res.route) {
+              setRoute(res.route);
+            } else {
+              alert(res.error || "Could not save comment");
+            }
+          }}
+        />
+      </div>
     </div>
   );
 }

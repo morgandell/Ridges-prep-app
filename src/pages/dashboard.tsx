@@ -30,35 +30,43 @@ export default function Dashboard() {
               give you a way to plan menus and routes then communicate them well so they get
               approved!
             </p>
-
-            <p className="dashboard-intro-subtitle">
-              Now, to get you some help on how to use this app to help you plan!
+            <p>
+              BIBLE VERSE HERE!
             </p>
+
           </div>
         </div>
+        <p className="dashboard-intro-subtitle">
+              Now, to get you some help on how to use this app to help you plan!
+            </p>
       </div>
 
       {/* Buttons stay, only the content below changes */}
       <div className="dashboard-tabbar">
         <button
           type="button"
-          className={tab === "general" ? "active" : ""}
+          className={`tab-btn ${tab === "general" ? "active" : ""}`}
           onClick={() => setTab("general")}
         >
           GENERAL
         </button>
-        <button type="button" className={tab === "menu" ? "active" : ""} onClick={() => setTab("menu")}>
-          MENU
-        </button>
+
         <button
           type="button"
-          className={tab === "routes" ? "active" : ""}
+          className={`tab-btn ${tab === "menu" ? "active" : ""}`}
+          onClick={() => setTab("menu")}
+        >
+          MENU
+        </button>
+
+        <button
+          type="button"
+          className={`tab-btn ${tab === "routes" ? "active" : ""}`}
           onClick={() => setTab("routes")}
         >
           ROUTES
         </button>
       </div>
-
       <div className="dashboard-tab-content">
         {tab === "general" && (
           <div className="dashboard-general-content">

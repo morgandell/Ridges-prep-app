@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Meal } from "../types/meal";
 import { DayOfWeek, MealSlot, Menu } from "../types/menu";
+import CommentsSection from "../components/CommentsSection";
 import "./MealDetail.css";
 
 export default function MealDetail() {
@@ -177,6 +178,21 @@ export default function MealDetail() {
           </div>
         </div>
       )}
+
+      <div className="meal-section">
+        <CommentsSection
+          comments={meal.comments ?? []}
+          onAdd={async (comment) => {
+            const next = [...(meal.comments ?? []), comment];
+            const res = await window.electronAPI.saveMeal({ ...meal, comments: next });
+            if (res.success && res.meal) {
+              setMeal(res.meal);
+            } else {
+              alert(res.error || "Could not save comment");
+            }
+          }}
+        />
+      </div>
  {showAddToMenu && menu && meal && (
   <div className="modal-overlay" onClick={() => setShowAddToMenu(false)}>
     <div className="modal large" onClick={(e) => e.stopPropagation()}>
@@ -228,9 +244,12 @@ export default function MealDetail() {
       </table>
 
       <div className="modal-actions">
-        <button onClick={() => setShowAddToMenu(false)}>Cancel</button>
+        <button className="cancel-button" onClick={() => setShowAddToMenu(false)}>
+          Cancel
+        </button>
 
         <button
+          className="add-to-menu-button"
           disabled={!selectedCell}
           onClick={async () => {
             if (!selectedCell) return;

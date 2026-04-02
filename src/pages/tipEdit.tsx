@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Tip } from "../types/tip";
+import { ItemComment } from "../types/itemComment";
+import CommentsSection from "../components/CommentsSection";
 import "./tipsAndTricks.css";
 
 export default function TipEdit() {
@@ -13,6 +15,7 @@ export default function TipEdit() {
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tipComments, setTipComments] = useState<ItemComment[]>([]);
 
   useEffect(() => {
     if (!isEditing || !id) return;
@@ -24,6 +27,7 @@ export default function TipEdit() {
         if (result.success && result.tip) {
           setSummary(result.tip.summary);
           setBody(result.tip.body || "");
+          setTipComments(Array.isArray(result.tip.comments) ? result.tip.comments : []);
         } else {
           setError("Could not load entry.");
         }
@@ -52,6 +56,7 @@ export default function TipEdit() {
         id: id || "",
         summary: trimmed,
         body,
+        comments: tipComments.length > 0 ? tipComments : undefined,
       };
       const result = await window.electronAPI.saveTip(tip);
       if (result.success && result.tip) {
@@ -123,6 +128,29 @@ export default function TipEdit() {
           </button>
         </div>
       </form>
+
+      {isEditing && id && (
+        <div className="tip-edit-comments">
+          <CommentsSection
+            comments={tipComments}
+            onAdd={async (comment) => {
+              const next = [...tipComments, comment];
+              const tipPayload: Tip = {
+                id,
+                summary: summary.trim(),
+                body,
+                comments: next,
+              };
+              const res = await window.electronAPI.saveTip(tipPayload);
+              if (res.success && res.tip) {
+                setTipComments(res.tip.comments ?? next);
+              } else {
+                alert(res.error || "Could not save comment");
+              }
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

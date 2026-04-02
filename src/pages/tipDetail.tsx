@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tip } from "../types/tip";
+import CommentsSection from "../components/CommentsSection";
 import "./tipsAndTricks.css";
 
 export default function TipDetail() {
@@ -90,6 +91,19 @@ export default function TipDetail() {
       )}
 
       <div className="tip-detail-body">{tip.body || <span className="tip-detail-empty-body">No additional notes.</span>}</div>
+
+      <CommentsSection
+        comments={tip.comments ?? []}
+        onAdd={async (comment) => {
+          const next = [...(tip.comments ?? []), comment];
+          const res = await window.electronAPI.saveTip({ ...tip, comments: next });
+          if (res.success && res.tip) {
+            setTip(res.tip);
+          } else {
+            alert(res.error || "Could not save comment");
+          }
+        }}
+      />
     </div>
   );
 }

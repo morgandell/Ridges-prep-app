@@ -539,10 +539,59 @@
 }
 
 
-.radio-group {
+/* .radio-group {
   display: flex;
   gap: 1rem;
   margin-top: 0.5rem;
   justify-content: space-evenly;
   margin-bottom: 0.75rem;
+} */
+
+.radio-toggle {
+  margin: 0 auto;
+}
+
+.radio-toggle {
+  display: flex;
+  justify-content: center;
+  width: fit-content;
+  align-items: center;
+  background: var(--color-backgroundLight);
+  padding: 4px;
+  border-radius: 999px;
+  gap: 4px;
+  margin-bottom: 1.25rem;
+}
+
+.radio-btn input {
+  display: none;
+}
+
+.radio-btn {
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--color-grayText);
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.radio-btn.active {
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
+  font-weight: 500;
+  box-shadow: 0 2px 6px var(--color-primaryBoxShadow);
+}
+
+
+.radio-btn:hover {
+  color: var(--color-textPrimary);
+  background-color: var(--color-primaryHover);
+}
+
+.route-edit-comments {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-grayBorder);
 }

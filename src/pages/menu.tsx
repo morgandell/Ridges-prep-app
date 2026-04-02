@@ -40,6 +40,7 @@ export default function WeeklyMenuPage() {
   const [menu, setMenu] = useState<Menu | null>(null);
   const [dragOverCell, setDragOverCell] = useState<{ day: DayOfWeek; slot: MealSlot } | null>(null);
   const [filterMealTime, setFilterMealTime] = useState<Meal["mealTime"] | "all">("all");
+  const [mealSearch, setMealSearch] = useState("");
   const [showSaveToPastForm, setShowSaveToPastForm] = useState(false);
   
   useEffect(() => {
@@ -154,16 +155,26 @@ export default function WeeklyMenuPage() {
       return targetSlot;
     }
 
+    function mealMatchesSearch(meal: Meal, q: string): boolean {
+      const s = q.trim().toLowerCase();
+      if (!s) return true;
+      if (meal.name.toLowerCase().includes(s)) return true;
+      if (meal.description?.toLowerCase().includes(s)) return true;
+      if (meal.mealTime.toLowerCase().includes(s)) return true;
+      if (meal.tags?.some((t) => t.toLowerCase().includes(s))) return true;
+      if (meal.ingredients?.some((i) => i.name.toLowerCase().includes(s))) return true;
+      return false;
+    }
+
     const filteredMeals = meals
-    .filter(meal =>
-        filterMealTime === "all"
-        ? true
-        : meal.mealTime === filterMealTime
-    )
-    .sort((a, b) =>
-        (MEAL_TIME_ORDER[a.mealTime] ?? 99) -
-        (MEAL_TIME_ORDER[b.mealTime] ?? 99)
-    );
+      .filter((meal) =>
+        filterMealTime === "all" ? true : meal.mealTime === filterMealTime
+      )
+      .filter((meal) => mealMatchesSearch(meal, mealSearch))
+      .sort(
+        (a, b) =>
+          (MEAL_TIME_ORDER[a.mealTime] ?? 99) - (MEAL_TIME_ORDER[b.mealTime] ?? 99)
+      );
 
 
   if (!menu) return null;
@@ -209,18 +220,38 @@ export default function WeeklyMenuPage() {
                         ))}
                         </div>
 
+                    <input
+                      type="search"
+                      className="menu-meal-search"
+                      placeholder="Search meals…"
+                      value={mealSearch}
+                      onChange={(e) => setMealSearch(e.target.value)}
+                      aria-label="Search meals in list"
+                      autoComplete="off"
+                    />
+
                     <div className="recipe-list-scroll">
-                    {filteredMeals.map((meal) => (
+                    {filteredMeals.length === 0 ? (
+                      <p className="menu-meal-search-empty">
+                        {meals.length === 0
+                          ? "No meals yet. Add meals from the Meals page."
+                          : "No meals match your search or filters."}
+                      </p>
+                    ) : (
+                      filteredMeals.map((meal) => (
                         <RecipeCard
-                            key={meal.id}
-                            meal = {meal}
-                            draggable
-                            onDragStart={(e) => setDragData(e, {
-                                type: "meal",
-                                mealId: meal.id,
-                            })}
-                             />
-                        ))}
+                          key={meal.id}
+                          meal={meal}
+                          draggable
+                          onDragStart={(e) =>
+                            setDragData(e, {
+                              type: "meal",
+                              mealId: meal.id,
+                            })
+                          }
+                        />
+                      ))
+                    )}
 
                     </div>
             </div>

@@ -361,3 +361,9 @@
   color: var(--color-backgroundLight);
   border-color: var(--color-primaryHover);
 }
+
+.new-meal-comments {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-grayBorder);
+}

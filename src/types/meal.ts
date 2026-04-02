@@ -1,3 +1,5 @@
+import { ItemComment } from "./itemComment";
+
 export interface Ingredient {
   name: string;
   quantity: number | null; // allow null for "to taste"
@@ -16,6 +18,7 @@ export interface Meal {
   servings?: number;
   tags?: string[];
   mealTime: "breakfast" | "lunch" | "dinner" | "dessert";
+  comments?: ItemComment[];
 }
 
 
