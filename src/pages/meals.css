@@ -48,10 +48,191 @@
   margin-bottom: 1.5rem;
 }
 
+.meal-filters-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
 .meal-filters {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
+}
+
+.meal-filters-row {
+  flex: 1;
+  min-width: 0;
+}
+
+.meals-tag-filter-btn {
+  flex-shrink: 0;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-secondary);
+  background: var(--color-secondary);
+  color: var(--color-textOnSecondary);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.meals-tag-filter-btn:hover {
+  background: var(--color-primaryHover);
+  border-color: var(--color-primaryHover);
+}
+
+.meals-tag-filter-btn.has-filters {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 18%, var(--color-secondary));
+}
+
+.meals-tag-filter-badge {
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.meals-tag-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--color-modalBackdrop, rgba(0, 0, 0, 0.45));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.meals-tag-modal {
+  width: 100%;
+  max-width: 420px;
+  max-height: min(85vh, 560px);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-card);
+  color: var(--color-textOnCard);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px var(--color-modalShadow, rgba(0, 0, 0, 0.2));
+  padding: 1.25rem 1.5rem;
+}
+
+.meals-tag-modal-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+}
+
+.meals-tag-modal-hint {
+  margin: 0 0 1rem 0;
+  font-size: 0.875rem;
+  color: var(--color-grayText);
+  line-height: 1.45;
+}
+
+.meals-tag-modal-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+  border: 1px solid var(--color-grayBorder);
+  border-radius: 8px;
+  padding: 0.35rem 0;
+}
+
+.meals-tag-modal-list li {
+  margin: 0;
+}
+
+.meals-tag-modal-option {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem 0.85rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.meals-tag-modal-option:hover {
+  background: var(--color-backgroundHover);
+}
+
+.meals-tag-modal-option input {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--color-primary);
+}
+
+.meals-tag-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-grayBorder);
+}
+
+.meals-tag-modal-actions-main {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.meals-tag-modal-clear {
+  padding: 0.45rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--color-grayText);
+  cursor: pointer;
+  font-size: 0.875rem;
+  text-decoration: underline;
+}
+
+.meals-tag-modal-cancel {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-grayBorder);
+  background: var(--color-backgroundLight);
+  color: var(--color-textOnBackground);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.meals-tag-modal-apply {
+  padding: 0.5rem 1.15rem;
+  border-radius: 6px;
+  border: none;
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.meals-tag-modal-apply:hover {
+  background: var(--color-primaryHover);
+}
+
+.meals-filter-empty {
+  padding: 3rem 2rem;
 }
 
 .meal-filters button {
