@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { DayOfWeek, MealSlot, Menu } from "../types/menu";
-import "./weekDetail.css";
+import "./styles/weekDetail.css";
 import { WeekStats } from "../types/weekStats";
 import { Meal } from "../types/meal";
 import { Route, RoutePoint } from "../types/route";

@@ -4,8 +4,8 @@ import { CamperRestriction, WeekMealSelection, WeekStats } from "../types/weekSt
 import { Meal } from "../types/meal";
 import { DayOfWeek, MealSlot, Menu } from "../types/menu";
 import { Route } from "../types/route";
-import "./weekSchedule.css";
-import "./weekEdit.css";
+import "./styles/weekSchedule.css";
+import "./styles/weekEdit.css";
 import { PRESET_DIETARY_RESTRICTIONS } from "../constants/tags";
 
 export default function WeekEdit() {

@@ -4,7 +4,7 @@ import { WeekStats } from "../types/weekStats";
 import { Route, RoutePoint, EvacPoint } from "../types/route";
 import { getDaysWithStats } from "../utils/routeDayBreakdown";
 import { calculateDriveMileage } from "../utils/driveMileage";
-import "./routesPrint.css";
+import "./styles/routesPrint.css";
 
 interface RouteWithWeeks {
   route: Route;

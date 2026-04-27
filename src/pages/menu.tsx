@@ -3,7 +3,7 @@ import { Meal } from "../types/meal";
 import { DayOfWeek, MealSlot, Menu } from "../types/menu";
 import RecipeCard from "../components/RecipeCard";
 import SaveToPastMenuForm from "../components/SaveToPastMenuForm";
-import "./menu.css";
+import "./styles/menu.css";
 
 const DAYS: DayOfWeek[] = [
   "sunday", "monday","tuesday","wednesday",

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Ingredient, Meal } from "../types/meal";
 import CommentsSection from "../components/CommentsSection";
-import "./NewMeal.css";
+import "./styles/NewMeal.css";
 import { PRESET_TAGS } from "../constants/tags"; // adjust path as needed
 
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tip } from "../types/tip";
-import "./tipsAndTricks.css";
+import "./styles/tipsAndTricks.css";
 
 export default function TipsAndTricks() {
   const navigate = useNavigate();

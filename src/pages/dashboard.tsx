@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./dashboard.css";
+import "./styles/dashboard.css";
 import welcomeImg from "../assets/IMG-selfie.jpg";
 type DashboardTab = "general" | "menu" | "routes";
 

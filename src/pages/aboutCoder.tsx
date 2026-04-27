@@ -1,5 +1,5 @@
 import React from "react";
-import "./aboutCoder.css";
+import "./styles/aboutCoder.css";
 import goof from "../assets/YouFoundMe.png";
 // import cramer from "../assets/Cramer.jpg";
 

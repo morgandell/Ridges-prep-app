@@ -4,7 +4,7 @@ import { PastMenu } from "../types/pastMenu";
 import { Menu, DayOfWeek, MealSlot } from "../types/menu";
 import { Meal } from "../types/meal";
 import SaveToPastMenuForm from "../components/SaveToPastMenuForm";
-import "./pastMenus.css";
+import "./styles/pastMenus.css";
 
 const DAYS: DayOfWeek[] = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday"];
 const SLOTS: MealSlot[] = ["breakfast", "lunch", "dinner"];

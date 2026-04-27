@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import "./weekSchedule.css";
+import "./styles/weekSchedule.css";
 import { WeekStats } from "../types/weekStats";
 import { useNavigate } from "react-router-dom";
 

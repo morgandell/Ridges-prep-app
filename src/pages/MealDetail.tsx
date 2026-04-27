@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Meal } from "../types/meal";
 import { DayOfWeek, MealSlot, Menu } from "../types/menu";
 import CommentsSection from "../components/CommentsSection";
-import "./MealDetail.css";
+import "./styles/MealDetail.css";
 
 export default function MealDetail() {
   const { id } = useParams<{ id: string }>();

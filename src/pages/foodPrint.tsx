@@ -4,7 +4,7 @@ import { WeekStats } from "../types/weekStats";
 import { Meal } from "../types/meal";
 import { Ingredient } from "../types/meal";
 import { DayOfWeek, MealSlot } from "../types/menu";
-import "./foodPrint.css";
+import "./styles/foodPrint.css";
 
 interface IngredientTotal {
   name: string;

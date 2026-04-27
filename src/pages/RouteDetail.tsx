@@ -9,7 +9,7 @@ import { Route, RoutePoint, EvacPoint } from "../types/route";
 import CommentsSection from "../components/CommentsSection";
 import { WeekStats } from "../types/weekStats";
 import { calculateDriveMileage } from "../utils/driveMileage";
-import "./RouteDetail.css";
+import "./styles/RouteDetail.css";
 
 // Fix for default marker icons in React-Leaflet
 delete (Icon.Default.prototype as any)._getIconUrl;

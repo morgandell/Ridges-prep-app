@@ -9,7 +9,7 @@ import { Route, RoutePoint, RouteSegment, EvacPoint } from "../types/route";
 import { ItemComment } from "../types/itemComment";
 import CommentsSection from "../components/CommentsSection";
 import { calculateDriveMileage } from "../utils/driveMileage";
-import "./RouteEdit.css";
+import "./styles/RouteEdit.css";
 
 
 // Create custom colored div icons

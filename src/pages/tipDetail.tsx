@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tip } from "../types/tip";
 import CommentsSection from "../components/CommentsSection";
-import "./tipsAndTricks.css";
+import "./styles/tipsAndTricks.css";
 
 export default function TipDetail() {
   const { id } = useParams<{ id: string }>();

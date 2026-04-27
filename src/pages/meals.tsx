@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import RecipeCard from "../components/RecipeCard";
 import { Meal } from "../types/meal";
 import { PRESET_TAGS } from "../constants/tags";
-import "./meals.css";
+import "./styles/meals.css";
 
 export default function Meals() {
   const navigate = useNavigate();

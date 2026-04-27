@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Tip } from "../types/tip";
 import { ItemComment } from "../types/itemComment";
 import CommentsSection from "../components/CommentsSection";
-import "./tipsAndTricks.css";
+import "./styles/tipsAndTricks.css";
 
 export default function TipEdit() {
   const { id } = useParams<{ id: string }>();
