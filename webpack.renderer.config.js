@@ -8,6 +8,6 @@ rules.push({
 module.exports = {
   module: { rules },
   resolve: {
-    extensions: ['.js', '.jsx', '.ts', '.tsx'],
+    extensions: ['.js', '.jsx', '.ts', '.tsx', '.css'],
   },
 };
