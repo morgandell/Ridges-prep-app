@@ -40,6 +40,7 @@ export default function FoodPrint() {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [teamFilter, setTeamFilter] = useState<"both" | WeekStats["team"]>("both");
   const [weekMealData, setWeekMealData] = useState<WeekMealData[]>([]);
   const [totalIngredients, setTotalIngredients] = useState<Map<string, IngredientTotal>>(new Map());
   const [editingNote, setEditingNote] = useState<{ weekId: string; day: DayOfWeek; slot: MealSlot } | null>(null);
@@ -58,6 +59,12 @@ export default function FoodPrint() {
       loadData(true);
     }
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (loading) return;
+    loadData(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamFilter]);
 
   // Reload data when window comes into focus (user navigates back or switches tabs)
   useEffect(() => {
@@ -94,9 +101,14 @@ export default function FoodPrint() {
         setWeeks(weeksResult.weeks);
         setMeals(mealsData);
 
+        const filteredWeeks =
+          teamFilter === "both"
+            ? weeksResult.weeks
+            : weeksResult.weeks.filter((w) => (w.team || "A") === teamFilter);
+
         // Build week meal data - need to get menu to match meals
         const menuResult = await window.electronAPI.getMenu();
-        const weekData: WeekMealData[] = weeksResult.weeks.map(week => {
+        const weekData: WeekMealData[] = filteredWeeks.map(week => {
           const mealSelections = week.mealsEatingOnTrail.map(selection => {
             // Get meal from menu for this day/slot, or use mealId if available
             // Check for week-specific override first, then selection.mealId, then menu
@@ -438,6 +450,36 @@ export default function FoodPrint() {
           ← Back
         </button>
         <div className="header-actions">
+          <div className="section-selectors no-print">
+            <span className="section-selectors-label">Weeks:</span>
+            <label className="section-checkbox">
+              <input
+                type="radio"
+                name="foodPrintTeamFilter"
+                checked={teamFilter === "both"}
+                onChange={() => setTeamFilter("both")}
+              />
+              Both
+            </label>
+            <label className="section-checkbox">
+              <input
+                type="radio"
+                name="foodPrintTeamFilter"
+                checked={teamFilter === "A"}
+                onChange={() => setTeamFilter("A")}
+              />
+              Team A
+            </label>
+            <label className="section-checkbox">
+              <input
+                type="radio"
+                name="foodPrintTeamFilter"
+                checked={teamFilter === "B"}
+                onChange={() => setTeamFilter("B")}
+              />
+              Team B
+            </label>
+          </div>
           <div className="section-selectors no-print">
             <span className="section-selectors-label">Sections to include:</span>
             <label className="section-checkbox">

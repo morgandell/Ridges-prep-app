@@ -21,10 +21,12 @@ export default function WeekEdit() {
     weekStart: string;
     numberOfCampers: string;
     ageGroup: WeekStats["ageGroup"];    
+    team: WeekStats["team"];
   }>({
     weekStart: "",
     numberOfCampers: "",
     ageGroup: "intro",
+    team: "A",
   });
   const [selectedMeals, setSelectedMeals] = useState<Set<string>>(new Set());
 const DAYS: DayOfWeek[] = [
@@ -56,7 +58,7 @@ const [routeId, setRouteId] = useState<string>("");
               weekStart: found.weekStart,
               numberOfCampers: found.numberOfCampers.toString(),
               ageGroup: found.ageGroup,
-              
+              team: found.team || "A",
             });
             setIncluded(found.mealsEatingOnTrail ?? []);
             setMealOverrides(found.mealOverrides || {});
@@ -136,6 +138,7 @@ useEffect(() => {
       weekStart: formData.weekStart,
       numberOfCampers: campersCount,
       ageGroup: formData.ageGroup,
+      team: formData.team,
       camperRestrictions: campers,
       routeId: routeId || null,
       mealsEatingOnTrail: included,
@@ -280,6 +283,18 @@ function removeRestriction(camperId: string, value: string) {
             <option value="intro">Intro</option>
             <option value="middle school">Middle school</option>
             <option value="high school">High school</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="team">Team</label>
+          <select
+            id="team"
+            value={formData.team}
+            onChange={e => handleInputChange("team", e.target.value)}
+          >
+            <option value="A">Team A</option>
+            <option value="B">Team B</option>
           </select>
         </div>
 

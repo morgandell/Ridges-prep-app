@@ -16,6 +16,7 @@ export default function RoutesPrint() {
   const [routeData, setRouteData] = useState<RouteWithWeeks[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [teamFilter, setTeamFilter] = useState<"both" | WeekStats["team"]>("both");
   const [driveMilesByRouteId, setDriveMilesByRouteId] = useState<
     Record<string, number | null | undefined>
   >({});
@@ -23,6 +24,12 @@ export default function RoutesPrint() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (loading) return;
+    loadData(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamFilter]);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,9 +88,11 @@ export default function RoutesPrint() {
       }
       const weeks = weeksResult.weeks;
       const routes = routesResult.routes;
+      const filteredWeeks =
+        teamFilter === "both" ? weeks : weeks.filter((w) => (w.team || "A") === teamFilter);
       const weekRouteMap = new Map<string, { route: Route; weeks: WeekStats[] }>();
 
-      for (const week of weeks) {
+      for (const week of filteredWeeks) {
         const rid = week.routeId;
         if (!rid) continue;
         const route = routes.find((r) => String(r.id) === String(rid));
@@ -154,6 +163,36 @@ export default function RoutesPrint() {
           ← Back
         </button>
         <div className="header-actions">
+          <div className="section-selectors no-print">
+            <span className="section-selectors-label">Weeks:</span>
+            <label className="section-checkbox">
+              <input
+                type="radio"
+                name="routesPrintTeamFilter"
+                checked={teamFilter === "both"}
+                onChange={() => setTeamFilter("both")}
+              />
+              Both
+            </label>
+            <label className="section-checkbox">
+              <input
+                type="radio"
+                name="routesPrintTeamFilter"
+                checked={teamFilter === "A"}
+                onChange={() => setTeamFilter("A")}
+              />
+              Team A
+            </label>
+            <label className="section-checkbox">
+              <input
+                type="radio"
+                name="routesPrintTeamFilter"
+                checked={teamFilter === "B"}
+                onChange={() => setTeamFilter("B")}
+              />
+              Team B
+            </label>
+          </div>
           <button
             className="refresh-button"
             onClick={() => loadData(true)}
