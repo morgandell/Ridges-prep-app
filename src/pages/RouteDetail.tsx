@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from "react-leaflet";
 import { Icon, LatLngBounds, divIcon } from "leaflet";
@@ -85,6 +85,9 @@ export default function RouteDetail() {
   const [driveMileage, setDriveMileage] = useState<number | null>(null);
   const [driveMileageLoading, setDriveMileageLoading] = useState(false);
   const [driveMileageError, setDriveMileageError] = useState<string | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const [routeImagePreviews, setRouteImagePreviews] = useState<Record<string, string>>({});
+  const [imageDescriptionDrafts, setImageDescriptionDrafts] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function loadRoute() {
@@ -159,6 +162,46 @@ export default function RouteDetail() {
     route?.endPoint?.lat,
     route?.endPoint?.lng,
   ]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!route?.id) {
+      setRouteImagePreviews({});
+      return;
+    }
+    const images = route.images ?? [];
+    if (images.length === 0) {
+      setRouteImagePreviews({});
+      return;
+    }
+    (async () => {
+      const entries = await Promise.all(
+        images.map(async (img) => {
+          const res = await window.electronAPI.getRouteImagePreview(route.id, img.id);
+          return [img.id, res.success ? res.dataUrl || "" : ""] as const;
+        })
+      );
+      if (!cancelled) {
+        const map: Record<string, string> = {};
+        for (const [imgId, dataUrl] of entries) {
+          if (dataUrl) map[imgId] = dataUrl;
+        }
+        setRouteImagePreviews(map);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [route?.id, route?.images]);
+
+  useEffect(() => {
+    const images = route?.images ?? [];
+    const next: Record<string, string> = {};
+    for (const img of images) {
+      next[img.id] = img.description || "";
+    }
+    setImageDescriptionDrafts(next);
+  }, [route?.images]);
 
   const handleBack = () => {
     if (location.state?.fromEdit) {
@@ -889,6 +932,130 @@ const lastCampsiteIndex = useMemo(() => {
           <p className="route-notes">{route.notes}</p>
         </div>
       )}
+
+      <div className="route-section">
+        <h2>Route Images (optional)</h2>
+
+        {(route.images ?? []).length === 0 ? (
+          <p className="route-image-muted">No images attached.</p>
+        ) : (
+          <div className="route-image-gallery">
+            {(route.images ?? []).map((img) => (
+              <div key={img.id} className="route-image-card">
+                <div className="route-image-row">
+                  <div>
+                    <strong>Attached:</strong> {img.name || "route-image"}
+                  </div>
+                  <div className="route-image-actions">
+                    <button
+                      type="button"
+                      className="route-image-button"
+                      onClick={async () => {
+                        const res = await window.electronAPI.openPath(img.path);
+                        if (!res.success) alert(res.error || "Could not open image.");
+                      }}
+                    >
+                      Open image
+                    </button>
+                    <button
+                      type="button"
+                      className="route-image-remove"
+                      onClick={async () => {
+                        if (!window.confirm("Remove this image?")) return;
+                        const res = await window.electronAPI.removeRouteImage(route.id, img.id);
+                        if (res.success && res.route) {
+                          setRoute(res.route);
+                        } else {
+                          alert(res.error || "Could not remove image.");
+                        }
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+
+                {routeImagePreviews[img.id] && (
+                  <div className="route-image-preview-wrap">
+                    <img
+                      src={routeImagePreviews[img.id]}
+                      alt={img.description || img.name || "Route attachment"}
+                      className="route-image-preview"
+                    />
+                  </div>
+                )}
+
+                <div className="route-image-description-edit">
+                  <label>
+                    Description (optional)
+                    <input
+                      type="text"
+                      className="route-image-description-input"
+                      value={imageDescriptionDrafts[img.id] ?? ""}
+                      onChange={(e) =>
+                        setImageDescriptionDrafts((prev) => ({ ...prev, [img.id]: e.target.value }))
+                      }
+                      placeholder="Add a short caption..."
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="route-image-button"
+                    onClick={async () => {
+                      const res = await window.electronAPI.updateRouteImageDescription(
+                        route.id,
+                        img.id,
+                        imageDescriptionDrafts[img.id] ?? ""
+                      );
+                      if (res.success && res.route) {
+                        setRoute(res.route);
+                      } else {
+                        alert(res.error || "Could not save description.");
+                      }
+                    }}
+                  >
+                    Save description
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="route-image-upload">
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              try {
+                const bytes = new Uint8Array(await f.arrayBuffer());
+                const res = await window.electronAPI.attachRouteImage(
+                  route.id,
+                  f.name,
+                  f.type || "image/jpeg",
+                  bytes,
+                  ""
+                );
+                if (res.success && res.route) {
+                  setRoute(res.route);
+                  if (imageInputRef.current) imageInputRef.current.value = "";
+                } else {
+                  alert(res.error || "Could not upload image.");
+                }
+              } catch (err) {
+                console.error(err);
+                alert("Could not upload image.");
+              }
+            }}
+          />
+          <small className="route-image-hint">
+            You can upload multiple images. Add an optional description to each.
+          </small>
+        </div>
+      </div>
 
       <div className="route-section">
         <CommentsSection

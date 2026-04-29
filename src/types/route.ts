@@ -23,6 +23,14 @@ export interface EvacPoint {
   label?: string;
 }
 
+export interface RouteImage {
+  id: string;
+  name: string;
+  path: string;
+  mimeType?: string;
+  description?: string;
+}
+
 export interface Route {
   id: string;
   name: string;
@@ -31,6 +39,7 @@ export interface Route {
   stops: RoutePoint[];
   segments: RouteSegment[]; // One segment per stop (start->stop1, stop1->stop2, ..., stopN->end)
   notes?: string;
+  images?: RouteImage[];
   ageGroup?: AgeGroup;
   /**
    * Optional evacuation points per day.

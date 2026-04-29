@@ -214,7 +214,7 @@ export default function PackingListEdit() {
         </div>
       </div>
 
-      <h1>Packing list</h1>
+      {/* <h1>Packing list</h1> */}
 
       {error && <div className="packing-list-error">{error}</div>}
 

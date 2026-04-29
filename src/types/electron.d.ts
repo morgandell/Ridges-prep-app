@@ -31,6 +31,20 @@ export interface ElectronAPI {
   getRoute: (id: string) => Promise<{ success: boolean; route?: Route; error?: string }>;
   saveRoute: (route: Route) => Promise<{ success: boolean; route?: Route; error?: string }>;
   deleteRoute: (id: string) => Promise<{ success: boolean; error?: string }>;
+  attachRouteImage: (
+    id: string,
+    filename: string,
+    mimeType: string,
+    bytes: Uint8Array,
+    description?: string
+  ) => Promise<{ success: boolean; route?: Route; error?: string }>;
+  removeRouteImage: (id: string, imageId: string) => Promise<{ success: boolean; route?: Route; error?: string }>;
+  updateRouteImageDescription: (
+    id: string,
+    imageId: string,
+    description: string
+  ) => Promise<{ success: boolean; route?: Route; error?: string }>;
+  getRouteImagePreview: (id: string, imageId: string) => Promise<{ success: boolean; dataUrl?: string; error?: string }>;
 
   // Tips & tricks
   getTips: () => Promise<Tip[]>;

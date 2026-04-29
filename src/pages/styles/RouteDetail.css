@@ -261,6 +261,121 @@
   color: var(--color-text);
 }
 
+.route-image-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--color-grayBorder);
+  border-radius: 10px;
+  background: var(--color-card);
+}
+
+.route-image-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.route-image-button,
+.route-image-remove {
+  padding: 0.5rem 0.9rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.route-image-button {
+  background: var(--color-secondary);
+  color: var(--color-textOnSecondary);
+}
+
+.route-image-button:hover {
+  background: var(--color-secondaryHover);
+}
+
+.route-image-remove {
+  background: var(--color-delete);
+  color: var(--color-textOnDelete);
+}
+
+.route-image-remove:hover {
+  background: var(--color-deleteHover);
+}
+
+.route-image-muted {
+  color: var(--color-grayText);
+  margin: 0 0 0.75rem 0;
+}
+
+.route-image-upload input[type="file"] {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.route-image-hint {
+  display: block;
+  color: var(--color-grayText);
+  margin-top: 0.35rem;
+}
+
+.route-image-preview-wrap {
+  margin-top: 0.9rem;
+  padding: 0.5rem;
+  border: 1px solid var(--color-grayBorder);
+  border-radius: 10px;
+  background: var(--color-card);
+}
+
+.route-image-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 320px;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+}
+
+.route-image-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.route-image-card {
+  border: 1px solid var(--color-grayBorder);
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: var(--color-card);
+}
+
+.route-image-description-edit {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.route-image-description-edit label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.route-image-description-input {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--color-grayBorder);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: var(--color-backgroundLight);
+  color: var(--color-text);
+}
+
 .route-map-container {
   border: 1px solid #e5e7eb;
   border-radius: 8px;

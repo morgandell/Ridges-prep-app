@@ -24,7 +24,7 @@ export default function Gear() {
       {
         id: "personal",
         title: "Personal",
-        description: "Personal packing lists for counselors/campers.",
+        description: "Personal packing lists for counselors.",
       },
     ],
     []

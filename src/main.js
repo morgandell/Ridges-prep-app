@@ -915,6 +915,27 @@ ipcMain.handle("save-route", async (_event, route) => {
           }))
         : undefined,
       notes: route.notes || undefined,
+      images: Array.isArray(route.images)
+        ? route.images
+            .filter((img) => img && typeof img === "object" && String(img.path || "").trim())
+            .map((img) => ({
+              id: String(img.id || `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`),
+              name: String(img.name || "").trim() || "route-image",
+              path: String(img.path || "").trim(),
+              mimeType: String(img.mimeType || "").trim() || undefined,
+              description: String(img.description || "").trim() || undefined,
+            }))
+        : route.image && typeof route.image === "object" && String(route.image.path || "").trim()
+        ? [
+            {
+              id: String(route.image.id || `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`),
+              name: String(route.image.name || "").trim() || "route-image",
+              path: String(route.image.path || "").trim(),
+              mimeType: String(route.image.mimeType || "").trim() || undefined,
+              description: String(route.image.description || "").trim() || undefined,
+            },
+          ]
+        : undefined,
       ageGroup: route.ageGroup || undefined,
       transportMode: route.transportMode || undefined,
       driveMileage: typeof route.driveMileage === "number" ? route.driveMileage : undefined,
@@ -939,6 +960,182 @@ ipcMain.handle("save-route", async (_event, route) => {
   } catch (err) {
     console.error("Failed to save route:", err);
     return { success: false, error: "Failed to save route" };
+  }
+});
+
+ipcMain.handle("attach-route-image", async (_event, payload) => {
+  try {
+    const id = String(payload?.id || "");
+    const filename = String(payload?.filename || "route-image");
+    const mimeType = String(payload?.mimeType || "image/jpeg");
+    const description = String(payload?.description || "").trim();
+    const bytes = payload?.bytes;
+    if (!id) return { success: false, error: "Route ID is required" };
+    if (!bytes || typeof bytes.length !== "number") {
+      return { success: false, error: "Image bytes are required" };
+    }
+
+    const routes = readRoutes();
+    const idx = routes.findIndex((r) => String(r.id) === String(id));
+    if (idx < 0) return { success: false, error: "Route not found" };
+
+    const extension =
+      mimeType === "image/png"
+        ? ".png"
+        : mimeType === "image/webp"
+        ? ".webp"
+        : mimeType === "image/gif"
+        ? ".gif"
+        : ".jpg";
+    const safeName = filename.toLowerCase().endsWith(extension) ? filename : `${filename}${extension}`;
+    const dir = path.join(app.getPath("userData"), "attachments", "routes", id);
+    await fsPromises.mkdir(dir, { recursive: true });
+    const outPath = path.join(dir, `${Date.now()}-${safeName}`.replace(/[<>:"/\\|?*]/g, "_"));
+    await fsPromises.writeFile(outPath, Buffer.from(bytes));
+
+    const existingImages = Array.isArray(routes[idx].images)
+      ? routes[idx].images
+      : routes[idx].image && routes[idx].image.path
+      ? [
+          {
+            id: String(routes[idx].image.id || `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`),
+            name: routes[idx].image.name || "route-image",
+            path: routes[idx].image.path,
+            mimeType: routes[idx].image.mimeType,
+            description: routes[idx].image.description,
+          },
+        ]
+      : [];
+
+    const updated = {
+      ...routes[idx],
+      images: [
+        ...existingImages,
+        {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+          name: safeName,
+          path: outPath,
+          mimeType,
+          description: description || undefined,
+        },
+      ],
+      image: undefined,
+    };
+    routes[idx] = updated;
+    writeRoutes(routes);
+    return { success: true, route: updated };
+  } catch (err) {
+    console.error("Failed to attach route image:", err);
+    return { success: false, error: err.message || "Failed to attach image" };
+  }
+});
+
+ipcMain.handle("remove-route-image", async (_event, payload) => {
+  try {
+    const rid = String(payload?.id || "");
+    const imageId = String(payload?.imageId || "");
+    if (!rid) return { success: false, error: "Route ID is required" };
+    if (!imageId) return { success: false, error: "Image ID is required" };
+    const routes = readRoutes();
+    const idx = routes.findIndex((r) => String(r.id) === String(rid));
+    if (idx < 0) return { success: false, error: "Route not found" };
+    const existingImages = Array.isArray(routes[idx].images)
+      ? routes[idx].images
+      : routes[idx].image && routes[idx].image.path
+      ? [
+          {
+            id: String(routes[idx].image.id || `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`),
+            name: routes[idx].image.name || "route-image",
+            path: routes[idx].image.path,
+            mimeType: routes[idx].image.mimeType,
+            description: routes[idx].image.description,
+          },
+        ]
+      : [];
+    const updated = {
+      ...routes[idx],
+      images: existingImages.filter((img) => String(img.id) !== imageId),
+      image: undefined,
+    };
+    routes[idx] = updated;
+    writeRoutes(routes);
+    return { success: true, route: updated };
+  } catch (err) {
+    console.error("Failed to remove route image:", err);
+    return { success: false, error: err.message || "Failed to remove image" };
+  }
+});
+
+ipcMain.handle("update-route-image-description", async (_event, payload) => {
+  try {
+    const rid = String(payload?.id || "");
+    const imageId = String(payload?.imageId || "");
+    const description = String(payload?.description || "").trim();
+    if (!rid) return { success: false, error: "Route ID is required" };
+    if (!imageId) return { success: false, error: "Image ID is required" };
+    const routes = readRoutes();
+    const idx = routes.findIndex((r) => String(r.id) === String(rid));
+    if (idx < 0) return { success: false, error: "Route not found" };
+    const existingImages = Array.isArray(routes[idx].images)
+      ? routes[idx].images
+      : routes[idx].image && routes[idx].image.path
+      ? [
+          {
+            id: String(routes[idx].image.id || `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`),
+            name: routes[idx].image.name || "route-image",
+            path: routes[idx].image.path,
+            mimeType: routes[idx].image.mimeType,
+            description: routes[idx].image.description,
+          },
+        ]
+      : [];
+    const updated = {
+      ...routes[idx],
+      images: existingImages.map((img) =>
+        String(img.id) === imageId ? { ...img, description: description || undefined } : img
+      ),
+      image: undefined,
+    };
+    routes[idx] = updated;
+    writeRoutes(routes);
+    return { success: true, route: updated };
+  } catch (err) {
+    console.error("Failed to update route image description:", err);
+    return { success: false, error: err.message || "Failed to update description" };
+  }
+});
+
+ipcMain.handle("get-route-image-preview", async (_event, payload) => {
+  try {
+    const rid = String(payload?.id || "");
+    const imageId = String(payload?.imageId || "");
+    if (!rid) return { success: false, error: "Route ID is required" };
+    if (!imageId) return { success: false, error: "Image ID is required" };
+    const routes = readRoutes();
+    const route = routes.find((r) => String(r.id) === String(rid));
+    if (!route) return { success: false, error: "Route not found" };
+    const images = Array.isArray(route.images)
+      ? route.images
+      : route.image && route.image.path
+      ? [
+          {
+            id: String(route.image.id || `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`),
+            name: route.image.name || "route-image",
+            path: route.image.path,
+            mimeType: route.image.mimeType,
+            description: route.image.description,
+          },
+        ]
+      : [];
+    const target = images.find((img) => String(img.id) === imageId);
+    if (!target?.path) return { success: false, error: "Image not found" };
+    const bytes = await fsPromises.readFile(target.path);
+    const mimeType = target.mimeType || "image/jpeg";
+    const dataUrl = `data:${mimeType};base64,${bytes.toString("base64")}`;
+    return { success: true, dataUrl };
+  } catch (err) {
+    console.error("Failed to read route image preview:", err);
+    return { success: false, error: err.message || "Failed to load image" };
   }
 });
 
