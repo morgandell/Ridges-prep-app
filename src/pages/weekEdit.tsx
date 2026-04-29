@@ -326,6 +326,7 @@ function removeRestriction(camperId: string, value: string) {
   {campers.map(camper => (
     <div key={camper.id} className="camper-details">
     <div className="camper-row">
+      <div className="camper-name">
       <button
         type="button"
         className="remove-button"
@@ -351,7 +352,7 @@ function removeRestriction(camperId: string, value: string) {
           )
         }
       />
-
+</div>
 <div className="preset-tags">
   {PRESET_DIETARY_RESTRICTIONS.map(tag => {
     const isSelected = camper.restrictions.includes(tag);
