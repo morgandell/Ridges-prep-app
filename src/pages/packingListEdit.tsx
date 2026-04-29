@@ -1,9 +1,13 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { PackingList } from "../types/packingList";
 import "./styles/packingListEdit.css";
 
 const DEFAULTS: Record<string, { title: string; items: string[] }> = {
+  inventory: {
+    title: "Inventory",
+    items: [],
+  },
   campers: {
     title: "Campers (before group gear)",
     items: [],
@@ -29,6 +33,9 @@ export default function PackingListEdit() {
   const [title, setTitle] = useState("");
   const [items, setItems] = useState<string[]>([]);
   const [draftItem, setDraftItem] = useState("");
+  const [dirty, setDirty] = useState(false);
+  const saveTimerRef = useRef<number | null>(null);
+  const lastSavedRef = useRef<{ title: string; itemsJson: string } | null>(null);
 
   useEffect(() => {
     if (!id) {
@@ -44,10 +51,20 @@ export default function PackingListEdit() {
         if (res.success && res.list) {
           setTitle(res.list.title || (defaults?.title ?? ""));
           setItems(Array.isArray(res.list.items) ? res.list.items : []);
+          lastSavedRef.current = {
+            title: (res.list.title || (defaults?.title ?? "")).trim(),
+            itemsJson: JSON.stringify(Array.isArray(res.list.items) ? res.list.items : []),
+          };
+          setDirty(false);
         } else if (defaults) {
           // Not found yet — start from defaults
           setTitle(defaults.title);
           setItems(defaults.items);
+          lastSavedRef.current = {
+            title: defaults.title.trim(),
+            itemsJson: JSON.stringify(defaults.items),
+          };
+          setDirty(false);
         } else {
           setError("Packing list not found.");
         }
@@ -68,10 +85,12 @@ export default function PackingListEdit() {
     if (!trimmed) return;
     setItems((prev) => [...prev, trimmed]);
     setDraftItem("");
+    setDirty(true);
   }
 
   function removeItem(idx: number) {
     setItems((prev) => prev.filter((_, i) => i !== idx));
+    setDirty(true);
   }
 
   function moveItem(idx: number, dir: -1 | 1) {
@@ -83,14 +102,22 @@ export default function PackingListEdit() {
       next.splice(target, 0, it);
       return next;
     });
+    setDirty(true);
   }
 
-  async function handleSave() {
+  async function saveNow(opts?: { navigateBack?: boolean }) {
     if (!id) return;
     setError(null);
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
       setError("Title is required.");
+      return;
+    }
+    const snapshot = { title: trimmedTitle, itemsJson: JSON.stringify(items) };
+    const last = lastSavedRef.current;
+    if (last && last.title === snapshot.title && last.itemsJson === snapshot.itemsJson) {
+      setDirty(false);
+      if (opts?.navigateBack) navigate("/gear");
       return;
     }
     setSaving(true);
@@ -102,7 +129,9 @@ export default function PackingListEdit() {
       };
       const res = await window.electronAPI.savePackingList(payload);
       if (res.success) {
-        navigate("/gear");
+        lastSavedRef.current = snapshot;
+        setDirty(false);
+        if (opts?.navigateBack) navigate("/gear");
       } else {
         setError(res.error || "Save failed.");
       }
@@ -112,6 +141,34 @@ export default function PackingListEdit() {
     } finally {
       setSaving(false);
     }
+  }
+
+  // Auto-save (debounced)
+  useEffect(() => {
+    if (!id) return;
+    if (loading) return;
+    if (!dirty) return;
+
+    if (saveTimerRef.current) {
+      window.clearTimeout(saveTimerRef.current);
+    }
+    saveTimerRef.current = window.setTimeout(() => {
+      saveNow();
+    }, 650);
+
+    return () => {
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, items, dirty, id, loading]);
+
+  async function handleBack() {
+    if (saving) return;
+    if (!dirty) {
+      navigate("/gear");
+      return;
+    }
+    await saveNow({ navigateBack: true });
   }
 
   if (loading) {
@@ -137,18 +194,23 @@ export default function PackingListEdit() {
   return (
     <div className="packing-list-page">
       <div className="packing-list-header">
-        <button type="button" className="packing-list-back" onClick={() => navigate("/gear")}>
+        <button type="button" className="packing-list-back" onClick={handleBack} disabled={saving}>
           ← Back
         </button>
         <div className="packing-list-actions">
-          <button
-            type="button"
-            className="packing-list-save"
-            onClick={handleSave}
-            disabled={saving}
-          >
-            {saving ? "Saving…" : "Save"}
-          </button>
+          {id && (
+            <button
+              type="button"
+              className="packing-list-print"
+              onClick={() => navigate(`/gear/packing/${id}/print`)}
+              disabled={saving}
+            >
+              Print
+            </button>
+          )}
+          <span className="packing-list-status" aria-live="polite">
+            {saving ? "Saving…" : dirty ? "Unsaved changes" : "Saved"}
+          </span>
         </div>
       </div>
 
@@ -162,7 +224,10 @@ export default function PackingListEdit() {
           className="packing-list-input"
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            setDirty(true);
+          }}
           placeholder="List title"
         />
       </label>

@@ -67,7 +67,23 @@ export default function Gear() {
 
       <div className="gear-section inventory">
         <h2>Inventory</h2>
-        <p className="gear-muted">Inventory tracking coming soon.</p>
+        <div className="gear-card-grid">
+          <div
+            className="gear-nav-card"
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate("/gear/packing/inventory")}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                navigate("/gear/packing/inventory");
+              }
+            }}
+          >
+            <h3 className="gear-nav-card-title">Inventory list</h3>
+            <p className="gear-nav-card-desc">Track what you have, what’s missing, and replacements.</p>
+          </div>
+        </div>
       </div>
 
       <div className="gear-section packing-list">

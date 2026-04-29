@@ -22,6 +22,7 @@ import TipDetail from "./pages/tipDetail";
 import TipEdit from "./pages/tipEdit";
 import AboutCoder from "./pages/aboutCoder";
 import PackingListEdit from "./pages/packingListEdit";
+import PackingListPrint from "./pages/packingListPrint";
 import GearUsageNoteDetail from "./pages/gearUsageNoteDetail";
 import GearUsageNoteEdit from "./pages/gearUsageNoteEdit";
 import GearFixNoteDetail from "./pages/gearFixNoteDetail";
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/routes/:id/edit" element={<RouteEdit />} />
           <Route path="/gear" element={<Gear />} />
           <Route path="/gear/packing/:id" element={<PackingListEdit />} />
+          <Route path="/gear/packing/:id/print" element={<PackingListPrint />} />
           <Route path="/gear/usage/new" element={<GearUsageNoteEdit />} />
           <Route path="/gear/usage/:id/edit" element={<GearUsageNoteEdit />} />
           <Route path="/gear/usage/:id" element={<GearUsageNoteDetail />} />
