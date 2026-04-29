@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, globalShortcut, session } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut, session, shell } = require('electron');
 const path = require('node:path');
 const fs = require("fs");
 const fsPromises = fs.promises;
@@ -38,6 +38,7 @@ app.whenReady().then(() => {
   ensureMealsFile();
   ensureTipsFile();
   registerTipsIpcHandlers();
+  registerGearAndSundayIpcHandlers();
 
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
@@ -87,6 +88,10 @@ async function ensureMealsFile() {
 }
 
 const tipsFilePath = path.join(app.getPath('userData'), 'tips-and-tricks.json');
+const gearUsageNotesPath = path.join(app.getPath("userData"), "gear-usage-notes.json");
+const gearFixNotesPath = path.join(app.getPath("userData"), "gear-fix-notes.json");
+const sundayCounselorTipsPath = path.join(app.getPath("userData"), "sunday-counselor-tips.json");
+const packingListsPath = path.join(app.getPath("userData"), "packing-lists.json");
 
 async function ensureTipsFile() {
   try {
@@ -94,6 +99,62 @@ async function ensureTipsFile() {
   } catch {
     await fsPromises.writeFile(tipsFilePath, JSON.stringify([], null, 2));
   }
+}
+
+async function ensureJsonArrayFile(filePath) {
+  try {
+    await fsPromises.access(filePath);
+  } catch {
+    await fsPromises.writeFile(filePath, JSON.stringify([], null, 2));
+  }
+}
+
+async function readJsonArray(filePath) {
+  try {
+    await ensureJsonArrayFile(filePath);
+    const raw = await fsPromises.readFile(filePath, "utf-8");
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.error("Error reading json array:", filePath, err);
+    return [];
+  }
+}
+
+async function writeJsonArray(filePath, arr) {
+  await fsPromises.writeFile(filePath, JSON.stringify(arr, null, 2), "utf-8");
+}
+
+function cleanNoteEntry(entry) {
+  if (!entry || typeof entry !== "object") return null;
+  const summary = String(entry.summary || "").trim();
+  if (!summary) return null;
+  const now = new Date().toISOString();
+  return {
+    id: String(entry.id || Date.now().toString()),
+    summary,
+    body: typeof entry.body === "string" ? entry.body : "",
+    pdf:
+      entry.pdf && typeof entry.pdf === "object"
+        ? {
+            name: String(entry.pdf.name || "").trim(),
+            path: String(entry.pdf.path || "").trim(),
+          }
+        : undefined,
+    updatedAt: now,
+  };
+}
+
+function cleanPackingList(list) {
+  if (!list || typeof list !== "object") return null;
+  const id = String(list.id || "").trim();
+  const title = String(list.title || "").trim();
+  if (!id || !title) return null;
+  const items = Array.isArray(list.items)
+    ? list.items.map((x) => String(x || "").trim()).filter(Boolean)
+    : [];
+  const now = new Date().toISOString();
+  return { id, title, items, updatedAt: now };
 }
 
 /** Name + text comments on meals, routes, tips */
@@ -214,6 +275,256 @@ function registerTipsIpcHandlers() {
     } catch (error) {
       console.error('Error deleting tip:', error);
       return { success: false, error: error.message };
+    }
+  });
+}
+
+function registerGearAndSundayIpcHandlers() {
+  const channels = [
+    "get-gear-usage-notes",
+    "get-gear-usage-note",
+    "save-gear-usage-note",
+    "delete-gear-usage-note",
+    "get-gear-fix-notes",
+    "get-gear-fix-note",
+    "save-gear-fix-note",
+    "delete-gear-fix-note",
+    "get-sunday-counselor-tips",
+    "get-sunday-counselor-tip",
+    "save-sunday-counselor-tip",
+    "delete-sunday-counselor-tip",
+    "get-packing-lists",
+    "get-packing-list",
+    "save-packing-list",
+    "attach-note-pdf",
+    "remove-note-pdf",
+    "open-path",
+  ];
+  for (const ch of channels) ipcMain.removeHandler(ch);
+
+  function notesPathForScope(scope) {
+    if (scope === "gear-usage") return gearUsageNotesPath;
+    if (scope === "gear-fixes") return gearFixNotesPath;
+    if (scope === "sunday-counselor-tips") return sundayCounselorTipsPath;
+    return null;
+  }
+
+  async function getNoteById(scope, id) {
+    const fp = notesPathForScope(scope);
+    if (!fp) return { success: false, error: "Invalid scope" };
+    if (!id) return { success: false, error: "Entry ID is required" };
+    const all = await readJsonArray(fp);
+    const entry = all.find((e) => String(e.id) === String(id));
+    if (!entry) return { success: false, error: "Entry not found" };
+    return { success: true, entry };
+  }
+
+  // Gear usage notes
+  ipcMain.handle("get-gear-usage-notes", async () => {
+    return await readJsonArray(gearUsageNotesPath);
+  });
+  ipcMain.handle("get-gear-usage-note", async (_event, id) => {
+    return await getNoteById("gear-usage", id);
+  });
+  ipcMain.handle("save-gear-usage-note", async (_event, entry) => {
+    try {
+      const clean = cleanNoteEntry(entry);
+      if (!clean) return { success: false, error: "Summary is required" };
+      const all = await readJsonArray(gearUsageNotesPath);
+      const idx = all.findIndex((e) => String(e.id) === String(clean.id));
+      if (idx >= 0) all[idx] = { ...all[idx], ...clean };
+      else all.push(clean);
+      await writeJsonArray(gearUsageNotesPath, all);
+      return { success: true, entry: clean };
+    } catch (err) {
+      console.error("Error saving gear usage note:", err);
+      return { success: false, error: err.message };
+    }
+  });
+  ipcMain.handle("delete-gear-usage-note", async (_event, id) => {
+    try {
+      const all = await readJsonArray(gearUsageNotesPath);
+      const next = all.filter((e) => String(e.id) !== String(id));
+      await writeJsonArray(gearUsageNotesPath, next);
+      return { success: true };
+    } catch (err) {
+      console.error("Error deleting gear usage note:", err);
+      return { success: false, error: err.message };
+    }
+  });
+
+  // Gear fix notes
+  ipcMain.handle("get-gear-fix-notes", async () => {
+    return await readJsonArray(gearFixNotesPath);
+  });
+  ipcMain.handle("get-gear-fix-note", async (_event, id) => {
+    return await getNoteById("gear-fixes", id);
+  });
+  ipcMain.handle("save-gear-fix-note", async (_event, entry) => {
+    try {
+      const clean = cleanNoteEntry(entry);
+      if (!clean) return { success: false, error: "Summary is required" };
+      const all = await readJsonArray(gearFixNotesPath);
+      const idx = all.findIndex((e) => String(e.id) === String(clean.id));
+      if (idx >= 0) all[idx] = { ...all[idx], ...clean };
+      else all.push(clean);
+      await writeJsonArray(gearFixNotesPath, all);
+      return { success: true, entry: clean };
+    } catch (err) {
+      console.error("Error saving gear fix note:", err);
+      return { success: false, error: err.message };
+    }
+  });
+  ipcMain.handle("delete-gear-fix-note", async (_event, id) => {
+    try {
+      const all = await readJsonArray(gearFixNotesPath);
+      const next = all.filter((e) => String(e.id) !== String(id));
+      await writeJsonArray(gearFixNotesPath, next);
+      return { success: true };
+    } catch (err) {
+      console.error("Error deleting gear fix note:", err);
+      return { success: false, error: err.message };
+    }
+  });
+
+  // Sundays counselor tips
+  ipcMain.handle("get-sunday-counselor-tips", async () => {
+    return await readJsonArray(sundayCounselorTipsPath);
+  });
+  ipcMain.handle("get-sunday-counselor-tip", async (_event, id) => {
+    return await getNoteById("sunday-counselor-tips", id);
+  });
+  ipcMain.handle("save-sunday-counselor-tip", async (_event, entry) => {
+    try {
+      const clean = cleanNoteEntry(entry);
+      if (!clean) return { success: false, error: "Summary is required" };
+      const all = await readJsonArray(sundayCounselorTipsPath);
+      const idx = all.findIndex((e) => String(e.id) === String(clean.id));
+      if (idx >= 0) all[idx] = { ...all[idx], ...clean };
+      else all.push(clean);
+      await writeJsonArray(sundayCounselorTipsPath, all);
+      return { success: true, entry: clean };
+    } catch (err) {
+      console.error("Error saving counselor tip:", err);
+      return { success: false, error: err.message };
+    }
+  });
+  ipcMain.handle("delete-sunday-counselor-tip", async (_event, id) => {
+    try {
+      const all = await readJsonArray(sundayCounselorTipsPath);
+      const next = all.filter((e) => String(e.id) !== String(id));
+      await writeJsonArray(sundayCounselorTipsPath, next);
+      return { success: true };
+    } catch (err) {
+      console.error("Error deleting counselor tip:", err);
+      return { success: false, error: err.message };
+    }
+  });
+
+  // Packing lists
+  ipcMain.handle("get-packing-lists", async () => {
+    return await readJsonArray(packingListsPath);
+  });
+  ipcMain.handle("get-packing-list", async (_event, id) => {
+    try {
+      if (!id) return { success: false, error: "List ID is required" };
+      const all = await readJsonArray(packingListsPath);
+      const list = all.find((l) => String(l.id) === String(id));
+      if (!list) return { success: false, error: "List not found" };
+      return { success: true, list };
+    } catch (err) {
+      console.error("Error reading packing list:", err);
+      return { success: false, error: err.message };
+    }
+  });
+  ipcMain.handle("save-packing-list", async (_event, list) => {
+    try {
+      const clean = cleanPackingList(list);
+      if (!clean) return { success: false, error: "List id and title are required" };
+      const all = await readJsonArray(packingListsPath);
+      const idx = all.findIndex((l) => String(l.id) === String(clean.id));
+      if (idx >= 0) all[idx] = { ...all[idx], ...clean };
+      else all.push(clean);
+      await writeJsonArray(packingListsPath, all);
+      return { success: true, list: clean };
+    } catch (err) {
+      console.error("Error saving packing list:", err);
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle("attach-note-pdf", async (_event, payload) => {
+    try {
+      const scope = String(payload?.scope || "");
+      const id = String(payload?.id || "");
+      const filename = String(payload?.filename || "attachment.pdf");
+      const bytes = payload?.bytes;
+      const fp = notesPathForScope(scope);
+      if (!fp) return { success: false, error: "Invalid scope" };
+      if (!id) return { success: false, error: "Entry ID is required" };
+      if (!bytes || typeof bytes.length !== "number") {
+        return { success: false, error: "PDF bytes are required" };
+      }
+
+      const all = await readJsonArray(fp);
+      const idx = all.findIndex((e) => String(e.id) === String(id));
+      if (idx < 0) return { success: false, error: "Entry not found" };
+
+      const safeName = filename.toLowerCase().endsWith(".pdf") ? filename : `${filename}.pdf`;
+      const dir = path.join(app.getPath("userData"), "attachments", scope, id);
+      await fsPromises.mkdir(dir, { recursive: true });
+      const outPath = path.join(dir, `${Date.now()}-${safeName}`.replace(/[<>:"/\\|?*]/g, "_"));
+      await fsPromises.writeFile(outPath, Buffer.from(bytes));
+
+      const now = new Date().toISOString();
+      const entry = {
+        ...all[idx],
+        pdf: { name: safeName, path: outPath },
+        updatedAt: now,
+      };
+      all[idx] = entry;
+      await writeJsonArray(fp, all);
+      return { success: true, entry };
+    } catch (err) {
+      console.error("Error attaching note pdf:", err);
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle("remove-note-pdf", async (_event, payload) => {
+    try {
+      const scope = String(payload?.scope || "");
+      const id = String(payload?.id || "");
+      const fp = notesPathForScope(scope);
+      if (!fp) return { success: false, error: "Invalid scope" };
+      if (!id) return { success: false, error: "Entry ID is required" };
+      const all = await readJsonArray(fp);
+      const idx = all.findIndex((e) => String(e.id) === String(id));
+      if (idx < 0) return { success: false, error: "Entry not found" };
+      const now = new Date().toISOString();
+      const entry = { ...all[idx], pdf: undefined, updatedAt: now };
+      all[idx] = entry;
+      await writeJsonArray(fp, all);
+      return { success: true, entry };
+    } catch (err) {
+      console.error("Error removing note pdf:", err);
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle("open-path", async (_event, p) => {
+    try {
+      const target = String(p || "");
+      if (!target) return { success: false, error: "Path is required" };
+      const userData = app.getPath("userData");
+      if (!target.startsWith(userData)) {
+        return { success: false, error: "Not allowed" };
+      }
+      await shell.openPath(target);
+      return { success: true };
+    } catch (err) {
+      console.error("Error opening path:", err);
+      return { success: false, error: err.message };
     }
   });
 }

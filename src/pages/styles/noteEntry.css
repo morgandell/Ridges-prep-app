@@ -1,0 +1,247 @@
+.note-detail,
+.note-edit-page {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.note-loading {
+  padding: 3rem;
+  text-align: center;
+  color: var(--color-grayText);
+}
+
+.note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.note-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.note-back,
+.note-edit,
+.note-delete,
+.note-save,
+.note-cancel,
+.note-open-pdf,
+.note-remove-pdf,
+.note-clear-selected {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.note-back {
+  background: var(--color-backgroundLight);
+  color: var(--color-grayText);
+}
+
+.note-back:hover {
+  background: var(--color-secondaryHover);
+}
+
+.note-edit {
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
+}
+
+.note-edit:hover {
+  background: var(--color-primaryHover);
+}
+
+.note-delete {
+  background: var(--color-delete);
+  color: var(--color-textOnDelete);
+}
+
+.note-delete:hover {
+  background: var(--color-deleteHover);
+}
+
+.note-title {
+  font-size: 2rem;
+  margin: 0 0 0.5rem 0;
+  color: var(--color-textOnBackground);
+}
+
+.note-updated {
+  color: var(--color-grayText);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.note-body {
+  white-space: pre-wrap;
+  line-height: 1.65;
+  color: var(--color-textOnBackground);
+  font-size: 1rem;
+}
+
+.note-empty-body,
+.note-empty {
+  color: var(--color-grayText);
+  font-style: italic;
+}
+
+.note-attachment {
+  margin: 0 0 1.25rem 0;
+  padding: 1rem;
+  border: 1px solid var(--color-grayBorder);
+  border-radius: 10px;
+  background: var(--color-card);
+}
+
+.note-attachment-row {
+  color: var(--color-textOnCard);
+  margin-bottom: 0.5rem;
+}
+
+.note-open-pdf {
+  background: var(--color-secondary);
+  color: var(--color-textOnSecondary);
+}
+
+.note-open-pdf:hover {
+  background: var(--color-secondaryHover);
+}
+
+.note-edit-page h1 {
+  margin: 1rem 0 1.25rem 0;
+  color: var(--color-textOnBackground);
+}
+
+.note-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.note-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--color-textOnBackground);
+}
+
+.note-input,
+.note-textarea {
+  padding: 0.65rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-grayBorder);
+  font-size: 1rem;
+  font-family: inherit;
+  background: var(--color-backgroundLight);
+  color: var(--color-textOnBackground);
+}
+
+.note-textarea {
+  resize: vertical;
+  min-height: 220px;
+}
+
+.note-error {
+  padding: 0.75rem 1rem;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 6px;
+  color: #c33;
+}
+
+.note-edit-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.note-save {
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
+}
+
+.note-save:hover:not(:disabled) {
+  background: var(--color-primaryHover);
+}
+
+.note-cancel {
+  background: transparent;
+  color: var(--color-grayText);
+  border: 1px solid var(--color-grayBorder);
+}
+
+.note-cancel:hover:not(:disabled) {
+  background: var(--color-backgroundLight);
+}
+
+.note-attachment-edit {
+  padding: 1rem;
+  border: 1px solid var(--color-grayBorder);
+  border-radius: 10px;
+  background: var(--color-card);
+}
+
+.note-attachment-existing {
+  margin: 0.75rem 0;
+}
+
+.note-attachment-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.note-remove-pdf {
+  background: var(--color-delete);
+  color: var(--color-textOnDelete);
+}
+
+.note-remove-pdf:hover:not(:disabled) {
+  background: var(--color-deleteHover);
+}
+
+.note-file-input {
+  display: block;
+  margin-top: 0.5rem;
+  color: var(--color-textOnCard);
+}
+
+.note-selected-file {
+  margin-top: 0.5rem;
+  color: var(--color-textOnCard);
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.note-clear-selected {
+  background: transparent;
+  color: var(--color-grayText);
+  border: 1px solid var(--color-grayBorder);
+}
+
+.note-clear-selected:hover:not(:disabled) {
+  background: var(--color-backgroundLight);
+}
+
+.note-save:disabled,
+.note-cancel:disabled,
+.note-open-pdf:disabled,
+.note-remove-pdf:disabled,
+.note-clear-selected:disabled,
+.note-back:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+

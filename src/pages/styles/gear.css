@@ -1,0 +1,60 @@
+.gear-page {
+  padding: 2rem;
+}
+
+.gear-page h1 {
+  margin: 0 0 1.5rem 0;
+  color: var(--color-textOnBackground);
+}
+
+.gear-section {
+  margin-bottom: 2rem;
+}
+
+.gear-section h2 {
+  margin: 0 0 0.75rem 0;
+  color: var(--color-textOnBackground);
+}
+
+.gear-muted {
+  color: var(--color-grayText);
+}
+
+.gear-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.gear-nav-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-grayBorder);
+  border-radius: 10px;
+  padding: 1.1rem 1.2rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.gear-nav-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.14);
+}
+
+.gear-nav-card:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.gear-nav-card-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  color: var(--color-textOnCard);
+}
+
+.gear-nav-card-desc {
+  margin: 0;
+  color: var(--color-grayText);
+  line-height: 1.45;
+}
+

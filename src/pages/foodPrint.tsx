@@ -450,6 +450,7 @@ export default function FoodPrint() {
           ← Back
         </button>
         <div className="header-actions">
+          <div className="header-selectors">
           <div className="section-selectors no-print">
             <span className="section-selectors-label">Weeks:</span>
             <label className="section-checkbox">
@@ -507,6 +508,7 @@ export default function FoodPrint() {
               Meal breakdowns
             </label>
           </div>
+          </div>
           <button 
             className="refresh-button" 
             onClick={handleRefresh}
@@ -527,7 +529,7 @@ export default function FoodPrint() {
         <div className="print-section">
           <h1>Total Food Requirements for Summer</h1>
           <p className="print-meta">
-            Calculated for all weeks with servings = (campers + 2) per meal
+            Calculated all weeks{teamFilter !== "both" && ` for team ${teamFilter}`}, with servings = (campers + 2) per meal
           </p>
 
           <table className="ingredients-table">

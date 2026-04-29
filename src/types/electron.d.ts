@@ -4,6 +4,8 @@ import { Menu } from "./menu";
 import { PastMenu } from "./pastMenu";
 import { Route } from "./route";
 import { Tip } from "./tip";
+import { NoteEntry } from "./noteEntry";
+import { PackingList } from "./packingList";
 
 export interface ElectronAPI {
   getMeals: () => Promise<Meal[]>;
@@ -35,6 +37,50 @@ export interface ElectronAPI {
   getTip: (id: string) => Promise<{ success: boolean; tip?: Tip; error?: string }>;
   saveTip: (tip: Partial<Tip> & { summary: string }) => Promise<{ success: boolean; tip?: Tip; error?: string }>;
   deleteTip: (id: string) => Promise<{ success: boolean; error?: string }>;
+
+  // Gear: how-to-use notes
+  getGearUsageNotes: () => Promise<NoteEntry[]>;
+  getGearUsageNote: (id: string) => Promise<{ success: boolean; entry?: NoteEntry; error?: string }>;
+  saveGearUsageNote: (entry: NoteEntry) => Promise<{ success: boolean; entry?: NoteEntry; error?: string }>;
+  deleteGearUsageNote: (id: string) => Promise<{ success: boolean; error?: string }>;
+  attachGearUsageNotePdf: (
+    id: string,
+    filename: string,
+    bytes: Uint8Array
+  ) => Promise<{ success: boolean; entry?: NoteEntry; error?: string }>;
+  removeGearUsageNotePdf: (id: string) => Promise<{ success: boolean; entry?: NoteEntry; error?: string }>;
+
+  // Gear: fixes notes
+  getGearFixNotes: () => Promise<NoteEntry[]>;
+  getGearFixNote: (id: string) => Promise<{ success: boolean; entry?: NoteEntry; error?: string }>;
+  saveGearFixNote: (entry: NoteEntry) => Promise<{ success: boolean; entry?: NoteEntry; error?: string }>;
+  deleteGearFixNote: (id: string) => Promise<{ success: boolean; error?: string }>;
+  attachGearFixNotePdf: (
+    id: string,
+    filename: string,
+    bytes: Uint8Array
+  ) => Promise<{ success: boolean; entry?: NoteEntry; error?: string }>;
+  removeGearFixNotePdf: (id: string) => Promise<{ success: boolean; entry?: NoteEntry; error?: string }>;
+
+  // Sundays: counselor tips
+  getSundayCounselorTips: () => Promise<NoteEntry[]>;
+  getSundayCounselorTip: (id: string) => Promise<{ success: boolean; entry?: NoteEntry; error?: string }>;
+  saveSundayCounselorTip: (entry: NoteEntry) => Promise<{ success: boolean; entry?: NoteEntry; error?: string }>;
+  deleteSundayCounselorTip: (id: string) => Promise<{ success: boolean; error?: string }>;
+  attachSundayCounselorTipPdf: (
+    id: string,
+    filename: string,
+    bytes: Uint8Array
+  ) => Promise<{ success: boolean; entry?: NoteEntry; error?: string }>;
+  removeSundayCounselorTipPdf: (id: string) => Promise<{ success: boolean; entry?: NoteEntry; error?: string }>;
+
+  // Open local file path (e.g. PDF attachments)
+  openPath: (path: string) => Promise<{ success: boolean; error?: string }>;
+
+  // Packing lists
+  getPackingLists: () => Promise<PackingList[]>;
+  getPackingList: (id: string) => Promise<{ success: boolean; list?: PackingList; error?: string }>;
+  savePackingList: (list: PackingList) => Promise<{ success: boolean; list?: PackingList; error?: string }>;
 }
 
 declare global {

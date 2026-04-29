@@ -21,6 +21,13 @@ import TipsAndTricks from "./pages/tipsAndTricks";
 import TipDetail from "./pages/tipDetail";
 import TipEdit from "./pages/tipEdit";
 import AboutCoder from "./pages/aboutCoder";
+import PackingListEdit from "./pages/packingListEdit";
+import GearUsageNoteDetail from "./pages/gearUsageNoteDetail";
+import GearUsageNoteEdit from "./pages/gearUsageNoteEdit";
+import GearFixNoteDetail from "./pages/gearFixNoteDetail";
+import GearFixNoteEdit from "./pages/gearFixNoteEdit";
+import SundayCounselorTipDetail from "./pages/sundayCounselorTipDetail";
+import SundayCounselorTipEdit from "./pages/sundayCounselorTipEdit";
 
 export default function App() {
   return (
@@ -37,7 +44,17 @@ export default function App() {
           <Route path="/routes/:id" element={<RouteDetail />} />
           <Route path="/routes/:id/edit" element={<RouteEdit />} />
           <Route path="/gear" element={<Gear />} />
+          <Route path="/gear/packing/:id" element={<PackingListEdit />} />
+          <Route path="/gear/usage/new" element={<GearUsageNoteEdit />} />
+          <Route path="/gear/usage/:id/edit" element={<GearUsageNoteEdit />} />
+          <Route path="/gear/usage/:id" element={<GearUsageNoteDetail />} />
+          <Route path="/gear/fixes/new" element={<GearFixNoteEdit />} />
+          <Route path="/gear/fixes/:id/edit" element={<GearFixNoteEdit />} />
+          <Route path="/gear/fixes/:id" element={<GearFixNoteDetail />} />
           <Route path="/sundays" element={<Sundays />} />
+          <Route path="/sundays/counselor-tips/new" element={<SundayCounselorTipEdit />} />
+          <Route path="/sundays/counselor-tips/:id/edit" element={<SundayCounselorTipEdit />} />
+          <Route path="/sundays/counselor-tips/:id" element={<SundayCounselorTipDetail />} />
           <Route path="/menu" element={<Menu />} />
           <Route path="/weeks" element={<WeekSchedule />} />
           <Route path="/weeks/new" element={<WeekEdit />} />

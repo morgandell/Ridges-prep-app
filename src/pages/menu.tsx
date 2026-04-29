@@ -481,6 +481,6 @@ const MEAL_TIME_ORDER: Record<Meal["mealTime"], number> = {
   breakfast: 1,
   lunch: 2,
   dinner: 3,
-  // snack: 4,
-  dessert: 4,
+  snack: 4,
+  dessert: 5,
 };

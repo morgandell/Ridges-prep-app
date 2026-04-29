@@ -1,0 +1,18 @@
+.sundays-page {
+  padding: 2rem;
+}
+
+.sundays-page h1 {
+  margin: 0 0 1.5rem 0;
+  color: var(--color-textOnBackground);
+}
+
+.static-Sunday-info {
+  margin-bottom: 2rem;
+  color: var(--color-textOnBackground);
+}
+
+.sunday-input {
+  margin-top: 1rem;
+}
+
