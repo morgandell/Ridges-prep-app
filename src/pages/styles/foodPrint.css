@@ -89,7 +89,7 @@
 }
 
 .print-content {
-  background: white;
+  background: var(--color-white);
   padding: 2rem;
   border-radius: 8px;
 }
@@ -101,15 +101,15 @@
 .print-section h1 {
   font-size: 2rem;
   margin-bottom: 0.5rem;
-  color: #1f2937;
+  color: var(--color-black);
 }
 
 .print-section h2 {
   font-size: 1.5rem;
   margin-top: 2rem;
   margin-bottom: 0.5rem;
-  color: #374151;
-  border-bottom: 2px solid #e5e7eb;
+  color: var(--color-black);
+  border-bottom: 2px solid var(--color-grayBorderLight);
   padding-bottom: 0.5rem;
 }
 
@@ -117,18 +117,18 @@
   font-size: 1.25rem;
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
-  color: #4b5563;
+  color: var(--color-black);
 }
 
 .print-section h4 {
   font-size: 1.1rem;
   margin-top: 1rem;
   margin-bottom: 0.5rem;
-  color: #6b7280;
+  color: var(--color-black);
 }
 
 .print-meta {
-  color: #6b7280;
+  color: var(--color-black);
   font-size: 0.9rem;
   margin-bottom: 1.5rem;
 }
@@ -144,60 +144,54 @@
 .ingredients-table th,
 .meals-table th,
 .meal-ingredients-table th {
-  background: #f3f4f6;
+  background: var(--color-white);
   padding: 0.75rem;
   text-align: left;
   font-weight: 600;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-grayBorderLight);
 }
 
 .ingredients-table td,
 .meals-table td,
 .meal-ingredients-table td {
   padding: 0.75rem;
-  border: 1px solid #e5e7eb;
-}
-
-.ingredients-table tr:nth-child(even),
-.meals-table tr:nth-child(even),
-.meal-ingredients-table tr:nth-child(even) {
-  background: #f9fafb;
+  border: 1px solid var(--color-grayBorderLight);
 }
 
 .meal-detail-print {
   margin-bottom: 2rem;
   padding: 1rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-grayBorderLight);
   border-radius: 6px;
-  background: #f9fafb;
+  background: var(--color-white);
 }
 
 .servings-info {
   font-size: 0.9rem;
-  color: #6b7280;
+  color: var(--color-black);
   margin-bottom: 0.75rem;
   font-style: italic;
 }
 
 .restriction-note {
-  color: #dc2626;
+  color: var(--color-errorText);
   font-weight: 500;
   font-size: 0.9rem;
 }
 
 .no-restrictions-note {
-  color: #059669;
+  color: var(--color-black);
   font-size: 0.85rem;
   font-style: italic;
 }
 
 .restriction-alert {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: var(--color-whtie);
+  border: 1px solid var(--color-grayBorderLight);
   border-radius: 6px;
   padding: 0.75rem;
   margin-bottom: 1rem;
-  color: #991b1b;
+  color: var(--color-errorText);
 }
 
 .restriction-alert strong {
@@ -236,18 +230,15 @@
 
 .meal-note-display .edit-note-button:hover {
   opacity: 1;
-  background: #f3f4f6;
+  background: var(--color-white);
   border-radius: 4px;
 }
 
 .custom-note {
-  margin-top: 0.5rem;
-  padding: 0.5rem;
-  background: #f0f9ff;
-  border-left: 3px solid #3b82f6;
-  border-radius: 4px;
+  padding: 0.25rem;
+  background: var(--color-white);
   font-size: 0.9rem;
-  color: #1e40af;
+  color: var(--color-black);
 }
 
 .custom-note strong {
@@ -263,7 +254,7 @@
 .meal-note-textarea {
   width: 100%;
   padding: 0.5rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-grayBorderLight);
   border-radius: 4px;
   font-family: inherit;
   font-size: 0.875rem;
@@ -296,12 +287,12 @@
 }
 
 .cancel-note-button {
-  background: #e5e7eb;
-  color: #374151;
+  background: var(--color-grayBorderLight);
+  color: var(--color-black);
 }
 
 .cancel-note-button:hover {
-  background: #d1d5db;
+  background: var(--color-grayBorder);
 }
 
 @media print {
@@ -312,12 +303,12 @@
 
   .custom-note {
     background: white;
-    border: 1px solid #000;
-    color: #000 !important;
+    border: 1px solid var(--color-black);
+    color: var(--color-black) !important;
   }
 
   .custom-note strong {
-    color: #000 !important;
+    color: var(--color-black) !important;
   }
 }
 
@@ -339,7 +330,7 @@
 
   .content {
     padding: 0 !important;
-    background: white !important;
+    background: var(--color-white) !important;
   }
 
   /* Reset body/html for print */
@@ -368,7 +359,7 @@
 
   .print-content {
     padding: 0 !important;
-    background: white !important;
+    background: var(--color-white) !important;
     border-radius: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -398,8 +389,8 @@
   .meal-detail-print {
     page-break-inside: avoid;
     margin-bottom: 1rem;
-    background: white !important;
-    border: 1px solid #000 !important;
+    background: var(--color-white) !important;
+    border: 1px solid var(--color-black) !important;
   }
 
   .ingredients-table,
@@ -437,7 +428,7 @@
   .ingredients-table td,
   .meals-table td,
   .meal-ingredients-table td {
-    color: #000 !important;
+    color: var(--color-black) !important;
   }
 
   /* Ensure borders are visible */
@@ -447,19 +438,13 @@
   .ingredients-table td,
   .meals-table td,
   .meal-ingredients-table td {
-    border: 1px solid #000 !important;
-    background: white !important;
+    border: 1px solid var(--color-black) !important;
+    background: var(--color-white) !important;
   }
 
   .ingredients-table th,
   .meals-table th,
   .meal-ingredients-table th {
-    background: #f0f0f0 !important;
-  }
-
-  .ingredients-table tr:nth-child(even),
-  .meals-table tr:nth-child(even),
-  .meal-ingredients-table tr:nth-child(even) {
-    background: #f9f9f9 !important;
+    background: var(--color-white) !important;
   }
 }

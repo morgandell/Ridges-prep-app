@@ -90,10 +90,10 @@
 
 .packing-list-error {
   padding: 0.75rem 1rem;
-  background: #fee;
-  border: 1px solid #fcc;
+  background: var(--color-errorBackground);
+  border: 1px solid var(--color-errorBorder);
   border-radius: 6px;
-  color: #c33;
+  color: var(--color-errorText);
   margin-bottom: 1rem;
 }
 
@@ -197,7 +197,7 @@
   padding: 0.35rem 0.55rem;
   border-radius: 6px;
   border: 1px solid var(--color-grayBorder);
-  background: white;
+  background: var(--color-white);
   cursor: pointer;
   font-weight: 700;
 }

@@ -22,7 +22,7 @@
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 500;
-  transition: background-color 0.2s;
+  transition: var(--color-background) 0.2s;
 }
 
 .back-button {
@@ -165,7 +165,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--color-modalBackdrop);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -177,7 +177,7 @@
   padding: 1.5rem;
   border-radius: 12px;
   width: 320px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 30px var(--color-modalShadow);
 }
 
 .modal.large {

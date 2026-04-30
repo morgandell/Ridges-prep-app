@@ -23,7 +23,6 @@
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 500;
-  /* transition: background-color 0.2s; */
 }
 
 .back-button:hover {
@@ -61,7 +60,7 @@
 .form-group textarea:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  box-shadow: 0 0 0 3px var(--color-primaryBoxShadow);
 }
 
 .form-row {
@@ -88,7 +87,7 @@
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
-  transition: background-color 0.2s;
+  transition: var(--color-background) 0.2s;
 }
 
 .input-with-button button:hover {
@@ -134,11 +133,11 @@
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  transition: background-color 0.2s;
+  transition: var(--color-background) 0.2s;
 }
 
 .remove-button:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--color-modalShadow);
 }
 
 .form-actions {
@@ -158,12 +157,12 @@
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: var(--color-background) 0.2s;
 }
 
 .cancel-button {
   background: var(--color-secondary);
-  color: var(--color-grayText);
+  color: var(--color-textOnSecondary);
 }
 
 .cancel-button:hover {
@@ -200,7 +199,7 @@
 
 .error-input {
   border-color: var(--color-error) !important;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+  box-shadow: 0 0 0 3px var(--color-modalShadow) !important;
 }
 
 .field-error {
@@ -268,6 +267,10 @@
   flex-direction: column;
   gap: 4px;
   margin-bottom: 0.75rem;
+}
+
+.ingredient-modal label select {
+  width: 100%
 }
 
 .unit-select {

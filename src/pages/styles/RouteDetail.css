@@ -26,8 +26,9 @@
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 500;
-  transition: background-color 0.2s;
+  transition: var(--color-background) 0.2s;
 }
+
 .back-button {
   background: var(--color-secondary);
   color: var(--color-textOnSecondary);
@@ -113,20 +114,20 @@
 .total-hint {
   font-size: 0.8rem;
   font-weight: 400;
-  color: #6b7280;
+  color: var(--color-grayTextLight);
   margin-left: 0.25rem;
 }
 
 .total-item.total-error .total-value {
   font-size: 0.9rem;
   font-weight: 500;
-  color: #b91c1c;
+  color: var(--color-errorText);
 }
 
 .route-section {
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-grayBorder);
 }
 
 .route-section:last-child {
@@ -159,8 +160,8 @@
   background: var(--color-card);
   border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 4px var(--color-modalShadow);
+  transition: transform 0.2s, var(--color-modalShadow) 0.2s;
   border: 1px solid var(--color-card);
 }
 
@@ -186,7 +187,6 @@
   gap: 1.5rem;
   margin-bottom: 1rem;
   padding: 0.75rem 1rem;
-  /* font-weight: 600; */
   color: var(--color-primary);
 }
 
@@ -240,7 +240,7 @@
 .segment-info {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-grayBorderLight);
   display: flex;
   flex-direction: row;
   justify-content: end;
@@ -252,8 +252,8 @@
 }
 
 .route-notes {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--color-backgroundLight);
+  border: 1px solid var(--color-grayBorder);
   border-radius: 6px;
   padding: 1rem;
   white-space: pre-wrap;
@@ -377,10 +377,10 @@
 }
 
 .route-map-container {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-backgroundAlt);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px var(--color-modalShadow);
   margin-top: 1rem;
 }
 
@@ -403,7 +403,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--color-primaryBoxShadow);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -416,7 +416,7 @@
   background: var(--color-card);
   border-radius: 10px;
   border: 1px solid var(--color-grayBorder);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 10px 40px var(--color-modalShadow);
 }
 
 .modal-header {
@@ -424,7 +424,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.1rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-grayBorderLight);
 }
 
 .modal-title {
@@ -459,16 +459,16 @@
 
 .modal-row select {
   padding: 0.65rem 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-grayBorder);
   border-radius: 6px;
   font-size: 0.95rem;
   font-family: inherit;
 }
 
 .modal-error {
-  color: #b91c1c;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  color: var(--color-errorText);
+  background: var(--color-errorBackground);
+  border: 1px solid var(--color-errorBorder);
   border-radius: 6px;
   padding: 0.5rem 0.75rem;
   font-size: 0.9rem;
@@ -476,7 +476,7 @@
 
 .modal-hint {
   margin-top: 0.75rem;
-  color: #6b7280;
+  color: var(--color-text);
   font-size: 0.9rem;
 }
 
@@ -485,7 +485,7 @@
   justify-content: flex-end;
   gap: 0.5rem;
   padding: 0.9rem 1.1rem 1.1rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-grayBorderLight);
 }
 
 .primary-button,

@@ -51,16 +51,16 @@
 
 .error-message {
   padding: 1rem;
-  background: #fee;
-  border: 1px solid #fcc;
+  background: var(--color-errorBackground);
+  border: 1px solid var(--color-errorBorder);
   border-radius: 6px;
-  color: #c33;
+  color: var(--color-errorText);
   margin-bottom: 1rem;
 }
 
 .add-menu-form {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--color-card);
+  border: 1px solid var(--color-grayBorder);
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 2rem;
@@ -74,7 +74,7 @@
 .add-menu-form input {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-grayBorder);
   border-radius: 4px;
   font-size: 1rem;
   margin-bottom: 1rem;
@@ -105,18 +105,18 @@
 }
 
 .cancel-button {
-  background: #e5e7eb;
-  color: #374151;
+  background: var(--color-backgroundAlt);
+  color: var(--color-grayText);
 }
 
 .cancel-button:hover {
-  background: #d1d5db;
+  background: var(--color-backgorundHover);
 }
 
 .empty-state {
   text-align: center;
   padding: 3rem;
-  color: #6b7280;
+  color: var(--color-grayBorder);
 }
 
 .past-menus-list {
@@ -126,11 +126,11 @@
 }
 
 .past-menu-card {
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--color-card);
+  border: 1px solid var(--color-grayBorder);
   border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px var(--color-modalShadow);
   cursor: pointer;
 }
 
@@ -159,7 +159,7 @@
 
 .past-menu-date {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--color-grayText);
   white-space: nowrap;
   margin-left: 1rem;
 }
@@ -200,12 +200,12 @@
 }
 
 .delete-button {
-  background: #fee;
-  color: #c33;
+  background: var(--color-delete);
+  color: var(--color-textOnDelete);
 }
 
 .delete-button:hover {
-  background: #fcc;
+  background: var(--color-deleteHover);
 }
 
 .past-menu-actions {
@@ -219,16 +219,16 @@
 
 .past-menu-preview .past-menu-date {
   margin-bottom: 1rem;
-  color: #6b7280;
+  color: var(--color-grayText);
 }
 
 .past-menu-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: var(--color-backgroundAlt);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px var(--color-modalShadow);
   background-color: var(--color-background);
 }
 
@@ -242,25 +242,18 @@
 
 .past-menu-table td {
   padding: 0.75rem;
-  border-top: 1px solid #e5e7eb;
+  background: var(--color-backgroundAlt);
+  border-top: 1px solid var(--color-grayBorder);
+  border-right: 1px solid var(--color-grayBorder);
 }
 
 .past-menu-table td.day {
   font-weight: 600;
-  background: #f9fafb;
-}
-
-.past-menu-table td.filled {
-  background: #f0f9ff;
-}
-
-.past-menu-table td.empty {
-  color: #9ca3af;
-  font-style: italic;
+  background: var(--color-backgroundAlt);
 }
 
 .loading {
   text-align: center;
   padding: 3rem;
-  color: #6b7280;
+  color: var(--color-background);
 }

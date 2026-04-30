@@ -208,9 +208,6 @@ export default function PackingListEdit() {
               Print
             </button>
           )}
-          <span className="packing-list-status" aria-live="polite">
-            {saving ? "Saving…" : dirty ? "Unsaved changes" : "Saved"}
-          </span>
         </div>
       </div>
 
