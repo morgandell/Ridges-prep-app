@@ -28,19 +28,29 @@ export default function WeekEdit() {
     ageGroup: "intro",
     team: "A",
   });
-  const [selectedMeals, setSelectedMeals] = useState<Set<string>>(new Set());
 const DAYS: DayOfWeek[] = [
   "sunday","monday","tuesday","wednesday","thursday","friday"
 ];
 
 const SLOTS: MealSlot[] = ["breakfast","lunch","dinner"];
+const DEFAULT_INCLUDED_MEALS: WeekMealSelection[] = [
+  { day: "monday", slot: "lunch", mealId: "" },
+  { day: "monday", slot: "dinner", mealId: "" },
+  { day: "tuesday", slot: "breakfast", mealId: "" },
+  { day: "tuesday", slot: "lunch", mealId: "" },
+  { day: "tuesday", slot: "dinner", mealId: "" },
+  { day: "wednesday", slot: "breakfast", mealId: "" },
+  { day: "wednesday", slot: "lunch", mealId: "" },
+  { day: "wednesday", slot: "dinner", mealId: "" },
+  { day: "thursday", slot: "breakfast", mealId: "" },
+  { day: "thursday", slot: "lunch", mealId: "" },
+];
 const [meals, setMeals] = useState<Meal[]>([]);
 const [included, setIncluded] = useState<WeekMealSelection[]>([]);
 const [menu, setMenu] = useState<Menu | null>(null);
 const [mealOverrides, setMealOverrides] = useState<
   NonNullable<WeekStats["mealOverrides"]>
   >({});
-const [swappingMeal, setSwappingMeal] = useState<{ day: DayOfWeek; slot: MealSlot } | null>(null);
 const [routes, setRoutes] = useState<Route[]>([]);
 const [routeId, setRouteId] = useState<string>("");
 
@@ -83,14 +93,13 @@ const [routeId, setRouteId] = useState<string>("");
   }, [id]);
 
   useEffect(() => {
-  async function loadMeals() {
-    const loadedMeals = await window.electronAPI.getMeals();
-    setMeals(loadedMeals);
-  }
-  loadMeals();
-}, []);
+    if (!isEditing) {
+      setIncluded(DEFAULT_INCLUDED_MEALS);
+      setMealOverrides({});
+    }
+  }, [isEditing]);
 
-useEffect(() => {
+  useEffect(() => {
   async function loadData() {
     const [loadedMeals, loadedMenu, routesResult] = await Promise.all([
       window.electronAPI.getMeals(),
@@ -163,13 +172,6 @@ useEffect(() => {
     }
   }
 
-  function toggleMeal(mealId: string) {
-  setSelectedMeals(prev => {
-    const next = new Set(prev);
-    next.has(mealId) ? next.delete(mealId) : next.add(mealId);
-    return next;
-  });
-}
 function toggleCell(day: DayOfWeek, slot: MealSlot) {
   setIncluded(prev => {
     const exists = prev.find(
@@ -177,6 +179,16 @@ function toggleCell(day: DayOfWeek, slot: MealSlot) {
     );
 
     if (exists) {
+      setMealOverrides(prevOverrides => {
+        const updated = { ...prevOverrides };
+        if (updated[day]?.[slot]) {
+          delete updated[day][slot];
+          if (Object.keys(updated[day]).length === 0) {
+            delete updated[day];
+          }
+        }
+        return Object.keys(updated).length > 0 ? updated : {};
+      });
       return prev.filter(c => c !== exists);
     }
 
@@ -185,9 +197,27 @@ function toggleCell(day: DayOfWeek, slot: MealSlot) {
       {
         day,
         slot,
-        mealId: "", // filled later by menu
+        mealId: "",
       },
     ];
+  });
+}
+
+function updateMealSelection(day: DayOfWeek, slot: MealSlot, mealId: string) {
+  setMealOverrides(prev => {
+    const updated = { ...prev };
+    if (!updated[day]) updated[day] = {};
+
+    if (mealId) {
+      updated[day][slot] = mealId;
+    } else {
+      delete updated[day][slot];
+      if (Object.keys(updated[day]).length === 0) {
+        delete updated[day];
+      }
+    }
+
+    return Object.keys(updated).length > 0 ? updated : {};
   });
 }
 
@@ -457,53 +487,10 @@ function removeRestriction(camperId: string, value: string) {
 </div>
 
 <div className="form-group">
-  <label>Meals included this week</label>
-
-  <table className="week-grid">
-    <thead>
-      <tr>
-        <th />
-        {SLOTS.map(slot => (
-          <th key={slot}>{slot.toUpperCase()}</th>
-        ))}
-      </tr>
-    </thead>
-
-    <tbody>
-      {DAYS.map(day => (
-        <tr key={day}>
-          <td className="day">{day.toUpperCase()}</td>
-
-          {SLOTS.map(slot => {
-            const active = included.some(
-              c => c.day === day && c.slot === slot
-            );
-
-            return (
-              <td
-                key={slot}
-                className={`week-grid-cell ${active ? "active" : ""}`}
-                onClick={() => toggleCell(day, slot)}
-              >
-                {active ? "✓" : ""}
-              </td>
-            );
-          })}
-        </tr>
-      ))}
-    </tbody>
-  </table>
-
-  <small className="hint">
-    Select which meal slots will be used during this week.
-  </small>
-</div>
-
-<div className="form-group">
-  <label>Week-specific meal swaps</label>
-  <p className="hint">Override meals from the main menu for this week only. Click a meal to swap it.</p>
+  <label>Week meals</label>
+  <p className="hint">Use one table to choose whether they eat each meal and what meal it is.</p>
   {menu && (
-    <table className="week-menu-table">
+    <table className="week-menu-table unified-week-table">
       <thead>
         <tr>
           <th>Day</th>
@@ -517,40 +504,32 @@ function removeRestriction(camperId: string, value: string) {
           <tr key={day}>
             <td className="day">{day.charAt(0).toUpperCase() + day.slice(1)}</td>
             {SLOTS.map(slot => {
+              const isIncluded = included.some(c => c.day === day && c.slot === slot);
               const overrideMealId = mealOverrides[day]?.[slot];
               const menuMealId = menu.days[day]?.[slot];
               const currentMealId = overrideMealId || menuMealId;
               const currentMeal = meals.find(m => m.id === currentMealId);
-              const isSwapping = swappingMeal?.day === day && swappingMeal?.slot === slot;
               const hasOverride = !!overrideMealId;
 
               return (
                 <td key={slot} className={`menu-swap-cell ${hasOverride ? "overridden" : ""}`}>
-                  {isSwapping ? (
-                    <div className="meal-swap-selector">
+                  <div className="week-meal-cell">
+                    <label className="eat-toggle">
+                      <input
+                        type="checkbox"
+                        checked={isIncluded}
+                        onChange={() => toggleCell(day, slot)}
+                      />
+                      <span>Packed meal</span>
+                    </label>
+
+                    {isIncluded ? (
                       <select
+                        className="meal-picker"
                         value={overrideMealId || ""}
-                        onChange={(e) => {
-                          const newMealId = e.target.value || undefined;
-                          setMealOverrides(prev => {
-                            const updated = { ...prev };
-                            if (!updated[day]) updated[day] = {};
-                            if (newMealId) {
-                              updated[day][slot] = newMealId;
-                            } else {
-                              delete updated[day][slot];
-                              if (Object.keys(updated[day]).length === 0) {
-                                delete updated[day];
-                              }
-                            }
-                            return Object.keys(updated).length > 0 ? updated : {};
-                          });
-                          setSwappingMeal(null);
-                        }}
-                        onBlur={() => setSwappingMeal(null)}
-                        autoFocus
+                        onChange={(e) => updateMealSelection(day, slot, e.target.value)}
                       >
-                        <option value="">Use menu default</option>
+                        <option value="">Use menu default{currentMeal ? ` (${currentMeal.name})` : ""}</option>
                         {meals
                           .filter(m => m.mealTime === slot || slot === "dinner")
                           .map(meal => (
@@ -559,30 +538,12 @@ function removeRestriction(camperId: string, value: string) {
                             </option>
                           ))}
                       </select>
-                      <button
-                        type="button"
-                        onClick={() => setSwappingMeal(null)}
-                        className="cancel-swap-button"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      className="meal-swap-display"
-                      onClick={() => setSwappingMeal({ day, slot })}
-                      title="Click to swap meal"
-                    >
-                      {currentMeal ? (
-                        <>
-                          <span className="meal-name">{currentMeal.name}</span>
-                          {hasOverride && <span className="override-badge">Swapped</span>}
-                        </>
-                      ) : (
-                        <span className="no-meal">Click to set</span>
-                      )}
-                    </div>
-                  )}
+                    ) : (
+                      <span className="no-meal">Not eating this meal</span>
+                    )}
+
+                    {isIncluded && hasOverride && <span className="override-badge">Custom meal for this week only</span>}
+                  </div>
                 </td>
               );
             })}
@@ -591,6 +552,9 @@ function removeRestriction(camperId: string, value: string) {
       </tbody>
     </table>
   )}
+  <small className="hint">
+    Uncheck a cell to remove that meal from the week. Checked cells can use menu default or a custom meal.
+  </small>
 </div>
 
         <div className="form-actions">

@@ -36,10 +36,10 @@
 
 .error-message {
   padding: 1rem;
-  background: #fee;
-  border: 1px solid #fcc;
+  background: var(--color-errorBackground);
+  border: 1px solid var(--color-errorBorder);
   border-radius: 6px;
-  color: #c33;
+  color: var(--color-errorText);
   margin-bottom: 1rem;
 }
 
@@ -55,7 +55,7 @@
   width: 300px;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid var(--color-grayBorderLight);
   padding-right: 2rem;
   overflow-y: auto;
 }
@@ -69,7 +69,7 @@
 .empty-state {
   text-align: center;
   padding: 2rem;
-  color: #6b7280;
+  color: var(--color-grayText);
 }
 
 .routes-grid {
@@ -82,7 +82,7 @@
    background: var(--color-card);
   border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px var(--color-primaryBoxShadow);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
   border: 1px solid var(--color-card);
@@ -90,7 +90,7 @@
 
 .route-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 8px var(--color-primaryBoxShadow);
 }
 
 .route-card.Intro {
@@ -140,7 +140,7 @@
 }
 
 .delete-button:hover {
-  background: #fee;
+  background: var(--color-deleteHover);
 }
 
 .route-card-info {
@@ -149,7 +149,7 @@
   gap: 0.5rem;
   margin-bottom: 0.75rem;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--color-grayText);
 }
 
 .route-stat {
@@ -181,11 +181,11 @@
 }
 
 .route-form {
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--color-card);
+  border: 1px solid var(--color-grayBorderLight);
   border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px var(--color-primaryBoxShadow);
 }
 
 .route-form h2 {
@@ -197,7 +197,7 @@
 .form-section {
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-grayBorderLight);
 }
 
 .form-section:last-of-type {
@@ -227,7 +227,7 @@
 .form-group textarea {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-grayBorder);
   border-radius: 4px;
   font-size: 0.9rem;
   font-family: inherit;
@@ -237,7 +237,7 @@
 .form-group textarea:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px var(--color-primaryBoxShadow);
 }
 
 .form-row {
@@ -247,15 +247,15 @@
 }
 
 .hint {
-  color: #6b7280;
+  color: var(--color-grayText);
   font-size: 0.875rem;
   font-style: italic;
   margin: 0.5rem 0;
 }
 
 .stop-item {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--color-card);
+  border: 1px solid var(--color-grayBorderLight);
   border-radius: 6px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -275,8 +275,8 @@
 }
 
 .remove-button {
-  background: #fee;
-  color: #c33;
+  background: var(--color-delete);
+  color: var(--color-textOnDelete);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -285,7 +285,7 @@
 }
 
 .remove-button:hover {
-  background: #fcc;
+  background: var(--color-deleteHover);
 }
 
 .add-stop-button {
@@ -305,8 +305,8 @@
 }
 
 .totals-section {
-  background: #f0f9ff;
-  border: 2px solid #3b82f6;
+  background: var(--color-tagBackground);
+  border: 2px solid var(--color-tagText);
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
@@ -329,7 +329,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem;
-  background: white;
+  background: var(--color-card);
   border-radius: 4px;
 }
 
@@ -373,5 +373,5 @@
 .loading {
   text-align: center;
   padding: 3rem;
-  color: #6b7280;
+  color: var(--color-grayText);
 }

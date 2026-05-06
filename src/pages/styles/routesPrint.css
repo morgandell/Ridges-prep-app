@@ -7,7 +7,7 @@
 .routes-print-loading {
   padding: 3rem;
   text-align: center;
-  color: #6b7280;
+  color: var(--color-grayText);
 }
 
 .print-header {
@@ -59,7 +59,7 @@
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: var(--cololor-background) 0.2s;
 }
 
 .refresh-button {
@@ -95,7 +95,7 @@
 }
 
 .print-content {
-  background: white;
+  background: var(--color-white);
   padding: 2rem;
   border-radius: 8px;
 }
@@ -107,15 +107,15 @@
 .print-section h1 {
   font-size: 2rem;
   margin-bottom: 0.5rem;
-  color: #1f2937;
+  color: var(--color-black);
 }
 
 .print-section h2 {
   font-size: 1.5rem;
   margin-top: 2rem;
   margin-bottom: 0.5rem;
-  color: #374151;
-  border-bottom: 2px solid #e5e7eb;
+  color: var(--color-black);
+  border-bottom: 2px solid var(--color-grayBorder);
   padding-bottom: 0.5rem;
 }
 
@@ -123,14 +123,14 @@
   font-size: 1.25rem;
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
-  color: #4b5563;
+  color: var(--color-black);
 }
 
 .print-section h4 {
   font-size: 1.1rem;
   margin-top: 1rem;
   margin-bottom: 0.5rem;
-  color: #6b7280;
+  color: var(--color-black);
 }
 
 .print-totals {
@@ -138,7 +138,7 @@
 }
 
 .print-meta {
-  color: #6b7280;
+  color: var(--color-black);
   font-size: 0.9rem;
   margin-bottom: 1.5rem;
 }
@@ -148,7 +148,7 @@
 }
 
 .print-empty {
-  color: #6b7280;
+  color: var(--color-black);
   font-style: italic;
   padding: 2rem 0;
 }
@@ -172,19 +172,19 @@
 .route-days-table th,
 .route-days-table td {
   padding: 0.5rem 0.75rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-grayBorder);
   text-align: left;
   vertical-align: top;
 }
 
 .route-days-table th {
-  background: #f3f4f6;
+  background: var(--color-white);
   font-weight: 600;
-  color: #374151;
+  color: var(--color-black);
 }
 
 .route-days-table tbody tr:nth-child(even) {
-  background: #f9fafb;
+  background: var(--color-white);
 }
 
 .route-days-table td:first-child {
@@ -200,17 +200,15 @@
 
 .point-note {
   font-size: 0.85rem;
-  color: #4b5563;
+  color: var(--color-black);
   margin-top: 0.25rem;
   margin-left: 1rem;
   font-style: italic;
 }
 
 .route-notes-print {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background: #f0f9ff;
-  border-left: 4px solid #3b82f6;
+  margin-top: 1rem;
+  background: var(--color-white);
   border-radius: 4px;
 }
 
@@ -227,7 +225,7 @@
 
   .content {
     padding: 0 !important;
-    background: white !important;
+    background: var(--color-white) !important;
   }
 
   html, body {
@@ -250,7 +248,7 @@
 
   .print-content {
     padding: 0 !important;
-    background: white !important;
+    background: var(--color-white) !important;
     border-radius: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -277,11 +275,11 @@
   .route-days-table th,
   .route-days-table td {
     padding: 0.35rem 0.5rem;
-    border: 1px solid #000 !important;
+    border: 1px solid var(--color-black) !important;
   }
 
   .route-days-table th {
-    background: #e5e5e5 !important;
+    background: var(--color-white) !important;
   }
 
   .route-days-table tbody tr {
@@ -292,22 +290,22 @@
   .print-section h2,
   .print-section h3 {
     page-break-after: avoid;
-    color: #000 !important;
+    color: var(--color-black) !important;
   }
 
   .print-meta,
   .point-block,
   .point-note,
   .weeks-list li {
-    color: #000 !important;
+    color: var(--color-black) !important;
   }
 
   .route-notes-print {
-    background: white !important;
-    border: 1px solid #000 !important;
+    background: var(--color-white) !important;
+    border: 1px solid var(--color-black) !important;
   }
 
   .route-notes-print p {
-    color: #000 !important;
+    color: var(--color-black) !important;
   }
 }

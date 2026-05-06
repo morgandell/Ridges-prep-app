@@ -34,25 +34,25 @@
 
 .error-message {
   padding: 1rem;
-  background: #fee;
-  border: 1px solid #fcc;
+  background: var(--color-errorBackground);
+  border: 1px solid var(--color-errorBorder);
   border-radius: 6px;
-  color: #c33;
+  color: var(--color-errorText);
   margin-bottom: 1rem;
 }
 
 .route-form {
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--color-card);
+  border: 1px solid var(--color-grayBorder);
   border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px var(--color-primaryBoxShadow);
 }
 
 .form-section {
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-grayBorder);
 }
 
 .form-section:last-of-type {
@@ -99,15 +99,15 @@
 }
 
 .hint {
-  color: #6b7280;
+  color: var(--color-grayText);
   font-size: 0.875rem;
   font-style: italic;
   margin: 0.5rem 0;
 }
 
 .stop-item {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--color-card);
+  border: 1px solid var(--color-grayBorderLight);
   border-radius: 6px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -127,8 +127,8 @@
 }
 
 .remove-button {
-  background: #fee;
-  color: #c33;
+  background: var(--color-errorBackground);
+  color: var(--color-errorText);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -137,7 +137,7 @@
 }
 
 .remove-button:hover {
-  background: #fcc;
+  background: var(--color-deleteHover);
 }
 
 .add-stop-button {
@@ -157,8 +157,8 @@
 }
 
 .totals-section {
-  background: #f0f9ff;
-  border: 2px solid #3b82f6;
+  background: var(--color-tagBackground);
+  border: 2px solid var(--color-tagText);
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
@@ -181,7 +181,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem;
-  background: white;
+  background: var(--color-card);
   border-radius: 4px;
 }
 
@@ -199,14 +199,14 @@
 .total-hint {
   font-size: 0.8rem;
   font-weight: 400;
-  color: #6b7280;
+  color: var(--color-grayText);
   margin-left: 0.25rem;
 }
 
 .total-item.total-error .total-value {
   font-size: 0.9rem;
   font-weight: 500;
-  color: #b91c1c;
+  color: var(--color-errorText);
 }
 
 .form-actions {
@@ -227,12 +227,12 @@
 }
 
 .cancel-button {
-  background: #e5e7eb;
-  color: #374151;
+  background: var(--color-background);
+  color: var(--color-grayText);
 }
 
 .cancel-button:hover {
-  background: #d1d5db;
+  background: var(--color-backgroundHover);
 }
 
 .save-button {
@@ -250,10 +250,10 @@
 }
 
 .route-map-container {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-card);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px var(--color-primaryBoxShadow);
   margin-top: 1rem;
 }
 
@@ -266,8 +266,8 @@
 
 .map-control-button {
   padding: 0.5rem 1rem;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  background: var(--color-background);
+  border: 1px solid var(--color-grayBorder);
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.875rem;
@@ -277,8 +277,8 @@
 }
 
 .map-control-button:hover {
-  background: #e5e7eb;
-  border-color: #9ca3af;
+  background: var(--color-backgroundHover);
+  border-color: var(--color-grayBorder);
 }
 
 .map-control-button.active {
@@ -301,7 +301,7 @@
   margin-top: 12px;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-grayBorder);
 }
 
 /* Map section styles */
@@ -320,7 +320,7 @@
   margin-bottom: 1rem;
   font-size: 1.1rem;
   font-weight: 500;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 2px 8px var(--color-modalBackdrop);
 }
 
 .instruction-icon {
@@ -335,14 +335,14 @@
 .points-summary {
   margin-top: 1rem;
   padding: 1rem;
-  background: var(--color-backgroundLight, #f9fafb);
+  background: var(--color-backgroundLight);
   border-radius: 8px;
 }
 
 .points-instruction {
   margin: 0 0 0.75rem 0;
   font-size: 0.9rem;
-  color: #6b7280;
+  color: var(--color-grayText);
 }
 
 .points-list {
@@ -357,14 +357,14 @@
   gap: 0.75rem;
   padding: 0.75rem 1rem;
   border-radius: 8px;
-  background: white;
-  border: 2px solid #e5e7eb;
+  background: var(--color-card);
+  border: 2px solid var(--color-grayBorder);
   transition: all 0.2s;
 }
 
 .point-chip:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px var(--color-primaryBoxShadow);
 }
 
 .start-chip {
@@ -391,13 +391,13 @@
 .point-coords {
   flex: 1;
   font-family: 'Courier New', monospace;
-  color: #6b7280;
+  color: var(--color-grayText);
   font-size: 0.9rem;
 }
 
 .remove-chip {
-  background: #ef4444;
-  color: white;
+  background: var(--color-delete);
+  color: var(--color-textOnDelete);
   border: none;
   border-radius: 50%;
   width: 24px;
@@ -407,11 +407,11 @@
   justify-content: center;
   cursor: pointer;
   font-size: 0.9rem;
-  transition: background 0.2s;
+  transition: var(--color-background) 0.2s;
 }
 
 .remove-chip:hover {
-  background: var(--color-error);
+  background: var(--color-deleteHover);
 }
 
 /* Drag and drop styles */
@@ -420,7 +420,7 @@
 }
 
 .drag-handle {
-  color: #9ca3af;
+  color: var(--color-grayText);
   font-size: 1.2rem;
   cursor: grab;
   user-select: none;
@@ -432,7 +432,7 @@
 
 .point-chip.dragging {
   opacity: 0.5;
-  border: 2px dashed #3b82f6;
+  border: 2px dashed var(--color-primary);
 }
 
 .point-chip.stop-chip:hover {
@@ -443,16 +443,16 @@
 .route-by-day-preview .day-preview-hint {
   margin: -0.5rem 0 1rem 0;
   font-size: 0.9rem;
-  color: #6b7280;
+  color: var(--color-grayText);
 }
 
 .route-by-day-preview .stops-by-day {
   margin-bottom: 1.5rem;
-  background: var(--color-card, #f9fafb);
+  background: var(--color-card);
   border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 4px var(--color-primaryBoxShadow);
+  border: 1px solid var(--color-grayBorderLight);
 }
 
 .route-by-day-preview .stops-by-day:last-child {
@@ -485,7 +485,7 @@
 
 .route-by-day-preview .stop-details {
   margin-bottom: 1rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-grayBorderLight);
   padding-top: 1rem;
 }
 
@@ -500,11 +500,11 @@
 }
 
 .route-by-day-preview .stop-details-editable {
-  background: #fafafa;
+  background: var(--color-backgroundAlt);
   border-radius: 6px;
   padding: 1rem;
   margin-top: 0.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-grayBorderLight);
 }
 
 .route-by-day-preview .stop-details h4,
@@ -526,7 +526,7 @@
   margin-top: 0.5rem;
   padding-top: 0.5rem;
   font-size: 0.9rem;
-  color: #4b5563;
+  color: var(--color-grayText);
 }
 
 .route-by-day-preview .segment-info div {
@@ -537,15 +537,6 @@
   color: var(--color-primary);
   margin-right: 0.25rem;
 }
-
-
-/* .radio-group {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0.5rem;
-  justify-content: space-evenly;
-  margin-bottom: 0.75rem;
-} */
 
 .radio-toggle {
   margin: 0 auto;

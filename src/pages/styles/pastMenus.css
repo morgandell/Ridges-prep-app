@@ -105,12 +105,12 @@
 }
 
 .cancel-button {
-  background: var(--color-backgroundAlt);
+  background: var(--color-background);
   color: var(--color-grayText);
 }
 
 .cancel-button:hover {
-  background: var(--color-backgorundHover);
+  background: var(--color-backgroundHover);
 }
 
 .empty-state {

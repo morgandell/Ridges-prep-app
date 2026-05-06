@@ -23,7 +23,7 @@
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: var(--color-background) 0.2s;
 }
 
 .new-week-button:hover {
@@ -50,12 +50,12 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
   border: 1px solid var(--color-grayBorderLight);
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, var(--color-primaryBoxShadow) 0.15s ease;
 }
 
 .week-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 6px 14px var(--color-primaryBoxShadow);
 }
 
 .week-card-header {
@@ -68,7 +68,7 @@
 .week-card-header h3 {
   margin: 0;
   font-size: 1.1rem;
-  color: var(--color-textOnCard, #111827);
+  color: var(--color-textOnBackground);
 }
 
 .week-age-group {
@@ -83,7 +83,7 @@
 
 .week-card-body p {
   margin: 0.25rem 0;
-  color: var(--color-textOnCard, #374151);
+  color: var(--color-textOnBackground);
   font-size: 0.95rem;
 }
 
@@ -121,7 +121,7 @@
 .week-form textarea:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  box-shadow: 0 0 0 3px var(--color-primaryBoxShadow);
 }
 
 .week-form .form-actions {
