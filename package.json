@@ -9,13 +9,15 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "echo \"No linting configured\""
+    "lint": "echo \"No linting configured\"",
+    "dist": "electron-builder"
   },
   "keywords": [],
   "author": {
-    "name": "morgandell",
+    "name": "Morgan Dellermann",
     "email": "morgandellermann@gmail.com"
   },
+  
   "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.26.0",
@@ -36,6 +38,7 @@
     "babel-loader": "^9.2.1",
     "css-loader": "^6.11.0",
     "electron": "^41.1.1",
+    "electron-builder": "^26.8.1",
     "node-loader": "^2.1.0",
     "style-loader": "^3.3.4",
     "ts-loader": "^9.5.4",
@@ -51,5 +54,30 @@
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.1",
     "react-router-dom": "^7.11.0"
+  },
+
+   "build": {
+    "appId": "com.yourcompany.myapp",
+    "productName": "My App",
+
+    "files": [
+      "**/*"
+    ],
+
+    "directories": {
+      "output": "dist"
+    },
+
+    "win": {
+      "target": "nsis"
+    },
+
+    "mac": {
+      "target": "dmg"
+    },
+
+    "linux": {
+      "target": "AppImage"
+    }
   }
 }
