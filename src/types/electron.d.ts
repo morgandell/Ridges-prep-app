@@ -20,6 +20,7 @@ export interface ElectronAPI {
   // Week stats
   getWeekStats: () => Promise<{ success: boolean; weeks?: WeekStats[]; error?: string }>;
   saveWeekStats: (week: WeekStats) => Promise<{ success: boolean; error?: string }>;
+  deleteWeekStats: (id: string) => Promise<{ success: boolean; error?: string }>;
 
   // Past menus
   getPastMenus: () => Promise<{ success: boolean; pastMenus?: PastMenu[]; error?: string }>;

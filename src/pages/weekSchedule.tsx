@@ -50,6 +50,32 @@ export default function WeekSchedule() {
   ).length ?? 0;
 }
 
+  async function handleDeleteWeek(
+    e: React.MouseEvent,
+    week: WeekStats,
+  ) {
+    e.stopPropagation();
+    if (
+      !window.confirm(
+        `Delete week starting ${formatDate(week.weekStart)}?`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const result = await window.electronAPI.deleteWeekStats(week.id);
+      if (result.success) {
+        setWeeks(prev => prev.filter(w => w.id !== week.id));
+      } else {
+        alert("Failed to delete week: " + (result.error || "Unknown error"));
+      }
+    } catch (err) {
+      console.error("Error deleting week:", err);
+      alert("Failed to delete week");
+    }
+  }
+
 
   return (
     <div className="week-schedule-page">
@@ -98,9 +124,19 @@ export default function WeekSchedule() {
               >
                 <div className="week-card-header">
                   <h3>{formatDate(week.weekStart)}</h3>
-                  <span className="week-age-group">
-                    {week.ageGroup}
-                  </span>
+                  <div className="week-card-header-actions">
+                    <span className="week-age-group">
+                      {week.ageGroup}
+                    </span>
+                    <button
+                      type="button"
+                      className="week-card-delete"
+                      aria-label={`Delete week ${formatDate(week.weekStart)}`}
+                      onClick={(e) => handleDeleteWeek(e, week)}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
                 <div className="week-card-body">
                   <p>

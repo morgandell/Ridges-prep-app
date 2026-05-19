@@ -1,12 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Route } from "../types/route";
+import { AgeGroup, Route } from "../types/route";
 import "./styles/routes.css";
+
+type AgeGroupFilter = "all" | AgeGroup | "unassigned";
+
+const AGE_GROUP_FILTERS: { value: AgeGroupFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "Intro", label: "Intro" },
+  { value: "Middle School", label: "Middle School" },
+  { value: "High School", label: "High School" },
+  { value: "unassigned", label: "Unassigned" },
+];
 
 export default function RoutesPage() {
   const navigate = useNavigate();
   const [routes, setRoutes] = useState<Route[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ageGroupFilter, setAgeGroupFilter] = useState<AgeGroupFilter>("all");
 
   useEffect(() => {
     loadRoutes();
@@ -67,6 +78,12 @@ export default function RoutesPage() {
     return days.length;
   }
 
+  const filteredRoutes = routes.filter(route => {
+    if (ageGroupFilter === "all") return true;
+    if (ageGroupFilter === "unassigned") return !route.ageGroup;
+    return route.ageGroup === ageGroupFilter;
+  });
+
   return (
     <div className="routes-page">
       <div className="routes-header">
@@ -75,6 +92,21 @@ export default function RoutesPage() {
           + New Route
         </button>
       </div>
+
+      {!loading && routes.length > 0 && (
+        <div className="routes-filters">
+          {AGE_GROUP_FILTERS.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              className={ageGroupFilter === value ? "active" : ""}
+              onClick={() => setAgeGroupFilter(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="routes-loading">Loading routes...</div>
@@ -85,9 +117,20 @@ export default function RoutesPage() {
             Create Route
           </button>
         </div>
+      ) : filteredRoutes.length === 0 ? (
+        <div className="routes-filter-empty">
+          <p>No routes match this age group filter.</p>
+          <button
+            type="button"
+            className="new-route-button"
+            onClick={() => setAgeGroupFilter("all")}
+          >
+            Clear filter
+          </button>
+        </div>
       ) : (
         <div className="routes-grid">
-          {routes.map(route => {
+          {filteredRoutes.map(route => {
             const { totalMiles, totalElevation } = calculateTotals(route);
             const dayCount = calculateDayCount(route);
             return (
@@ -98,6 +141,9 @@ export default function RoutesPage() {
               >
                 <div className="route-card-header">
                   <h3>{route.name}</h3>
+                  {route.ageGroup && (
+                    <span className="route-age-badge">{route.ageGroup}</span>
+                  )}
                 </div>
                 <div className="route-card-body">
                   {totalMiles > 0 && (

@@ -153,8 +153,8 @@
   opacity: 0.9;
 }
 
-.menu-cell:hover {
-  border: 2px dashed var(--color-primary);
+.menu-cell:hover:not(.blocked) {
+  border-color: var(--color-primary);
 }
 
 .recipe-list {

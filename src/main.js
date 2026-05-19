@@ -791,6 +791,24 @@ ipcMain.handle("save-week-stats", async (_event, week) => {
   }
 });
 
+ipcMain.handle("delete-week-stats", async (_event, id) => {
+  try {
+    if (!id) {
+      return { success: false, error: "No week id provided" };
+    }
+    const weeks = readWeekStats();
+    const filtered = weeks.filter(w => w.id !== id);
+    if (filtered.length === weeks.length) {
+      return { success: false, error: "Week not found" };
+    }
+    writeWeekStats(filtered);
+    return { success: true };
+  } catch (err) {
+    console.error("Failed to delete week stats:", err);
+    return { success: false, error: "Failed to delete week stats" };
+  }
+});
+
 
 function loadPastMenus() {
   if (!fs.existsSync(pastMenusPath)) return [];

@@ -1,16 +1,51 @@
 .routes-page {
   padding: 2rem;
-  height: calc(100vh - 4rem);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
 }
 
 .routes-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 1rem;
+}
+
+.routes-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-bottom: 1.5rem;
+}
+
+.routes-filters button {
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-secondary);
+  background: var(--color-secondary);
+  color: var(--color-textOnSecondary);
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.routes-filters button:hover {
+  background: var(--color-secondaryHover);
+}
+
+.routes-filters button.active {
+  background: var(--color-primary);
+  color: var(--color-textOnPrimary);
+  border-color: var(--color-primary);
+}
+
+.routes-loading,
+.routes-empty,
+.routes-filter-empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--color-textOnBackground);
+}
+
+.routes-filter-empty p {
+  margin-bottom: 1rem;
 }
 
 .routes-header h1 {
@@ -117,6 +152,18 @@
   font-size: 1.5rem;
   color: var(--color-text);
   flex: 1;
+}
+
+.route-age-badge {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background: var(--color-secondary);
+  color: var(--color-textOnSecondary);
 }
 
 .route-card-body {

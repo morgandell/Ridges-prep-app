@@ -134,6 +134,24 @@ function calculateDayCountFromStops(stops: RoutePoint[] | undefined) {
     return <div className="week-detail">Loading...</div>;
   }
 
+  const handleDelete = async () => {
+    if (!week || !window.confirm("Are you sure you want to delete this week?")) {
+      return;
+    }
+
+    try {
+      const result = await window.electronAPI.deleteWeekStats(week.id);
+      if (result.success) {
+        navigate("/weeks");
+      } else {
+        alert("Failed to delete week: " + (result.error || "Unknown error"));
+      }
+    } catch (error) {
+      console.error("Error deleting week:", error);
+      alert("Failed to delete week");
+    }
+  };
+
   const handleBack = () => {
     // If we came from an edit page, go to weeks list instead
     const cameFromEdit = location.state?.fromEdit;
@@ -178,6 +196,9 @@ function calculateDayCountFromStops(stops: RoutePoint[] | undefined) {
             onClick={() => navigate(`/weeks/${week.id}/edit`, { state: { fromDetail: true } })}
           >
             Edit
+          </button>
+          <button className="delete-button" onClick={handleDelete}>
+            Delete
           </button>
         </div>
       </div>

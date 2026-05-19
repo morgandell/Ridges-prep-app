@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Week stats
   getWeekStats: () => ipcRenderer.invoke("get-week-stats"),
   saveWeekStats: (week) => ipcRenderer.invoke("save-week-stats", week),
+  deleteWeekStats: (id) => ipcRenderer.invoke("delete-week-stats", id),
 
   // Past menus
   getPastMenus: () => ipcRenderer.invoke("get-past-menus"),
