@@ -1,9 +1,23 @@
+.save-to-past-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
 .save-to-past-menu-form {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--color-card, #f9fafb);
+  border: 1px solid var(--color-grayBorder, #e5e7eb);
   border-radius: 8px;
   padding: 1.5rem;
-  margin-bottom: 2rem;
+  width: min(480px, 100%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  margin-top: 2rem;
 }
 
 .save-to-past-menu-form h3 {
@@ -18,11 +32,13 @@
   border-radius: 4px;
   font-size: 1rem;
   margin-bottom: 1rem;
+  box-sizing: border-box;
 }
 
 .save-to-past-menu-form input:focus {
   outline: none;
   border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primaryBoxShadow, rgba(59, 130, 246, 0.25));
 }
 
 .save-to-past-menu-form-error {

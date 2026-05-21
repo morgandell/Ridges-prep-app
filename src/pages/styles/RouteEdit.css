@@ -185,6 +185,66 @@
   border-radius: 4px;
 }
 
+.total-item-drive-mileage {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.drive-mileage-field {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.drive-mileage-field label {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.drive-mileage-hint {
+  display: block;
+  margin-left: 0;
+}
+
+.drive-mileage-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.drive-mileage-row input {
+  width: 7rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--color-grayBorder);
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.use-calculated-drive-btn {
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--color-secondary);
+  border-radius: 4px;
+  background: var(--color-secondary);
+  color: var(--color-textOnSecondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.use-calculated-drive-btn:hover {
+  background: var(--color-secondaryHover);
+}
+
+.drive-mileage-status {
+  font-size: 0.85rem;
+  color: var(--color-grayText);
+}
+
+.drive-mileage-error {
+  color: var(--color-errorText);
+}
+
 .total-label {
   font-weight: 600;
   color: var(--color-text);

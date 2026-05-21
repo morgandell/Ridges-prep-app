@@ -6,6 +6,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBinoculars, faCampground, faSignsPost, faCircleExclamation } from "@fortawesome/free-solid-svg-icons";
 import "leaflet/dist/leaflet.css";
 import { Route, RoutePoint, RouteSegment, EvacPoint } from "../types/route";
+import {
+  getDaysWithStats,
+  getLastCampsiteIndex,
+  isPickupDay,
+} from "../utils/routeDayBreakdown";
 import { ItemComment } from "../types/itemComment";
 import CommentsSection from "../components/CommentsSection";
 import { calculateDriveMileage } from "../utils/driveMileage";
@@ -105,13 +110,20 @@ function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number
 }
 
 // Component to fit bounds
-function FitBounds({ bounds }: { bounds: LatLngBounds | undefined }) {
+function FitBounds({ boundsKey }: { boundsKey: string }) {
   const map = useMap();
   useEffect(() => {
-    if (bounds) {
-      map.fitBounds(bounds, { padding: [50, 50] });
-    }
-  }, [bounds, map]);
+    if (!boundsKey) return;
+    const parts = boundsKey.split("|").map((pair) => pair.split(",").map(Number));
+    if (parts.length < 2) return;
+    const lats = parts.map((p) => p[0]);
+    const lngs = parts.map((p) => p[1]);
+    const b = new LatLngBounds(
+      [Math.min(...lats), Math.min(...lngs)],
+      [Math.max(...lats), Math.max(...lngs)],
+    );
+    map.fitBounds(b, { padding: [50, 50] });
+  }, [boundsKey, map]);
   return null;
 }
 
@@ -139,7 +151,9 @@ export default function RouteEdit() {
   const [fetchingRoute, setFetchingRoute] = useState(false);
   const [draggedPoint, setDraggedPoint] = useState<number | null>(null);
   const [evacPoints, setEvacPoints] = useState<EvacPoint[]>([]);
-  const [driveMileage, setDriveMileage] = useState<number | null>(null);
+  const [driveMileageInput, setDriveMileageInput] = useState("");
+  const [driveMileageManual, setDriveMileageManual] = useState(false);
+  const [calculatedDriveMileage, setCalculatedDriveMileage] = useState<number | null>(null);
   const [driveMileageLoading, setDriveMileageLoading] = useState(false);
   const [driveMileageError, setDriveMileageError] = useState<string | null>(null);
   const [routeComments, setRouteComments] = useState<ItemComment[]>([]);
@@ -182,6 +196,14 @@ export default function RouteEdit() {
         setSegments(route.segments || []);
         setEvacPoints(route.evacPoints || []);
         setRouteComments(Array.isArray(route.comments) ? route.comments : []);
+        if (typeof route.driveMileage === "number") {
+          setDriveMileageInput(String(route.driveMileage));
+          setDriveMileageManual(true);
+        } else {
+          setDriveMileageInput("");
+          setDriveMileageManual(false);
+        }
+        setCalculatedDriveMileage(null);
       }
     } catch (error) {
       console.error("Error loading route:", error);
@@ -268,26 +290,42 @@ export default function RouteEdit() {
     return [avgLat, avgLng];
   }, [allPoints]);
 
+  const boundsKey = useMemo(() => {
+    if (allPoints.length < 2) return "";
+    return allPoints.map((p) => `${p.lat},${p.lng}`).join("|");
+  }, [allPoints]);
+
   const bounds = useMemo(() => {
-    if (allPoints.length < 2) return undefined;
-    const lats = allPoints.map(p => p.lat);
-    const lngs = allPoints.map(p => p.lng);
+    if (!boundsKey) return undefined;
+    const parts = boundsKey.split("|").map((pair) => pair.split(",").map(Number));
+    const lats = parts.map((p) => p[0]);
+    const lngs = parts.map((p) => p[1]);
     return new LatLngBounds(
       [Math.min(...lats), Math.min(...lngs)],
-      [Math.max(...lats), Math.max(...lngs)]
+      [Math.max(...lats), Math.max(...lngs)],
     );
-  }, [allPoints]);
+  }, [boundsKey]);
 
   
 
-  // Fetch route geometry when points change
-  useEffect(() => {
-    async function fetchRouteGeometry() {
-      if (allPoints.length < 2) {
-        setRouteGeometry([]);
-        return;
-      }
+  const pointsSignature = useMemo(
+    () => points.map((p) => `${p.lat},${p.lng}`).join("|"),
+    [points],
+  );
 
+  // Fetch route geometry when points change (debounced, cancellable)
+  useEffect(() => {
+    if (points.length < 2) {
+      setRouteGeometry([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const debounceId = window.setTimeout(() => {
+      void fetchRouteGeometry(controller.signal);
+    }, 450);
+
+    async function fetchRouteGeometry(signal: AbortSignal) {
       setFetchingRoute(true);
       try {
         // Use OpenRouteService for hiking trails
@@ -308,7 +346,8 @@ export default function RouteEdit() {
             coordinates: coordinates,
             preference: 'recommended',
             elevation: true  // Request elevation data
-          })
+          }),
+          signal,
         });
 
         if (!response.ok) {
@@ -326,6 +365,7 @@ export default function RouteEdit() {
           // Convert [lng, lat] to [lat, lng] for Leaflet
           const leafletCoords: [number, number][] = geometry.map((coord: number[]) => [coord[1], coord[0]]);
           console.log('Hiking route geometry points:', leafletCoords.length);
+          if (signal.aborted) return;
           setRouteGeometry(leafletCoords);
 
           // Extract segments data (distance and elevation between waypoints)
@@ -391,16 +431,20 @@ export default function RouteEdit() {
           setRouteGeometry(allPoints.map(p => [p.lat, p.lng]));
         }
       } catch (error) {
+        if (signal.aborted) return;
         console.error('Error fetching hiking route:', error);
-        // Fallback to straight lines
         setRouteGeometry(allPoints.map(p => [p.lat, p.lng]));
       } finally {
-        setFetchingRoute(false);
+        if (!signal.aborted) setFetchingRoute(false);
       }
     }
 
-    fetchRouteGeometry();
-  }, [allPoints]);
+    return () => {
+      window.clearTimeout(debounceId);
+      controller.abort();
+      setFetchingRoute(false);
+    };
+  }, [pointsSignature]);
 
 /** Base location for all drives (camp/office). */
  const BASE_LAT = 43.9281;
@@ -481,66 +525,23 @@ async function fetchDrivingDistanceMiles(
     setSegments(updated);
   }
 
-  const stopsByDay = useMemo(() => {
-    if (!stops?.length) return [];
-    const days: RoutePoint[][] = [];
-    let currentDay: RoutePoint[] = [];
-    for (const stop of stops) {
-      currentDay.push(stop);
-      if (stop.type === "campsite") {
-        days.push([...currentDay]);
-        currentDay = [];
-      }
-    }
-    if (currentDay.length > 0) days.push(currentDay);
-    let lastCampIdx = -1;
-    for (let i = stops.length - 1; i >= 0; i--) {
-      if (stops[i].type === "campsite") {
-        lastCampIdx = i;
-        break;
-      }
-    }
-    if (lastCampIdx >= 0 && stops.slice(lastCampIdx + 1).length === 0) {
-      days.push([]);
-    }
-    return days;
-  }, [stops]);
+  const draftRoute = useMemo((): Route | null => {
+    if (!startPoint || !endPoint) return null;
+    return {
+      id: id || "draft",
+      startPoint: { id: startPoint.id || "start", ...startPoint },
+      endPoint: { id: endPoint.id || "end", ...endPoint },
+      stops,
+      segments,
+    };
+  }, [startPoint, endPoint, stops, segments, id]);
 
- const lastCampsiteIndex = useMemo(() => {
-    if (!stops?.length) return -1;
-    for (let i = stops.length - 1; i >= 0; i--) {
-      if (stops[i].type === "campsite") return i;
-    }
-    return -1;
-  }, [stops]);
+  const daysWithStats = useMemo(
+    () => (draftRoute ? getDaysWithStats(draftRoute) : []),
+    [draftRoute],
+  );
 
-
-  const daysWithStats = useMemo(() => {
-    if (!stops?.length || !segments?.length || !stopsByDay.length) return [];
-    const segs = segments;
-    return stopsByDay.map((dayStops, dayIndex) => {
-      const isFinalLegDay = dayStops.length === 0 && lastCampsiteIndex >= 0;
-      const firstStopIndex = dayStops.length > 0 ? stops.indexOf(dayStops[0]) : lastCampsiteIndex + 1;
-      const lastStopIndex = dayStops.length > 0 ? stops.indexOf(dayStops[dayStops.length - 1]) : -1;
-      const startSeg = dayIndex === 0 ? 0 : isFinalLegDay ? lastCampsiteIndex + 1 : firstStopIndex;
-      const isLastDay = dayIndex === stopsByDay.length - 1;
-      const endSeg = isFinalLegDay || isLastDay ? segs.length - 1 : lastStopIndex;
-      let dayMiles = 0;
-      let dayElevation = 0;
-      for (let i = startSeg; i <= endSeg && i < segs.length; i++) {
-        dayMiles += segs[i].mileage || 0;
-        dayElevation += segs[i].elevationGainFt || 0;
-      }
-      return {
-        dayStops,
-        firstStopIndex: dayStops.length > 0 ? firstStopIndex : lastCampsiteIndex + 1,
-        lastStopIndex,
-        dayMiles,
-        dayElevation,
-        isFinalLegDay,
-      };
-    });
-  }, [stops, segments, stopsByDay, lastCampsiteIndex]);
+  const lastCampsiteIndex = draftRoute ? getLastCampsiteIndex(draftRoute) : -1;
 
 
   // Keep evacPoints array in sync with number of days; default each day to startPoint
@@ -568,11 +569,12 @@ async function fetchDrivingDistanceMiles(
     });
   }, [daysWithStats.length, startPoint?.lat, startPoint?.lng, startPoint?.label]);
 
-  // Fetch drive mileage when start/end points and transport mode are set
+  // Fetch suggested drive mileage when start/end points and transport mode are set
   useEffect(() => {
     if (!startPoint || !endPoint) {
-      setDriveMileage(null);
+      setCalculatedDriveMileage(null);
       setDriveMileageError(null);
+      if (!driveMileageManual) setDriveMileageInput("");
       return;
     }
     let cancelled = false;
@@ -586,19 +588,38 @@ async function fetchDrivingDistanceMiles(
       endPoint.lng
     )
       .then((miles) => {
-        if (!cancelled) setDriveMileage(miles);
+        if (!cancelled) {
+          setCalculatedDriveMileage(miles);
+          if (!driveMileageManual) {
+            setDriveMileageInput(miles.toFixed(1));
+          }
+        }
       })
       .catch((err) => {
         if (!cancelled) {
           setDriveMileageError(err?.message || "Failed to fetch drive distance");
-          setDriveMileage(null);
+          setCalculatedDriveMileage(null);
         }
       })
       .finally(() => {
         if (!cancelled) setDriveMileageLoading(false);
       });
     return () => { cancelled = true; };
-  }, [startPoint?.lat, startPoint?.lng, endPoint?.lat, endPoint?.lng, formData.transportMode]);
+  }, [
+    startPoint?.lat,
+    startPoint?.lng,
+    endPoint?.lat,
+    endPoint?.lng,
+    formData.transportMode,
+  ]);
+
+  function parseDriveMileageForSave(): number | undefined {
+    const trimmed = driveMileageInput.trim();
+    if (!trimmed) return undefined;
+    const n = parseFloat(trimmed);
+    if (Number.isNaN(n) || n < 0) return undefined;
+    return Math.round(n * 10) / 10;
+  }
 
   function setEvacPointForDay(dayIndex: number, point: EvacPoint) {
     setEvacPoints(prev => {
@@ -678,7 +699,7 @@ async function fetchDrivingDistanceMiles(
       ageGroup: formData.ageGroup,
       evacPoints: evacPoints.length ? evacPoints : undefined,
       transportMode: formData.transportMode,
-      driveMileage: driveMileage != null ? driveMileage : undefined,
+      driveMileage: parseDriveMileageForSave(),
     };
 
     setSaving(true);
@@ -729,7 +750,7 @@ async function fetchDrivingDistanceMiles(
   <label className={`radio-btn ${formData.ageGroup === "Intro" ? "active" : ""}`}>
     <input
       type="radio"
-      name={`age-group${formData.name}`}
+      name="route-age-group"
       value="Intro"
       checked={formData.ageGroup === "Intro"}
       onChange={() =>
@@ -742,7 +763,7 @@ async function fetchDrivingDistanceMiles(
   <label className={`radio-btn ${formData.ageGroup === "Middle School" ? "active" : ""}`}>
     <input
       type="radio"
-      name={`age-group${formData.name}`}
+      name="route-age-group"
       value="Middle School"
       checked={formData.ageGroup === "Middle School"}
       onChange={() =>
@@ -755,7 +776,7 @@ async function fetchDrivingDistanceMiles(
   <label className={`radio-btn ${formData.ageGroup === "High School" ? "active" : ""}`}>
     <input
       type="radio"
-      name={`age-group${formData.name}`}
+      name="route-age-group"
       value="High School"
       checked={formData.ageGroup === "High School"}
       onChange={() =>
@@ -800,6 +821,7 @@ async function fetchDrivingDistanceMiles(
               bounds={bounds}
               style={{ height: "500px", width: "100%", borderRadius: "8px" }}
               scrollWheelZoom
+              keyboard={false}
             >
               <TileLayer
                 attribution='&copy; OpenStreetMap contributors'
@@ -808,7 +830,7 @@ async function fetchDrivingDistanceMiles(
               />
 
               <MapClickHandler onMapClick={handleMapClick} />
-              {bounds && <FitBounds bounds={bounds} />}
+              {boundsKey && <FitBounds boundsKey={boundsKey} />}
 
               {allPoints.map((point, i) => {
                 const icon =
@@ -968,16 +990,16 @@ async function fetchDrivingDistanceMiles(
     </div>
   </div>
 )}
-                {day.isFinalLegDay && (() => {
-                  const segment = segments?.[lastCampsiteIndex + 1];
+                {endPoint && isPickupDay(day, dayIndex, daysWithStats) && (() => {
                   const lastCamp = lastCampsiteIndex >= 0 ? stops[lastCampsiteIndex] : null;
-                  if (!segment || !lastCamp) return null;
+                  const distanceLabel = lastCamp
+                    ? lastCamp.label || "last campsite"
+                    : "previous stop";
                   return (
-                    <div className="stop-details stop-details-editable">
-                      <h4>
+                    <div className="stop-details stop-details-editable stop-details-special">
+                      <h4 className="stop-details-title">
                         <FontAwesomeIcon icon={faSignsPost} className="icon-secondary" /> Pick up
-                        {endPoint?.label ? `: ${endPoint.label}` : ""}{" "}
-                        ({endPoint?.lat.toFixed(6)}, {endPoint?.lng.toFixed(6)})
+                        {" ("}{endPoint.lat.toFixed(5)}, {endPoint.lng.toFixed(5)}{")"}
                       </h4>
                       <div className="form-group">
                         <label>Label (optional)</label>
@@ -998,8 +1020,8 @@ async function fetchDrivingDistanceMiles(
                         />
                       </div>
                       <div className="segment-info">
-                        <div><strong>Distance from {lastCamp.label || "last campsite"}:</strong> {segment.mileage.toFixed(2)} mi</div>
-                        <div><strong>Elevation gain:</strong> {segment.elevationGainFt.toLocaleString()} ft</div>
+                        <div><strong>Distance from {distanceLabel}:</strong> {day.dayMiles.toFixed(2)} mi</div>
+                        <div><strong>Elevation gain:</strong> {day.dayElevation.toLocaleString()} ft</div>
                       </div>
                     </div>
                     
@@ -1156,6 +1178,55 @@ async function fetchDrivingDistanceMiles(
           </div>
         )}
 
+        {endPoint && stops.length === 0 && (
+          <div className="form-section">
+            <h3>Pick up</h3>
+            <p className="day-preview-hint">
+              Add stops on the map to split the route into days at campsites. You can still name the pick-up point below.
+            </p>
+            <div className="stop-details stop-details-editable stop-details-special">
+              <h4 className="stop-details-title">
+                <FontAwesomeIcon icon={faSignsPost} className="icon-secondary" /> Pick up
+                {" ("}{endPoint.lat.toFixed(5)}, {endPoint.lng.toFixed(5)}{")"}
+              </h4>
+              <div className="form-group">
+                <label>Label (optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Trailhead parking, pick-up lot"
+                  value={endPoint.label ?? ""}
+                  onChange={(e) =>
+                    setPoints((prev) =>
+                      prev.map((p, i) =>
+                        i === prev.length - 1
+                          ? { ...p, label: e.target.value || undefined }
+                          : p,
+                      ),
+                    )
+                  }
+                />
+              </div>
+              <div className="form-group">
+                <label>Note (optional)</label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g., Pick-up time, contact at ranger station"
+                  value={endPoint.note ?? ""}
+                  onChange={(e) =>
+                    setPoints((prev) =>
+                      prev.map((p, i) =>
+                        i === prev.length - 1
+                          ? { ...p, note: e.target.value || undefined }
+                          : p,
+                      ),
+                    )
+                  }
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* {endPoint && (
           <div className="form-section">
             <h3>🔴 End Point Details</h3>
@@ -1192,27 +1263,53 @@ async function fetchDrivingDistanceMiles(
               <span className="total-label">Total Elevation Gain:</span>
               <span className="total-value">{totalElevation} ft</span>
             </div>
-            {driveMileageLoading && (
-              <div className="total-item">
-                <span className="total-label">Drive mileage:</span>
-                <span className="total-value">Calculating...</span>
-              </div>
-            )}
-            {!driveMileageLoading && driveMileage != null && (
-              <div className="total-item">
-                <span className="total-label">Drive mileage:</span>
-                <span>
-                  <span className="total-value">{driveMileage.toFixed(1)} mi</span>
-                  <span className="total-hint">
-                    {" "}({formData.transportMode === "park" ? "base → start & back" : "base → start & end"})
+            {startPoint && endPoint && (
+              <div className="total-item total-item-drive-mileage">
+                <div className="drive-mileage-field">
+                  <label htmlFor="drive-mileage-input">Drive mileage (mi)</label>
+                  <span className="total-hint drive-mileage-hint">
+                    {formData.transportMode === "park"
+                      ? "Round trip: base → start & back"
+                      : "Round trip: base → start & end"}
                   </span>
-                </span>
-              </div>
-            )}
-            {!driveMileageLoading && driveMileageError && (
-              <div className="total-item total-error">
-                <span className="total-label">Drive mileage:</span>
-                <span className="total-value">{driveMileageError}</span>
+                  <div className="drive-mileage-row">
+                    <input
+                      id="drive-mileage-input"
+                      type="number"
+                      min={0}
+                      step={0.1}
+                      placeholder={driveMileageLoading ? "Calculating…" : "e.g. 120"}
+                      value={driveMileageInput}
+                      onChange={(e) => {
+                        setDriveMileageManual(true);
+                        setDriveMileageInput(e.target.value);
+                      }}
+                    />
+                    {calculatedDriveMileage != null && driveMileageManual && (
+                      <button
+                        type="button"
+                        className="use-calculated-drive-btn"
+                        onClick={() => {
+                          setDriveMileageManual(false);
+                          setDriveMileageInput(calculatedDriveMileage.toFixed(1));
+                        }}
+                      >
+                        Use calculated ({calculatedDriveMileage.toFixed(1)} mi)
+                      </button>
+                    )}
+                  </div>
+                  {driveMileageLoading && (
+                    <span className="drive-mileage-status">Calculating suggested mileage…</span>
+                  )}
+                  {!driveMileageLoading && calculatedDriveMileage != null && !driveMileageManual && (
+                    <span className="drive-mileage-status">
+                      Suggested: {calculatedDriveMileage.toFixed(1)} mi (from map)
+                    </span>
+                  )}
+                  {driveMileageError && (
+                    <span className="drive-mileage-status drive-mileage-error">{driveMileageError}</span>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -1274,7 +1371,7 @@ async function fetchDrivingDistanceMiles(
                   ageGroup: formData.ageGroup,
                   evacPoints: evacPoints.length ? evacPoints : undefined,
                   transportMode: formData.transportMode,
-                  driveMileage: driveMileage != null ? driveMileage : undefined,
+                  driveMileage: parseDriveMileageForSave(),
                 };
                 const res = await window.electronAPI.saveRoute(routePayload);
                 if (res.success && res.route) {

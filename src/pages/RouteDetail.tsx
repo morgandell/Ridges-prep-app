@@ -9,6 +9,11 @@ import { Route, RoutePoint, EvacPoint } from "../types/route";
 import CommentsSection from "../components/CommentsSection";
 import { WeekStats } from "../types/weekStats";
 import { calculateDriveMileage } from "../utils/driveMileage";
+import {
+  getDaysWithStats,
+  getLastCampsiteIndex,
+  isPickupDay,
+} from "../utils/routeDayBreakdown";
 import "./styles/RouteDetail.css";
 
 // Fix for default marker icons in React-Leaflet
@@ -361,75 +366,15 @@ export default function RouteDetail() {
     );
   }, [allPoints]);
 
-  const stopsByDay = useMemo(() => {
-  if (!route?.stops?.length) return [];
-  const days: RoutePoint[][] = [];
-  let currentDay: RoutePoint[] = [];
-  for (const stop of route.stops) {
-    currentDay.push(stop);
-    const isCampsite = stop.type === "campsite";
-    if (isCampsite) {
-      days.push([...currentDay]);
-      currentDay = [];
-    }
-  }
-  if (currentDay.length > 0) days.push(currentDay);
-  
-  // Add a final day for the leg from last campsite to endpoint
-  let lastCampIdx = -1;
-  for (let i = route.stops.length - 1; i >= 0; i--) {
-    if (route.stops[i].type === "campsite") {
-      lastCampIdx = i;
-      break;
-    }
-  }
-  
-  if (lastCampIdx >= 0) {
-    const stopsAfterLastCamp = route.stops.slice(lastCampIdx + 1);
-    if (stopsAfterLastCamp.length === 0) {
-      days.push([]); // last stop is campsite → add empty "day" for campsite → end
-    }
-  }
-  return days;
-}, [route]);
 
-const lastCampsiteIndex = useMemo(() => {
-  if (!route?.stops) return -1;
-  for (let i = route.stops.length - 1; i >= 0; i--) {
-    if (route.stops[i].type === "campsite") {
-      return i;
-    }
-  }
-  return -1;
-}, [route?.stops]);
 
-  // Per-day stats: segment indices and summed distance/elevation for each day
-  const daysWithStats = useMemo(() => {
-    if (!route?.stops?.length || !route?.segments?.length || !stopsByDay.length) return [];
-    const segs = route.segments;
-    return stopsByDay.map((dayStops, dayIndex) => {
-      const isFinalLegDay = dayStops.length === 0 && lastCampsiteIndex >= 0;
-      const firstStopIndex = dayStops.length > 0 ? route.stops!.indexOf(dayStops[0]) : lastCampsiteIndex + 1;
-      const lastStopIndex = dayStops.length > 0 ? route.stops!.indexOf(dayStops[dayStops.length - 1]) : -1;
-      const startSeg = dayIndex === 0 ? 0 : isFinalLegDay ? lastCampsiteIndex + 1 : firstStopIndex;
-      const isLastDay = dayIndex === stopsByDay.length - 1;
-      const endSeg = isFinalLegDay || isLastDay ? segs.length - 1 : lastStopIndex;
-      let dayMiles = 0;
-      let dayElevation = 0;
-      for (let i = startSeg; i <= endSeg && i < segs.length; i++) {
-        dayMiles += segs[i].mileage || 0;
-        dayElevation += segs[i].elevationGainFt || 0;
-      }
-      return {
-        dayStops,
-        firstStopIndex: dayStops.length > 0 ? firstStopIndex : lastCampsiteIndex + 1,
-        lastStopIndex,
-        dayMiles,
-        dayElevation,
-        isFinalLegDay,
-      };
-    });
-  }, [route?.stops, route?.segments, stopsByDay, lastCampsiteIndex]);
+  const lastCampsiteIndex = route ? getLastCampsiteIndex(route) : -1;
+
+
+
+  const daysWithStats = route ? getDaysWithStats(route) : [];
+
+
 
 
   // Fetch route geometry for trail-following polyline
@@ -804,41 +749,37 @@ const lastCampsiteIndex = useMemo(() => {
                   </div>
                 </div>
               )} */}
-              {day.isFinalLegDay && (() => {
-  const lastStopIndex = route.stops!.length - 1;
-  const segment = route.segments?.[lastStopIndex +1];
-  const lastStop = route.stops![lastStopIndex];
-
-  if (!segment || !lastStop) return null;
+              {route.endPoint && isPickupDay(day, dayIndex, daysWithStats) && (() => {
+  const lastCamp =
+    lastCampsiteIndex >= 0 ? route.stops![lastCampsiteIndex] : null;
+  const distanceLabel = lastCamp
+    ? lastCamp.label || "last campsite"
+    : "previous stop";
 
   return (
     <div className="stop-details">
       <h4>
         <FontAwesomeIcon icon={faSignsPost} className="icon-secondary" />
         {" "}Pick up
-        {route.endPoint?.label ? `: ${route.endPoint.label}` : ""}
+        {route.endPoint.label ? `: ${route.endPoint.label}` : ""}
         {" "}(
-        {route.endPoint?.lat?.toFixed(6)},
-        {" "}
-        {route.endPoint?.lng?.toFixed(6)}
-        )
+        {route.endPoint.lat.toFixed(6)}, {route.endPoint.lng.toFixed(6)})
       </h4>
-      {route.endPoint?.note && (
+      {route.endPoint.note && (
         <p className="point-note"><strong>Note:</strong> {route.endPoint.note}</p>
       )}
-      <div className="segment-info">
-        <div>
-          <strong>
-            Distance from
-            {lastStop.label ? ` — ${lastStop.label}` : ""}:
-          </strong>{" "}
-          {segment.mileage.toFixed(2)} mi
+      {(day.dayMiles > 0 || day.dayElevation > 0) && (
+        <div className="segment-info">
+          <div>
+            <strong>Distance from {distanceLabel}:</strong>{" "}
+            {day.dayMiles.toFixed(2)} mi
+          </div>
+          <div>
+            <strong>Elevation gain:</strong>{" "}
+            {day.dayElevation.toLocaleString()} ft
+          </div>
         </div>
-        <div>
-          <strong>Elevation gain:</strong>{" "}
-          {segment.elevationGainFt.toLocaleString()} ft
-        </div>
-      </div>
+      )}
     </div>
   );
 })()}

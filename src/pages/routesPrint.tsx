@@ -135,12 +135,13 @@ export default function RoutesPrint() {
   let totalDriveMiles = 0;
   let driveMilesPending = false;
   let anyRouteWithTransport = false;
-  for (const { route } of routeData) {
+  for (const { route, weeks } of routeData) {
     if (!route.transportMode) continue;
     anyRouteWithTransport = true;
     const v = driveMilesByRouteId[route.id];
+    const weekCount = weeks.length;
     if (v === undefined) driveMilesPending = true;
-    else if (typeof v === "number") totalDriveMiles += v;
+    else if (typeof v === "number") totalDriveMiles += v * weekCount;
   }
 
   if (loading) {
@@ -211,7 +212,7 @@ export default function RoutesPrint() {
           <h1>Routes Used by Weeks</h1>
           {routeData.length > 0 && anyRouteWithTransport && (
             <p className="print-meta print-totals">
-              <strong>Total drive mileage (all routes):</strong>{" "}
+              <strong>Total drive mileage (summer, counting each week):</strong>{" "}
               {driveMilesPending ? "…" : `${totalDriveMiles.toFixed(1)} mi`}
             </p>
           )}
