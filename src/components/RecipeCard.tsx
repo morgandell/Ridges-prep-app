@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Meal } from "../types/meal";
+import { formatUnitForDisplay } from "../utils/ingredientNormalization";
 import "./RecipeCard.css";
 
 interface RecipeCardProps {
@@ -54,9 +55,13 @@ export default function RecipeCard({
           <strong>Ingredients:</strong>{" "}
           {meal.ingredients
             .slice(0, 3)
-            .map(i =>
-              [i.quantity, i.unit, i.name].filter(Boolean).join(" ")
-            )
+            .map((i) => {
+              const unit =
+                i.quantity !== null
+                  ? formatUnitForDisplay(i.unit, i.quantity)
+                  : "";
+              return [i.quantity, unit, i.name].filter(Boolean).join(" ");
+            })
             .join(", ")}
           {meal.ingredients.length > 3 && "…"}
         </div>

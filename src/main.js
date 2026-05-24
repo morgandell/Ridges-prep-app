@@ -608,7 +608,7 @@ const cleanMeal = {
     .map(i => ({
       ...i,
       name: i.name.trim(),
-      unit: i.unit?.trim()
+      unit: i.unit?.trim() || 'pcs'
     })),
   instructions: (Array.isArray(meal.instructions) ? meal.instructions : []).filter(i => i && i.trim() !== ''),
   tags: (Array.isArray(meal.tags) ? meal.tags : []).filter(t => t && t.trim() !== ''),

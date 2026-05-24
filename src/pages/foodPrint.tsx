@@ -4,6 +4,13 @@ import { WeekStats } from "../types/weekStats";
 import { Meal } from "../types/meal";
 import { Ingredient } from "../types/meal";
 import { DayOfWeek, MealSlot } from "../types/menu";
+import {
+  formatIngredientDisplayName,
+  formatUnitForDisplay,
+  ingredientMergeKey,
+  normalizeIngredientName,
+  normalizeUnitForMerge,
+} from "../utils/ingredientNormalization";
 import "./styles/foodPrint.css";
 
 interface IngredientTotal {
@@ -32,6 +39,47 @@ type MealAccommodationResult = {
   needsAdjustment: boolean;
 };
 
+function addIngredientToMap(
+  ingredientMap: Map<string, IngredientTotal>,
+  ing: Ingredient,
+  servings: number
+) {
+  const key = ingredientMergeKey(ing.name, ing.unit, ing.perServing);
+  const existing = ingredientMap.get(key);
+  const displayName = formatIngredientDisplayName(normalizeIngredientName(ing.name));
+  const displayUnit = normalizeUnitForMerge(ing.unit);
+
+  if (ing.quantity === null) {
+    if (!existing) {
+      ingredientMap.set(key, {
+        name: displayName,
+        quantity: null,
+        unit: displayUnit,
+        perServing: ing.perServing,
+      });
+    }
+    return;
+  }
+
+  let amount = ing.quantity;
+  if (ing.perServing) {
+    amount = amount * servings;
+  }
+
+  if (existing) {
+    ingredientMap.set(key, {
+      ...existing,
+      quantity: (existing.quantity || 0) + amount,
+    });
+  } else {
+    ingredientMap.set(key, {
+      name: displayName,
+      quantity: amount,
+      unit: displayUnit,
+      perServing: ing.perServing,
+    });
+  }
+}
 
 export default function FoodPrint() {
   const navigate = useNavigate();
@@ -191,44 +239,9 @@ export default function FoodPrint() {
               servings = (includedCampers + 2) * 2;
             }
 
-            meal.ingredients.forEach(ing => {
-              const key = `${ing.name}|${ing.unit}|${ing.perServing}`;
-              const existing = ingredientMap.get(key);
-
-              if (ing.quantity === null) {
-                // "To taste" - just track that it's needed
-                if (!existing) {
-                  ingredientMap.set(key, {
-                    name: ing.name,
-                    quantity: null,
-                    unit: ing.unit,
-                    perServing: ing.perServing,
-                  });
-                }
-              } else {
-                let amount = ing.quantity;
-
-                if (ing.perServing) {
-                  // Multiply by number of servings
-                  amount = amount * servings;
-                }
-                // If whole recipe, amount stays the same
-
-                if (existing) {
-                  ingredientMap.set(key, {
-                    ...existing,
-                    quantity: (existing.quantity || 0) + amount,
-                  });
-                } else {
-                  ingredientMap.set(key, {
-                    name: ing.name,
-                    quantity: amount,
-                    unit: ing.unit,
-                    perServing: ing.perServing,
-                  });
-                }
-              }
-            });
+            meal.ingredients.forEach((ing) =>
+              addIngredientToMap(ingredientMap, ing, servings)
+            );
           });
         });
 
@@ -265,7 +278,8 @@ export default function FoodPrint() {
       return "to taste";
     }
     const formatted = ing.quantity.toFixed(ing.quantity % 1 === 0 ? 0 : 2);
-    return `${formatted} ${ing.unit || ""}`.trim();
+    const unit = formatUnitForDisplay(ing.unit, ing.quantity);
+    return `${formatted} ${unit}`.trim();
   };
 
   // Check if a meal can accommodate a camper's restrictions
@@ -397,41 +411,9 @@ export default function FoodPrint() {
         servings = (includedCampers + 2) * 2;
       }
 
-      meal.ingredients.forEach(ing => {
-        const key = `${ing.name}|${ing.unit}|${ing.perServing}`;
-        const existing = ingredientMap.get(key);
-
-        if (ing.quantity === null) {
-          if (!existing) {
-            ingredientMap.set(key, {
-              name: ing.name,
-              quantity: null,
-              unit: ing.unit,
-              perServing: ing.perServing,
-            });
-          }
-        } else {
-          let amount = ing.quantity;
-
-          if (ing.perServing) {
-            amount = amount * servings;
-          }
-
-          if (existing) {
-            ingredientMap.set(key, {
-              ...existing,
-              quantity: (existing.quantity || 0) + amount,
-            });
-          } else {
-            ingredientMap.set(key, {
-              name: ing.name,
-              quantity: amount,
-              unit: ing.unit,
-              perServing: ing.perServing,
-            });
-          }
-        }
-      });
+      meal.ingredients.forEach((ing) =>
+        addIngredientToMap(ingredientMap, ing, servings)
+      );
     });
 
     return Array.from(ingredientMap.values()).sort((a, b) =>
@@ -757,17 +739,26 @@ export default function FoodPrint() {
 
                           if (ing.perServing && quantity !== null) {
                             quantity = quantity * mealServings;
-                            notes = `(${ing.quantity} ${ing.unit || ""} per serving × ${mealServings.toFixed(1)})`.trim();
+                            const perServingUnit = formatUnitForDisplay(
+                              ing.unit,
+                              ing.quantity
+                            );
+                            notes = `(${ing.quantity} ${perServingUnit} per serving × ${mealServings.toFixed(1)})`.trim();
                           } else if (!ing.perServing) {
                             notes = "whole recipe";
                           }
+
+                          const displayUnit =
+                            quantity !== null
+                              ? formatUnitForDisplay(ing.unit, quantity)
+                              : "";
 
                           return (
                             <tr key={ingIdx}>
                               <td>{ing.name}</td>
                               <td>
                                 {quantity !== null
-                                  ? `${quantity.toFixed(quantity % 1 === 0 ? 0 : 2)} ${ing.unit || ""}`.trim()
+                                  ? `${quantity.toFixed(quantity % 1 === 0 ? 0 : 2)} ${displayUnit}`.trim()
                                   : "to taste"}
                               </td>
                               <td>{notes}</td>

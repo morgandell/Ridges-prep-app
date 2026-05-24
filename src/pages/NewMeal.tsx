@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Ingredient, Meal } from "../types/meal";
 import CommentsSection from "../components/CommentsSection";
+import { formatUnitForDisplay } from "../utils/ingredientNormalization";
 import "./styles/NewMeal.css";
 import { PRESET_TAGS } from "../constants/tags"; // adjust path as needed
 
@@ -28,7 +29,7 @@ export default function NewMeal() {
   const [newIngredient, setNewIngredient] = useState<Ingredient>({
     name: "",
     quantity: null,
-    unit: "",
+    unit: "pcs",
     perServing: true,
   });
 
@@ -275,7 +276,10 @@ export default function NewMeal() {
             <button
               type="button"
               className="add-ingredient-btn"
-              onClick={() => setShowIngredientModal(true)}
+              onClick={() => {
+                setNewIngredient({ name: "", quantity: null, unit: "pcs", perServing: true });
+                setShowIngredientModal(true);
+              }}
             >
               + Add Ingredient
             </button>
@@ -288,19 +292,15 @@ export default function NewMeal() {
               {formData.ingredients?.map((ingredient, index) => (
                 <div key={index} className="list-item">
                   <span>
-                    <span>
-                        {ingredient.quantity !== null && (
-                          <>
-                            {ingredient.quantity} {ingredient.unit}{" "}
-                          </>
-                        )}
-                        {ingredient.name}
-                        <em className="ingredient-scope">
-                          ({ingredient.perServing ? "per serving" : "whole recipe"})
-                        </em>
-                      </span>
-
+                    {ingredient.quantity !== null && (
+                      <>
+                        {ingredient.quantity}{" "}
+                        {formatUnitForDisplay(ingredient.unit, ingredient.quantity)}{" "}
+                      </>
+                    )}
+                    {ingredient.name}
                     <em className="ingredient-scope">
+                      {" "}
                       ({ingredient.perServing ? "per serving" : "whole recipe"})
                     </em>
                   </span>
@@ -328,7 +328,7 @@ export default function NewMeal() {
                     ingredients: [...(prev.ingredients || []), newIngredient],
                   }));
 
-                  setNewIngredient({ name: "", quantity: null, unit: "", perServing: true });
+                  setNewIngredient({ name: "", quantity: null, unit: "pcs", perServing: true });
                   setShowIngredientModal(false);
                 }}
               />

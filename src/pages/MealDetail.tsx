@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Meal } from "../types/meal";
 import { DayOfWeek, MealSlot, Menu } from "../types/menu";
 import CommentsSection from "../components/CommentsSection";
+import { formatUnitForDisplay } from "../utils/ingredientNormalization";
 import "./styles/MealDetail.css";
 
 export default function MealDetail() {
@@ -141,8 +142,8 @@ export default function MealDetail() {
                 <li key={index}>
                   {ingredient.quantity !== null && (
                     <>
-                      {ingredient.quantity}
-                      {ingredient.unit && ` ${ingredient.unit}`}{" "}
+                      {ingredient.quantity}{" "}
+                      {formatUnitForDisplay(ingredient.unit, ingredient.quantity)}{" "}
                     </>
                   )}
                   {ingredient.name}
