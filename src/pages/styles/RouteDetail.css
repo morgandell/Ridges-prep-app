@@ -389,6 +389,11 @@
   font-family: inherit;
 }
 
+.custom-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
 .icon-secondary {
   color: var(--color-secondary); 
   font-size: 24px;

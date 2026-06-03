@@ -275,7 +275,7 @@ function removeRestriction(camperId: string, value: string) {
 
       <form className="week-form" onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="weekStart">Week starting (Monday)</label>
+          <label htmlFor="weekStart">Week starting (Sunday)</label>
           <input
             id="weekStart"
             type="date"

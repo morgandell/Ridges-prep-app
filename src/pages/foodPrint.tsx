@@ -11,6 +11,7 @@ import {
   normalizeIngredientName,
   normalizeUnitForMerge,
 } from "../utils/ingredientNormalization";
+import { formatLocalDate } from "../utils/formatLocalDate";
 import "./styles/foodPrint.css";
 
 interface IngredientTotal {
@@ -257,20 +258,6 @@ export default function FoodPrint() {
 
   const handleRefresh = () => {
     loadData(true);
-  };
-
-  const formatDate = (iso: string) => {
-    if (!iso) return "";
-    try {
-      const d = new Date(iso);
-      return d.toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return iso;
-    }
   };
 
   const formatQuantity = (ing: IngredientTotal) => {
@@ -543,7 +530,7 @@ export default function FoodPrint() {
           return (
             <div key={weekData.week.id} className="print-section page-break">
               <h2>
-                Week: {formatDate(weekData.week.weekStart)} — {weekData.week.ageGroup}
+                Week: {formatLocalDate(weekData.week.weekStart)} — {weekData.week.ageGroup}
               </h2>
               <p className="print-meta">
                 Total Campers: {weekData.week.numberOfCampers} | Servings calculated per meal based on dietary restrictions

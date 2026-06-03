@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./styles/weekSchedule.css";
 import { WeekStats } from "../types/weekStats";
 import { useNavigate } from "react-router-dom";
+import { formatLocalDate } from "../utils/formatLocalDate";
 
 export default function WeekSchedule() {
   const navigate = useNavigate();
@@ -30,20 +31,6 @@ export default function WeekSchedule() {
 
   
 
-  const formatDate = (iso: string) => {
-    if (!iso) return "";
-    try {
-      const d = new Date(iso);
-      return d.toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return iso;
-    }
-  };
-
   function countRestrictedCampers(week: WeekStats) {
   return week.camperRestrictions?.filter(
     c => c.restrictions.length > 0
@@ -57,7 +44,7 @@ export default function WeekSchedule() {
     e.stopPropagation();
     if (
       !window.confirm(
-        `Delete week starting ${formatDate(week.weekStart)}?`,
+        `Delete week starting ${formatLocalDate(week.weekStart)}?`,
       )
     ) {
       return;
@@ -123,7 +110,7 @@ export default function WeekSchedule() {
                 }}
               >
                 <div className="week-card-header">
-                  <h3>{formatDate(week.weekStart)}</h3>
+                  <h3>{formatLocalDate(week.weekStart)}</h3>
                   <div className="week-card-header-actions">
                     <span className="week-age-group">
                       {week.ageGroup}
@@ -131,7 +118,7 @@ export default function WeekSchedule() {
                     <button
                       type="button"
                       className="week-card-delete"
-                      aria-label={`Delete week ${formatDate(week.weekStart)}`}
+                      aria-label={`Delete week ${formatLocalDate(week.weekStart)}`}
                       onClick={(e) => handleDeleteWeek(e, week)}
                     >
                       Delete

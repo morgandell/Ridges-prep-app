@@ -192,10 +192,44 @@
   width: 3em;
 }
 
-.route-simple-points .point-block {
+.route-simple-points .point-block,
+.route-drop-off-block .point-block,
+.route-pick-up-block .point-block {
   margin-bottom: 0.75rem;
   padding: 0.5rem 0;
   font-size: 0.95rem;
+}
+
+.route-drop-off-block,
+.route-pick-up-block {
+  margin-bottom: 1rem;
+}
+
+.route-drop-off-block h3,
+.route-pick-up-block h3 {
+  margin: 0 0 0.35rem 0;
+}
+
+.route-pick-up-block {
+  margin-top: 0.5rem;
+}
+
+.day-destination-list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.day-destination-list li {
+  margin-bottom: 0.2rem;
+}
+
+.day-destination-list li:last-child {
+  margin-bottom: 0;
+}
+
+.day-destination-muted {
+  color: var(--color-black);
+  font-style: italic;
 }
 
 .point-note {

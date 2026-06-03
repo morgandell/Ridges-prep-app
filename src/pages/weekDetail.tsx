@@ -5,6 +5,7 @@ import "./styles/weekDetail.css";
 import { WeekStats } from "../types/weekStats";
 import { Meal } from "../types/meal";
 import { Route, RoutePoint } from "../types/route";
+import { formatLocalDate } from "../utils/formatLocalDate";
 
 export default function WeekDetail() {
   const { id } = useParams<{ id: string }>();
@@ -59,20 +60,6 @@ const SLOTS: MealSlot[] = ["breakfast", "lunch", "dinner"];
     }
     loadWeek();
   }, [id]);
-
-  const formatDate = (iso?: string) => {
-    if (!iso) return "";
-    try {
-      const d = new Date(iso);
-      return d.toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return iso;
-    }
-  };
 
   function isIncluded(day: DayOfWeek, slot: MealSlot) {
   return week?.mealsEatingOnTrail?.some(
@@ -204,7 +191,7 @@ function calculateDayCountFromStops(stops: RoutePoint[] | undefined) {
       </div>
 
       <div className="week-header">
-        <h1>{formatDate(week.weekStart)}</h1>
+        <h1>{formatLocalDate(week.weekStart)}</h1>
         <span className="week-age-chip">{week.ageGroup}</span>
       </div>
 

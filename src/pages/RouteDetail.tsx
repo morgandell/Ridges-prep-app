@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from "react-leaflet";
-import { Icon, LatLngBounds, divIcon } from "leaflet";
+import { Icon, LatLngBounds } from "leaflet";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBinoculars, faCampground, faSignsPost, faCircleExclamation} from "@fortawesome/free-solid-svg-icons";
 import "leaflet/dist/leaflet.css";
@@ -9,6 +9,8 @@ import { Route, RoutePoint, EvacPoint } from "../types/route";
 import CommentsSection from "../components/CommentsSection";
 import { WeekStats } from "../types/weekStats";
 import { calculateDriveMileage } from "../utils/driveMileage";
+import { formatLocalDate } from "../utils/formatLocalDate";
+import { getRoutePointMarkerIcon } from "../utils/routeMapMarkers";
 import {
   getDaysWithStats,
   getLastCampsiteIndex,
@@ -22,55 +24,6 @@ Icon.Default.mergeOptions({
   iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
   iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-});
-
-// Create custom colored div icons
-const startIcon = divIcon({
-  className: 'custom-marker',
-  html: `<div style="
-    background-color: #22c55e;
-    width: 30px;
-    height: 30px;
-    border-radius: 50% 50% 50% 0;
-    transform: rotate(-45deg);
-    border: 3px solid white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-  "></div>`,
-  iconSize: [30, 30],
-  iconAnchor: [15, 30],
-  popupAnchor: [0, -30],
-});
-
-const endIcon = divIcon({
-  className: 'custom-marker',
-  html: `<div style="
-    background-color: #ef4444;
-    width: 30px;
-    height: 30px;
-    border-radius: 50% 50% 50% 0;
-    transform: rotate(-45deg);
-    border: 3px solid white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-  "></div>`,
-  iconSize: [30, 30],
-  iconAnchor: [15, 30],
-  popupAnchor: [0, -30],
-});
-
-const stopIcon = divIcon({
-  className: 'custom-marker',
-  html: `<div style="
-    background-color: #3b82f6;
-    width: 30px;
-    height: 30px;
-    border-radius: 50% 50% 50% 0;
-    transform: rotate(-45deg);
-    border: 3px solid white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-  "></div>`,
-  iconSize: [30, 30],
-  iconAnchor: [15, 30],
-  popupAnchor: [0, -30],
 });
 
 export default function RouteDetail() {
@@ -218,20 +171,6 @@ export default function RouteDetail() {
 
   const handleEdit = () => {
     navigate(`/routes/${id}/edit`, { state: { fromDetail: true } });
-  };
-
-  const formatDate = (iso?: string) => {
-    if (!iso) return "";
-    try {
-      const d = new Date(iso);
-      return d.toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return iso;
-    }
   };
 
   async function openAssignModal() {
@@ -514,7 +453,7 @@ export default function RouteDetail() {
                   <option value="">{weeksLoading ? "Loading weeks..." : "Select a week"}</option>
                   {weeks.map(w => (
                     <option key={w.id} value={w.id}>
-                      {formatDate(w.weekStart)} — {w.ageGroup}
+                      {formatLocalDate(w.weekStart)} — {w.ageGroup}
                       {w.routeId ? " (has route)" : ""}
                     </option>
                   ))}
@@ -526,7 +465,7 @@ export default function RouteDetail() {
                 <div className="modal-hint">
                   Already assigned to:{" "}
                   {weeksUsingThisRoute
-                    .map(w => `${formatDate(w.weekStart)} (${w.ageGroup})`)
+                    .map(w => `${formatLocalDate(w.weekStart)} (${w.ageGroup})`)
                     .join(", ")}
                 </div>
               )}
@@ -611,18 +550,21 @@ export default function RouteDetail() {
               />
               
               {allPoints.map((point, index) => {
-                let icon = stopIcon;
                 let popupText = "";
-                
+
                 if (point.type === "start") {
-                  icon = startIcon;
                   popupText = `Start${point.label ? `: ${point.label}` : ""}\n${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`;
                 } else if (point.type === "end") {
-                  icon = endIcon;
                   popupText = `End${point.label ? `: ${point.label}` : ""}\n${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`;
                 } else {
                   popupText = `Stop ${(point.index || 0) + 1}${point.label ? `: ${point.label}` : ""}\n${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`;
                 }
+
+                const stopType =
+                  point.type === "stop" && route?.stops
+                    ? route.stops[point.index ?? 0]?.type
+                    : undefined;
+                const icon = getRoutePointMarkerIcon(index, allPoints.length, stopType);
 
                 return (
                   <Marker
@@ -749,41 +691,6 @@ export default function RouteDetail() {
                   </div>
                 </div>
               )} */}
-              {route.endPoint && isPickupDay(day, dayIndex, daysWithStats) && (() => {
-  const lastCamp =
-    lastCampsiteIndex >= 0 ? route.stops![lastCampsiteIndex] : null;
-  const distanceLabel = lastCamp
-    ? lastCamp.label || "last campsite"
-    : "previous stop";
-
-  return (
-    <div className="stop-details">
-      <h4>
-        <FontAwesomeIcon icon={faSignsPost} className="icon-secondary" />
-        {" "}Pick up
-        {route.endPoint.label ? `: ${route.endPoint.label}` : ""}
-        {" "}(
-        {route.endPoint.lat.toFixed(6)}, {route.endPoint.lng.toFixed(6)})
-      </h4>
-      {route.endPoint.note && (
-        <p className="point-note"><strong>Note:</strong> {route.endPoint.note}</p>
-      )}
-      {(day.dayMiles > 0 || day.dayElevation > 0) && (
-        <div className="segment-info">
-          <div>
-            <strong>Distance from {distanceLabel}:</strong>{" "}
-            {day.dayMiles.toFixed(2)} mi
-          </div>
-          <div>
-            <strong>Elevation gain:</strong>{" "}
-            {day.dayElevation.toLocaleString()} ft
-          </div>
-        </div>
-      )}
-    </div>
-  );
-})()}
-
               {day.dayStops.map((stop, indexInDay) => {
                 const globalIndex = day.firstStopIndex + indexInDay;
                 const segment = route.segments?.[globalIndex];
@@ -807,6 +714,51 @@ export default function RouteDetail() {
                   </div>
                 );
               })}
+              {route.endPoint && isPickupDay(day, dayIndex, daysWithStats) && (() => {
+                const lastMiddleStop =
+                  route.stops && route.stops.length > 0
+                    ? route.stops[route.stops.length - 1]
+                    : null;
+                const distanceLabel = lastMiddleStop
+                  ? lastMiddleStop.label || `Stop ${route.stops!.length}`
+                  : route.startPoint?.label || "drop off";
+                const pickupLegSegment = day.includesPickup
+                  ? route.segments?.[route.stops!.length]
+                  : null;
+                const pickupMiles = day.isFinalLegDay
+                  ? day.dayMiles
+                  : pickupLegSegment?.mileage ?? 0;
+                const pickupElevation = day.isFinalLegDay
+                  ? day.dayElevation
+                  : pickupLegSegment?.elevationGainFt ?? 0;
+
+                return (
+                  <div className="stop-details">
+                    <h4>
+                      <FontAwesomeIcon icon={faSignsPost} className="icon-secondary" />
+                      {" "}Pick up
+                      {route.endPoint.label ? `: ${route.endPoint.label}` : ""}
+                      {" "}(
+                      {route.endPoint.lat.toFixed(6)}, {route.endPoint.lng.toFixed(6)})
+                    </h4>
+                    {route.endPoint.note && (
+                      <p className="point-note"><strong>Note:</strong> {route.endPoint.note}</p>
+                    )}
+                    {(pickupMiles > 0 || pickupElevation > 0) && (
+                      <div className="segment-info">
+                        <div>
+                          <strong>Distance from {distanceLabel}:</strong>{" "}
+                          {pickupMiles.toFixed(2)} mi
+                        </div>
+                        <div>
+                          <strong>Elevation gain:</strong>{" "}
+                          {pickupElevation.toLocaleString()} ft
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           ))}
         </div>

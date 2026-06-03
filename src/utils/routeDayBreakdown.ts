@@ -6,7 +6,10 @@ export interface DayWithStats {
   lastStopIndex: number;
   dayMiles: number;
   dayElevation: number;
+  /** Pick-up only day (no middle stops on this day). */
   isFinalLegDay: boolean;
+  /** This hiking day includes the leg to pick-up (merged, not a separate day). */
+  includesPickup?: boolean;
 }
 
 export function getLastCampsiteIndex(route: Route): number {
@@ -17,7 +20,17 @@ export function getLastCampsiteIndex(route: Route): number {
   return -1;
 }
 
-/** First segment index for the leg from last campsite (or last stop after it) to the end point. */
+/**
+ * Pick-up is its own day only when the last middle stop is a campsite,
+ * or when there are no middle stops (drop off → pick up).
+ */
+export function shouldHaveSeparatePickupDay(route: Route): boolean {
+  const stops = route.stops || [];
+  if (!stops.length) return true;
+  return stops[stops.length - 1].type === "campsite";
+}
+
+/** First segment index for the leg from last campsite to the end point. */
 export function getFinalLegStartSegmentIndex(
   route: Route,
   lastCampsiteIndex: number,
@@ -30,10 +43,12 @@ export function getFinalLegStartSegmentIndex(
 }
 
 export function getStopsByDay(route: Route): RoutePoint[][] {
-  if (!route?.stops?.length) return [];
+  const stops = route.stops || [];
+  if (!stops.length) return [];
+
   const days: RoutePoint[][] = [];
   let currentDay: RoutePoint[] = [];
-  for (const stop of route.stops) {
+  for (const stop of stops) {
     currentDay.push(stop);
     if (stop.type === "campsite") {
       days.push([...currentDay]);
@@ -42,33 +57,61 @@ export function getStopsByDay(route: Route): RoutePoint[][] {
   }
   if (currentDay.length > 0) days.push(currentDay);
 
-  const lastCampsiteIndex = getLastCampsiteIndex(route);
-  if (lastCampsiteIndex >= 0) {
+  if (shouldHaveSeparatePickupDay(route)) {
     days.push([]);
   }
   return days;
 }
 
+function sumSegments(
+  segs: Route["segments"],
+  startSeg: number,
+  endSeg: number,
+): { dayMiles: number; dayElevation: number } {
+  let dayMiles = 0;
+  let dayElevation = 0;
+  for (let i = startSeg; i <= endSeg && i < segs.length; i++) {
+    dayMiles += segs[i].mileage || 0;
+    dayElevation += segs[i].elevationGainFt || 0;
+  }
+  return { dayMiles, dayElevation };
+}
+
 export function getDaysWithStats(route: Route): DayWithStats[] {
-  if (!route?.stops?.length || !route?.segments?.length) return [];
+  if (!route?.segments?.length) return [];
+  const segs = route.segments;
+  const stops = route.stops || [];
+  const separatePickup = shouldHaveSeparatePickupDay(route);
+
+  if (!stops.length) {
+    const { dayMiles, dayElevation } = sumSegments(segs, 0, segs.length - 1);
+    return [
+      {
+        dayStops: [],
+        firstStopIndex: -1,
+        lastStopIndex: -1,
+        dayMiles,
+        dayElevation,
+        isFinalLegDay: true,
+        includesPickup: true,
+      },
+    ];
+  }
+
   const stopsByDay = getStopsByDay(route);
   if (!stopsByDay.length) return [];
+
   const lastCampsiteIndex = getLastCampsiteIndex(route);
-  const segs = route.segments;
-  const stops = route.stops;
+  const lastDayIndex = stopsByDay.length - 1;
 
   return stopsByDay.map((dayStops, dayIndex) => {
-    const isFinalLegDay = dayStops.length === 0 && lastCampsiteIndex >= 0;
+    const isFinalLegDay = dayStops.length === 0 && separatePickup;
+    const includesPickup =
+      !separatePickup && dayIndex === lastDayIndex && Boolean(route.endPoint);
 
     if (isFinalLegDay) {
       const startSeg = getFinalLegStartSegmentIndex(route, lastCampsiteIndex);
-      const endSeg = segs.length - 1;
-      let dayMiles = 0;
-      let dayElevation = 0;
-      for (let i = startSeg; i <= endSeg && i < segs.length; i++) {
-        dayMiles += segs[i].mileage || 0;
-        dayElevation += segs[i].elevationGainFt || 0;
-      }
+      const { dayMiles, dayElevation } = sumSegments(segs, startSeg, segs.length - 1);
       return {
         dayStops,
         firstStopIndex: lastCampsiteIndex + 1,
@@ -82,13 +125,9 @@ export function getDaysWithStats(route: Route): DayWithStats[] {
     const firstStopIndex = stops.indexOf(dayStops[0]);
     const lastStopIndex = stops.indexOf(dayStops[dayStops.length - 1]);
     const startSeg = dayIndex === 0 ? 0 : firstStopIndex;
-    const endSeg = lastStopIndex;
-    let dayMiles = 0;
-    let dayElevation = 0;
-    for (let i = startSeg; i <= endSeg && i < segs.length; i++) {
-      dayMiles += segs[i].mileage || 0;
-      dayElevation += segs[i].elevationGainFt || 0;
-    }
+    const endSeg = includesPickup ? segs.length - 1 : lastStopIndex;
+    const { dayMiles, dayElevation } = sumSegments(segs, startSeg, endSeg);
+
     return {
       dayStops,
       firstStopIndex,
@@ -96,6 +135,7 @@ export function getDaysWithStats(route: Route): DayWithStats[] {
       dayMiles,
       dayElevation,
       isFinalLegDay: false,
+      includesPickup: includesPickup || undefined,
     };
   });
 }
@@ -110,8 +150,8 @@ export function isPickupDay(
   dayIndex: number,
   daysWithStats: DayWithStats[],
 ): boolean {
-  if (day.isFinalLegDay) return true;
-  if (!daysWithStats.some((d) => d.isFinalLegDay)) {
+  if (day.isFinalLegDay || day.includesPickup) return true;
+  if (!daysWithStats.some((d) => d.isFinalLegDay || d.includesPickup)) {
     return dayIndex === daysWithStats.length - 1;
   }
   return false;

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, useMap } from "react-leaflet";
-import { LatLngBounds, divIcon } from "leaflet";
+import { LatLngBounds } from "leaflet";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBinoculars, faCampground, faSignsPost, faCircleExclamation } from "@fortawesome/free-solid-svg-icons";
 import "leaflet/dist/leaflet.css";
@@ -14,89 +14,16 @@ import {
 import { ItemComment } from "../types/itemComment";
 import CommentsSection from "../components/CommentsSection";
 import { calculateDriveMileage } from "../utils/driveMileage";
+import { getRoutePointColor } from "../utils/routePointColors";
+import { getRoutePointMarkerIcon } from "../utils/routeMapMarkers";
 import "./styles/RouteEdit.css";
 
-
-// Create custom colored div icons
-const startIcon = divIcon({
-  className: 'custom-marker',
-  html: `<div style="
-    background-color: var(--color-dessert);
-    width: 30px;
-    height: 30px;
-    border-radius: 50% 50% 50% 0;
-    transform: rotate(-45deg);
-    border: 3px solid white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-  "></div>`,
-  iconSize: [30, 30],
-  iconAnchor: [15, 30],
-  popupAnchor: [0, -30],
-});
-
-const endIcon = divIcon({
-  className: 'custom-marker',
-  html: `<div style="
-    background-color: var(--color-snack);
-    width: 30px;
-    height: 30px;
-    border-radius: 50% 50% 50% 0;
-    transform: rotate(-45deg);
-    border: 3px solid white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-  "></div>`,
-  iconSize: [30, 30],
-  iconAnchor: [15, 30],
-  popupAnchor: [0, -30],
-});
-
-const stopIcon = divIcon({
-  className: 'custom-marker',
-  html: `<div style="
-    background-color: #3b82f6;
-    width: 30px;
-    height: 30px;
-    border-radius: 50% 50% 50% 0;
-    transform: rotate(-45deg);
-    border: 3px solid white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-  "></div>`,
-  iconSize: [30, 30],
-  iconAnchor: [15, 30],
-  popupAnchor: [0, -30],
-});
-
-function makeStopIcon(iconClass: string, color = "var(--color-breakfast)") {
-  return divIcon({
-    className: "custom-marker",
-    html: `
-      <div style="
-        background-color: ${color};
-        width: 30px;
-        height: 30px;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
-        border: 3px solid white;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      ">
-        <i class="${iconClass}" style="
-          color: white;
-          font-size: 14px;
-          transform: rotate(45deg);
-        "></i>
-      </div>
-    `,
-    iconSize: [30, 30],
-    iconAnchor: [15, 30],
-    popupAnchor: [0, -30],
-  });
+function getPointListLabel(index: number, total: number, customLabel?: string): string {
+  const base =
+    index === 0 ? "Start" : index === total - 1 ? "End" : `Stop ${index}`;
+  const trimmed = customLabel?.trim();
+  return trimmed ? `${base} — ${trimmed}` : base;
 }
-
-const campsiteIcon = makeStopIcon("fa-solid fa-campground", "#a31676");
-const poiIcon = makeStopIcon("fa-solid fa-binoculars", "#3b82f6");
 
 
 // Component to handle map clicks
@@ -833,12 +760,12 @@ async function fetchDrivingDistanceMiles(
               {boundsKey && <FitBounds boundsKey={boundsKey} />}
 
               {allPoints.map((point, i) => {
-                const icon =
-                  point.type === "start"
-                    ? startIcon
-                    : point.type === "end"
-                    ? endIcon
-                    : campsiteIcon;
+                const routePoint = points[i];
+                const icon = getRoutePointMarkerIcon(
+                  i,
+                  allPoints.length,
+                  routePoint?.type,
+                );
 
                 return (
                   <Marker
@@ -891,19 +818,25 @@ async function fetchDrivingDistanceMiles(
                 const isStart = index === 0;
                 const isEnd = index === points.length - 1;
                 const chipClass = isStart ? "start-chip" : isEnd ? "end-chip" : "stop-chip";
-                const label = isStart ? "Start" : isEnd ? "End" : `Stop ${index}`;
-                const marker = isStart ? "🟢" : isEnd ? "🔴" : "🔵";
+                const color = getRoutePointColor(index, points.length);
+                const label = getPointListLabel(index, points.length, point.label);
                 return (
                   <div
                     key={point.id}
                     className={`point-chip ${chipClass} ${draggedPoint === index ? "dragging" : ""}`}
+                    style={{ borderLeftColor: color }}
                     draggable
                     onDragStart={() => handleDragStart(index)}
                     onDragOver={(e) => handleDragOver(e, index)}
                     onDrop={(e) => handleDrop(e, index)}
                   >
                     <span className="drag-handle">⋮⋮</span>
-                    <span className="point-marker">{marker}</span>
+                    <span
+                      className="point-marker-dot"
+                      style={{ backgroundColor: color }}
+                      title={`Point ${index + 1}`}
+                      aria-hidden
+                    />
                     <span className="point-label">{label}</span>
                     <span className="point-coords">{point.lat.toFixed(4)}, {point.lng.toFixed(4)}</span>
                     <button type="button" className="remove-chip" onClick={() => handleRemovePoint(index)} aria-label="Remove">✕</button>
@@ -918,7 +851,9 @@ async function fetchDrivingDistanceMiles(
         {stops.length > 0 && daysWithStats.length > 0 && (
           <div className="form-section route-by-day-preview">
             <h3>Route by day</h3>
-            <p className="day-preview-hint">Days are split at campsites. Edit each stop below; changing type to Campsite updates the day breakdown.</p>
+            <p className="day-preview-hint">
+              Only campsites end a day. A view can be the last stop shown for a day — the following stops stay on that same day until the next campsite or pick-up.
+            </p>
             {daysWithStats.map((day, dayIndex) => {
               const evac = evacPoints[dayIndex];
               const evacLabel =
@@ -990,47 +925,19 @@ async function fetchDrivingDistanceMiles(
     </div>
   </div>
 )}
-                {endPoint && isPickupDay(day, dayIndex, daysWithStats) && (() => {
-                  const lastCamp = lastCampsiteIndex >= 0 ? stops[lastCampsiteIndex] : null;
-                  const distanceLabel = lastCamp
-                    ? lastCamp.label || "last campsite"
-                    : "previous stop";
-                  return (
-                    <div className="stop-details stop-details-editable stop-details-special">
-                      <h4 className="stop-details-title">
-                        <FontAwesomeIcon icon={faSignsPost} className="icon-secondary" /> Pick up
-                        {" ("}{endPoint.lat.toFixed(5)}, {endPoint.lng.toFixed(5)}{")"}
-                      </h4>
-                      <div className="form-group">
-                        <label>Label (optional)</label>
-                        <input
-                          type="text"
-                          placeholder="e.g., Summit, Parking Lot"
-                          value={endPoint?.label ?? ""}
-                          onChange={(e) => setPoints((prev) => prev.map((p, i) => (i === prev.length - 1 ? { ...p, label: e.target.value || undefined } : p)))}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Note (optional)</label>
-                        <textarea
-                          rows={2}
-                          placeholder="e.g., Pick-up time, contact at ranger station"
-                          value={endPoint?.note ?? ""}
-                          onChange={(e) => setPoints((prev) => prev.map((p, i) => (i === prev.length - 1 ? { ...p, note: e.target.value || undefined } : p)))}
-                        />
-                      </div>
-                      <div className="segment-info">
-                        <div><strong>Distance from {distanceLabel}:</strong> {day.dayMiles.toFixed(2)} mi</div>
-                        <div><strong>Elevation gain:</strong> {day.dayElevation.toLocaleString()} ft</div>
-                      </div>
-                    </div>
-                    
-                  );
-                })()}
                 {day.dayStops.map((stop, indexInDay) => {
                   const globalIndex = day.firstStopIndex + indexInDay;
                   const segment = segments?.[globalIndex];
                   const isCampsite = stop.type === "campsite";
+                  const isLastStopInDay = indexInDay === day.dayStops.length - 1;
+                  const moreStopsAfter = globalIndex < stops.length - 1;
+                  const continuesToPickup =
+                    isLastStopInDay &&
+                    !isCampsite &&
+                    globalIndex === stops.length - 1 &&
+                    day.includesPickup;
+                  const viewExtendsDay =
+                    !isCampsite && isLastStopInDay && (moreStopsAfter || continuesToPickup);
                   const fromPoint = globalIndex === 0 ? { label: startPoint?.label || "Start" } : stops[globalIndex - 1];
                   return (
                     <div key={stop.id} className="stop-details stop-details-editable">
@@ -1058,11 +965,25 @@ async function fetchDrivingDistanceMiles(
                                 name={`stop-type-${stop.id}`}
                                 value="view"
                                 checked={stop.type === "view"}
-                                onChange={() => setPoints((prev) => prev.map((p) => (p.id === stop.id ? { ...p, type: "view" } : p)))}
+                                onChange={() =>
+                                  setPoints((prev) =>
+                                    prev.map((p) => (p.id === stop.id ? { ...p, type: "view" } : p)),
+                                  )
+                                }
                               />
                                <FontAwesomeIcon icon={faBinoculars} className="icon-primary" /> View
                             </label>
                           </div>
+                          {isCampsite && (
+                            <small className="hint">Campsite ends this day.</small>
+                          )}
+                          {viewExtendsDay && (
+                            <small className="hint">
+                              {moreStopsAfter
+                                ? "This view does not end the day — later stops stay on this day until the next campsite or pick-up."
+                                : "This view does not end the day — the trail continues to pick-up on the same day."}
+                            </small>
+                          )}
                         </div>
                       </div>
                       <div className="form-group">
@@ -1092,6 +1013,71 @@ async function fetchDrivingDistanceMiles(
                     </div>
                   );
                 })}
+                {endPoint && isPickupDay(day, dayIndex, daysWithStats) && (() => {
+                  const lastMiddleStop = stops.length > 0 ? stops[stops.length - 1] : null;
+                  const distanceLabel = lastMiddleStop
+                    ? lastMiddleStop.label || `Stop ${stops.length}`
+                    : startPoint?.label || "drop off";
+                  const pickupLegSegment = day.includesPickup ? segments[stops.length] : null;
+                  const pickupMiles = day.isFinalLegDay
+                    ? day.dayMiles
+                    : pickupLegSegment?.mileage ?? 0;
+                  const pickupElevation = day.isFinalLegDay
+                    ? day.dayElevation
+                    : pickupLegSegment?.elevationGainFt ?? 0;
+                  return (
+                    <div className="stop-details stop-details-editable stop-details-special">
+                      <h4 className="stop-details-title">
+                        <FontAwesomeIcon icon={faSignsPost} className="icon-secondary" /> Pick up
+                        {" ("}{endPoint.lat.toFixed(5)}, {endPoint.lng.toFixed(5)}{")"}
+                      </h4>
+                      <div className="form-group">
+                        <label>Label (optional)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g., Summit, Parking Lot"
+                          value={endPoint?.label ?? ""}
+                          onChange={(e) =>
+                            setPoints((prev) =>
+                              prev.map((p, i) =>
+                                i === prev.length - 1
+                                  ? { ...p, label: e.target.value || undefined }
+                                  : p,
+                              ),
+                            )
+                          }
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Note (optional)</label>
+                        <textarea
+                          rows={2}
+                          placeholder="e.g., Pick-up time, contact at ranger station"
+                          value={endPoint?.note ?? ""}
+                          onChange={(e) =>
+                            setPoints((prev) =>
+                              prev.map((p, i) =>
+                                i === prev.length - 1
+                                  ? { ...p, note: e.target.value || undefined }
+                                  : p,
+                              ),
+                            )
+                          }
+                        />
+                      </div>
+                      {(pickupMiles > 0 || pickupElevation > 0) && (
+                        <div className="segment-info">
+                          <div>
+                            <strong>Distance from {distanceLabel}:</strong> {pickupMiles.toFixed(2)} mi
+                          </div>
+                          <div>
+                            <strong>Elevation gain:</strong> {pickupElevation.toLocaleString()} ft
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
                 <div className="stop-details stop-details-readonly">
                   <h4>
                     <FontAwesomeIcon icon={faCircleExclamation} className="icon-evac" /> Evacuation point

@@ -1,14 +1,46 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { WeekStats } from "../types/weekStats";
-import { Route, RoutePoint, EvacPoint } from "../types/route";
-import { getDaysWithStats } from "../utils/routeDayBreakdown";
+import { Route, EvacPoint } from "../types/route";
+import { DayWithStats, getDaysWithStats } from "../utils/routeDayBreakdown";
 import { calculateDriveMileage } from "../utils/driveMileage";
+import { formatLocalDate } from "../utils/formatLocalDate";
 import "./styles/routesPrint.css";
 
 interface RouteWithWeeks {
   route: Route;
   weeks: WeekStats[];
+}
+
+function DayDestinationList({ day, route }: { day: DayWithStats; route: Route }) {
+  if (day.isFinalLegDay) {
+    return (
+      <span className="day-destination-muted">
+        Pick up: {route.endPoint?.label || "End"}
+      </span>
+    );
+  }
+
+  const listedStops = day.dayStops.filter(
+    stop => stop.type === "view" || stop.type === "campsite",
+  );
+
+  if (listedStops.length === 0 && !day.includesPickup) {
+    return <>—</>;
+  }
+
+  return (
+    <ul className="day-destination-list">
+      {listedStops.map((stop, index) => (
+        <li key={stop.id || `${stop.type}-${index}`}>
+          {stop.type === "view" ? "View" : "Campsite"}: {stop.label || "—"}
+        </li>
+      ))}
+      {day.includesPickup && route.endPoint && (
+        <li>Pick up: {route.endPoint.label || "End"}</li>
+      )}
+    </ul>
+  );
 }
 
 export default function RoutesPrint() {
@@ -118,20 +150,6 @@ export default function RoutesPrint() {
     }
   }
 
-  const formatDate = (iso?: string) => {
-    if (!iso) return "";
-    try {
-      const d = new Date(iso);
-      return d.toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return iso;
-    }
-  };
-
   let totalDriveMiles = 0;
   let driveMilesPending = false;
   let anyRouteWithTransport = false;
@@ -233,7 +251,6 @@ export default function RoutesPrint() {
               key={route.id}
               route={route}
               weeks={weeks}
-              formatDate={formatDate}
               driveMileageResolved={driveMilesByRouteId[route.id]}
             />
           ))
@@ -246,12 +263,10 @@ export default function RoutesPrint() {
 function RoutePrintSection({
   route,
   weeks,
-  formatDate,
   driveMileageResolved,
 }: {
   route: Route;
   weeks: WeekStats[];
-  formatDate: (iso?: string) => string;
   driveMileageResolved?: number | null;
 }) {
   const totalMiles = route.segments?.reduce((sum, seg) => sum + (seg.mileage || 0), 0) || 0;
@@ -285,13 +300,25 @@ function RoutePrintSection({
       <ul className="weeks-list">
         {weeks.map((w) => (
           <li key={w.id}>
-            {formatDate(w.weekStart)} — {w.ageGroup} ({w.numberOfCampers} campers)
+            {formatLocalDate(w.weekStart)} — {w.ageGroup} ({w.numberOfCampers} campers)
           </li>
         ))}
       </ul>
 
       {daysWithStats.length > 0 ? (
         <>
+          {route.startPoint && (
+            <div className="route-drop-off-block route-simple-points">
+              <h3>Drop off</h3>
+              <div className="point-block">
+                <strong>{route.startPoint.label || "Start"}</strong>{" "}
+                ({route.startPoint.lat.toFixed(6)}, {route.startPoint.lng.toFixed(6)})
+                {route.startPoint.note && (
+                  <div className="point-note">Note: {route.startPoint.note}</div>
+                )}
+              </div>
+            </div>
+          )}
           <h3>Route by day</h3>
           <table className="route-days-table">
             <thead>
@@ -305,30 +332,36 @@ function RoutePrintSection({
             </thead>
             <tbody>
               {daysWithStats.map((day, dayIndex) => {
-                const evac = (evacPoints[dayIndex] || route.startPoint);
-                const evacLabel = evac ? (evac.label || `${evac.lat.toFixed(4)}, ${evac.lng.toFixed(4)}`) : "—";
-                let destination = "—";
-                if (dayIndex === 0 && route.startPoint) {
-                  destination = `Drop off: ${route.startPoint.label || "Start"}`;
-                } else if (day.isFinalLegDay && route.endPoint) {
-                  destination = `Pick up: ${route.endPoint.label || "End"}`;
-                } else if (day.dayStops.length > 0) {
-                  const lastStop = day.dayStops[day.dayStops.length - 1];
-                  const type = (lastStop as RoutePoint).type === "campsite" ? "Campsite" : "View";
-                  destination = `${type}: ${lastStop.label || "—"}`;
-                }
+                const evac = evacPoints[dayIndex] || route.startPoint;
+                const evacLabel = evac
+                  ? evac.label || `${evac.lat.toFixed(4)}, ${evac.lng.toFixed(4)}`
+                  : "—";
                 return (
                   <tr key={dayIndex}>
                     <td>{dayIndex + 1}</td>
                     <td>{day.dayMiles.toFixed(2)} mi</td>
                     <td>{day.dayElevation.toLocaleString()} ft</td>
                     <td>{evacLabel}</td>
-                    <td>{destination}</td>
+                    <td>
+                      <DayDestinationList day={day} route={route} />
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+          {route.endPoint && (
+            <div className="route-pick-up-block route-simple-points">
+              <h3>Pick up</h3>
+              <div className="point-block">
+                <strong>{route.endPoint.label || "End"}</strong>{" "}
+                ({route.endPoint.lat.toFixed(6)}, {route.endPoint.lng.toFixed(6)})
+                {route.endPoint.note && (
+                  <div className="point-note">Note: {route.endPoint.note}</div>
+                )}
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <div className="route-simple-points">
