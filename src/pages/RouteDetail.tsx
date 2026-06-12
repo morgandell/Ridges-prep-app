@@ -652,46 +652,7 @@ export default function RouteDetail() {
                   )}
                 </div>
               )}
-              {/* {dayIndex > 0 && !day.isFinalLegDay && (
-                <div className="day-campsite-labels">
-                  <div className="day-label-row">
-                    <strong>Starting at:</strong>{" "}
-                    {(() => {
-                      const prev = stopsByDay[dayIndex - 1];
-                      const lastPrev = prev?.[prev.length - 1];
-                      if (!lastPrev) return "—";
-                      const idx = route.stops!.indexOf(lastPrev) + 1;
-                      return `Stop ${idx}${lastPrev.label ? ` — ${lastPrev.label}` : ""} (campsite)`;
-                    })()}
-                  </div>
-                  <div className="day-label-row">
-                    <strong>Ending at:</strong>{" "}
-                    {(() => {
-                      const lastStop = day.dayStops[day.dayStops.length - 1];
-                      if (!lastStop) return "—";
-                      const idx = route.stops!.indexOf(lastStop) + 1;
-                      return `Stop ${idx}${lastStop.label ? ` — ${lastStop.label}` : ""} (campsite)`;
-                    })()}
-                  </div>
-                </div>
-              )} */}
-              {/* {day.isFinalLegDay && (
-                <div className="day-campsite-labels">
-                  <div className="day-label-row">
-                    <strong>Starting at:</strong>{" "}
-                    {(() => {
-                      const lastCamp = route.stops![lastCampsiteIndex];
-                      if (!lastCamp) return "—";
-                      const idx = lastCampsiteIndex + 1;
-                      return `Stop ${idx}${lastCamp.label ? ` — ${lastCamp.label}` : ""} (campsite)`;
-                    })()}
-                  </div>
-                  <div className="day-label-row">
-                    <strong>Ending at:</strong> End point
-                  </div>
-                </div>
-              )} */}
-              {day.dayStops.map((stop, indexInDay) => {
+             {day.dayStops.map((stop, indexInDay) => {
                 const globalIndex = day.firstStopIndex + indexInDay;
                 const segment = route.segments?.[globalIndex];
                 const isCampsite = (stop as RoutePoint).type === "campsite";
@@ -704,6 +665,9 @@ export default function RouteDetail() {
 }
                       {" "} {stop.label ? ` ${stop.label}` : ""}
                       {" "} {"("} {stop.lat.toFixed(6)}, {stop.lng.toFixed(6)} {")"}
+                      {stop.note && (
+                    <p className="point-note"><strong>Note:</strong> {stop.note}</p>
+                  )}
                     </h4>
                     {segment && (
                       <div className="segment-info">

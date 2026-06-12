@@ -14,6 +14,7 @@ import {
 import { ItemComment } from "../types/itemComment";
 import CommentsSection from "../components/CommentsSection";
 import { calculateDriveMileage } from "../utils/driveMileage";
+import { resolveTransportModeForRoute } from "../utils/transportMode";
 import { getRoutePointColor } from "../utils/routePointColors";
 import { getRoutePointMarkerIcon } from "../utils/routeMapMarkers";
 import "./styles/RouteEdit.css";
@@ -455,13 +456,14 @@ async function fetchDrivingDistanceMiles(
   const draftRoute = useMemo((): Route | null => {
     if (!startPoint || !endPoint) return null;
     return {
-      id: id || "draft",
-      startPoint: { id: startPoint.id || "start", ...startPoint },
-      endPoint: { id: endPoint.id || "end", ...endPoint },
-      stops,
-      segments,
-    };
-  }, [startPoint, endPoint, stops, segments, id]);
+    id: id || "draft",
+    name: formData.name,
+    startPoint,
+    endPoint,
+    stops,
+    segments,
+  };
+}, [startPoint, endPoint, stops, segments, id, formData.name]);
 
   const daysWithStats = useMemo(
     () => (draftRoute ? getDaysWithStats(draftRoute) : []),
@@ -540,6 +542,24 @@ async function fetchDrivingDistanceMiles(
     formData.transportMode,
   ]);
 
+  useEffect(() => {
+    if (!startPoint || !endPoint) return;
+    const resolved = resolveTransportModeForRoute(
+      startPoint,
+      endPoint,
+      formData.transportMode,
+    );
+    if (resolved !== formData.transportMode) {
+      setFormData((prev) => ({ ...prev, transportMode: resolved }));
+    }
+  }, [
+    startPoint?.lat,
+    startPoint?.lng,
+    endPoint?.lat,
+    endPoint?.lng,
+    formData.transportMode,
+  ]);
+
   function parseDriveMileageForSave(): number | undefined {
     const trimmed = driveMileageInput.trim();
     if (!trimmed) return undefined;
@@ -586,6 +606,10 @@ async function fetchDrivingDistanceMiles(
 
     const start = points[0];
     const end = points[points.length - 1];
+    const transportMode = resolveTransportModeForRoute(start, end, formData.transportMode);
+    if (transportMode !== formData.transportMode) {
+      setFormData((prev) => ({ ...prev, transportMode }));
+    }
     const startLat = start.lat;
     const startLng = start.lng;
     const endLat = end.lat;
@@ -625,7 +649,7 @@ async function fetchDrivingDistanceMiles(
       notes: formData.notes.trim() || undefined,
       ageGroup: formData.ageGroup,
       evacPoints: evacPoints.length ? evacPoints : undefined,
-      transportMode: formData.transportMode,
+      transportMode,
       driveMileage: parseDriveMileageForSave(),
     };
 
@@ -1333,6 +1357,11 @@ async function fetchDrivingDistanceMiles(
                 if (adjustedSegments.length > numSegmentsNeeded) {
                   adjustedSegments.splice(numSegmentsNeeded);
                 }
+                const transportMode = resolveTransportModeForRoute(
+                  start,
+                  end,
+                  formData.transportMode,
+                );
                 const routePayload: Route = {
                   id,
                   name: formData.name.trim(),
@@ -1356,7 +1385,7 @@ async function fetchDrivingDistanceMiles(
                   notes: formData.notes.trim() || undefined,
                   ageGroup: formData.ageGroup,
                   evacPoints: evacPoints.length ? evacPoints : undefined,
-                  transportMode: formData.transportMode,
+                  transportMode,
                   driveMileage: parseDriveMileageForSave(),
                 };
                 const res = await window.electronAPI.saveRoute(routePayload);

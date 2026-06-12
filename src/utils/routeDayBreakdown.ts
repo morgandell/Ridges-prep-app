@@ -10,6 +10,7 @@ export interface DayWithStats {
   isFinalLegDay: boolean;
   /** This hiking day includes the leg to pick-up (merged, not a separate day). */
   includesPickup?: boolean;
+  notes?: string;
 }
 
 export function getLastCampsiteIndex(route: Route): number {
@@ -77,11 +78,26 @@ function sumSegments(
   return { dayMiles, dayElevation };
 }
 
+function getDayNotes(points: RoutePoint[]): string | undefined {
+  const notes = points
+    .filter((point) => point.note?.trim())
+    .map((point, index) => {
+      const title =
+        point.label?.trim() ||
+        `Stop ${index + 1}`;
+
+      return `${title}: ${point.note?.trim()}`;
+    });
+
+  return notes.length ? notes.join("\n\n") : undefined;
+}
+
 export function getDaysWithStats(route: Route): DayWithStats[] {
   if (!route?.segments?.length) return [];
   const segs = route.segments;
   const stops = route.stops || [];
   const separatePickup = shouldHaveSeparatePickupDay(route);
+  
 
   if (!stops.length) {
     const { dayMiles, dayElevation } = sumSegments(segs, 0, segs.length - 1);
@@ -94,6 +110,7 @@ export function getDaysWithStats(route: Route): DayWithStats[] {
         dayElevation,
         isFinalLegDay: true,
         includesPickup: true,
+        notes: getDayNotes([]),
       },
     ];
   }
@@ -105,10 +122,13 @@ export function getDaysWithStats(route: Route): DayWithStats[] {
   const lastDayIndex = stopsByDay.length - 1;
 
   return stopsByDay.map((dayStops, dayIndex) => {
+    const notes = getDayNotes(dayStops);
+
     const isFinalLegDay = dayStops.length === 0 && separatePickup;
     const includesPickup =
       !separatePickup && dayIndex === lastDayIndex && Boolean(route.endPoint);
 
+      
     if (isFinalLegDay) {
       const startSeg = getFinalLegStartSegmentIndex(route, lastCampsiteIndex);
       const { dayMiles, dayElevation } = sumSegments(segs, startSeg, segs.length - 1);
@@ -119,6 +139,7 @@ export function getDaysWithStats(route: Route): DayWithStats[] {
         dayMiles,
         dayElevation,
         isFinalLegDay: true,
+        notes,
       };
     }
 
@@ -136,6 +157,7 @@ export function getDaysWithStats(route: Route): DayWithStats[] {
       dayElevation,
       isFinalLegDay: false,
       includesPickup: includesPickup || undefined,
+      notes,
     };
   });
 }

@@ -5,6 +5,7 @@ import { Route, EvacPoint } from "../types/route";
 import { DayWithStats, getDaysWithStats } from "../utils/routeDayBreakdown";
 import { calculateDriveMileage } from "../utils/driveMileage";
 import { formatLocalDate } from "../utils/formatLocalDate";
+import { getTransportModeLabel } from "../utils/transportMode";
 import "./styles/routesPrint.css";
 
 interface RouteWithWeeks {
@@ -296,6 +297,12 @@ function RoutePrintSection({
         )}
       </div>
 
+      {route.transportMode && (
+        <p className="route-transport-summary">
+          <strong>Van plan:</strong> {getTransportModeLabel(route.transportMode)}
+        </p>
+      )}
+
       <h3>Used by weeks</h3>
       <ul className="weeks-list">
         {weeks.map((w) => (
@@ -328,6 +335,7 @@ function RoutePrintSection({
                 <th>Elevation</th>
                 <th>Evac Point</th>
                 <th>Campsite / Endpoint</th>
+                <th>Notes</th>
               </tr>
             </thead>
             <tbody>
@@ -344,6 +352,11 @@ function RoutePrintSection({
                     <td>{evacLabel}</td>
                     <td>
                       <DayDestinationList day={day} route={route} />
+                    </td>
+                    <td>
+                      <div style={{ whiteSpace: "pre-line" }}>
+                        {day.notes || "—"}
+                      </div>
                     </td>
                   </tr>
                 );

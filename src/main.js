@@ -4,6 +4,30 @@ const fs = require("fs");
 const fsPromises = fs.promises;
 const pastMenusPath = path.join(app.getPath("userData"), "past-menus.json");
 
+const ENDPOINTS_DROP_OFF_THRESHOLD_MI = 1;
+
+function milesBetweenPoints(lat1, lng1, lat2, lng2) {
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const earthRadiusMi = 3958.8;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return earthRadiusMi * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function resolveTransportModeForRoute(start, end, current) {
+  if (!start || !end) return current === "dropOff" ? "dropOff" : "park";
+  if (
+    milesBetweenPoints(start.lat, start.lng, end.lat, end.lng) >
+    ENDPOINTS_DROP_OFF_THRESHOLD_MI
+  ) {
+    return "dropOff";
+  }
+  return current === "dropOff" ? "dropOff" : "park";
+}
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
   app.quit();
@@ -956,7 +980,11 @@ ipcMain.handle("save-route", async (_event, route) => {
           ]
         : undefined,
       ageGroup: route.ageGroup || undefined,
-      transportMode: route.transportMode || undefined,
+      transportMode: resolveTransportModeForRoute(
+        route.startPoint || { lat: 0, lng: 0 },
+        route.endPoint || { lat: 0, lng: 0 },
+        route.transportMode || "park",
+      ),
       driveMileage: typeof route.driveMileage === "number" ? route.driveMileage : undefined,
     };
 
