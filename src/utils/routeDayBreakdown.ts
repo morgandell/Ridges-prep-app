@@ -122,43 +122,78 @@ export function getDaysWithStats(route: Route): DayWithStats[] {
   const lastDayIndex = stopsByDay.length - 1;
 
   return stopsByDay.map((dayStops, dayIndex) => {
-    const notes = getDayNotes(dayStops);
+  const isFinalLegDay = dayStops.length === 0 && separatePickup;
+  const includesPickup =
+    !separatePickup &&
+    dayIndex === lastDayIndex &&
+    Boolean(route.endPoint);
 
-    const isFinalLegDay = dayStops.length === 0 && separatePickup;
-    const includesPickup =
-      !separatePickup && dayIndex === lastDayIndex && Boolean(route.endPoint);
+  // Build list of points whose notes belong to this day
+  const notePoints: RoutePoint[] = [...dayStops];
 
-      
-    if (isFinalLegDay) {
-      const startSeg = getFinalLegStartSegmentIndex(route, lastCampsiteIndex);
-      const { dayMiles, dayElevation } = sumSegments(segs, startSeg, segs.length - 1);
-      return {
-        dayStops,
-        firstStopIndex: lastCampsiteIndex + 1,
-        lastStopIndex: -1,
-        dayMiles,
-        dayElevation,
-        isFinalLegDay: true,
-        notes,
-      };
-    }
+  // Include drop-off notes on Day 1
+  if (dayIndex === 0 && route.startPoint) {
+    notePoints.unshift(route.startPoint);
+  }
 
-    const firstStopIndex = stops.indexOf(dayStops[0]);
-    const lastStopIndex = stops.indexOf(dayStops[dayStops.length - 1]);
-    const startSeg = dayIndex === 0 ? 0 : firstStopIndex;
-    const endSeg = includesPickup ? segs.length - 1 : lastStopIndex;
-    const { dayMiles, dayElevation } = sumSegments(segs, startSeg, endSeg);
+  // Include pickup notes when pickup is merged into the final hiking day
+  if (includesPickup && route.endPoint) {
+    notePoints.push(route.endPoint);
+  }
+
+  const notes = getDayNotes(notePoints);
+
+  if (isFinalLegDay) {
+    const startSeg = getFinalLegStartSegmentIndex(
+      route,
+      lastCampsiteIndex,
+    );
+
+    const { dayMiles, dayElevation } = sumSegments(
+      segs,
+      startSeg,
+      segs.length - 1,
+    );
 
     return {
       dayStops,
-      firstStopIndex,
-      lastStopIndex,
+      firstStopIndex: lastCampsiteIndex + 1,
+      lastStopIndex: -1,
       dayMiles,
       dayElevation,
-      isFinalLegDay: false,
-      includesPickup: includesPickup || undefined,
-      notes,
+      isFinalLegDay: true,
+      notes: getDayNotes(
+        route.endPoint ? [route.endPoint] : [],
+      ),
     };
+  }
+
+  const firstStopIndex = stops.indexOf(dayStops[0]);
+  const lastStopIndex = stops.indexOf(
+    dayStops[dayStops.length - 1],
+  );
+
+  const startSeg = dayIndex === 0 ? 0 : firstStopIndex;
+  const endSeg = includesPickup
+    ? segs.length - 1
+    : lastStopIndex;
+
+  const { dayMiles, dayElevation } = sumSegments(
+    segs,
+    startSeg,
+    endSeg,
+  );
+
+  return {
+    dayStops,
+    firstStopIndex,
+    lastStopIndex,
+    dayMiles,
+    dayElevation,
+    isFinalLegDay: false,
+    includesPickup: includesPickup || undefined,
+    notes,
+  };
   });
 }
 

@@ -14,7 +14,6 @@ import {
 import { ItemComment } from "../types/itemComment";
 import CommentsSection from "../components/CommentsSection";
 import { calculateDriveMileage } from "../utils/driveMileage";
-import { resolveTransportModeForRoute } from "../utils/transportMode";
 import { getRoutePointColor } from "../utils/routePointColors";
 import { getRoutePointMarkerIcon } from "../utils/routeMapMarkers";
 import "./styles/RouteEdit.css";
@@ -542,24 +541,6 @@ async function fetchDrivingDistanceMiles(
     formData.transportMode,
   ]);
 
-  useEffect(() => {
-    if (!startPoint || !endPoint) return;
-    const resolved = resolveTransportModeForRoute(
-      startPoint,
-      endPoint,
-      formData.transportMode,
-    );
-    if (resolved !== formData.transportMode) {
-      setFormData((prev) => ({ ...prev, transportMode: resolved }));
-    }
-  }, [
-    startPoint?.lat,
-    startPoint?.lng,
-    endPoint?.lat,
-    endPoint?.lng,
-    formData.transportMode,
-  ]);
-
   function parseDriveMileageForSave(): number | undefined {
     const trimmed = driveMileageInput.trim();
     if (!trimmed) return undefined;
@@ -606,10 +587,7 @@ async function fetchDrivingDistanceMiles(
 
     const start = points[0];
     const end = points[points.length - 1];
-    const transportMode = resolveTransportModeForRoute(start, end, formData.transportMode);
-    if (transportMode !== formData.transportMode) {
-      setFormData((prev) => ({ ...prev, transportMode }));
-    }
+    const transportMode = formData.transportMode;
     const startLat = start.lat;
     const startLng = start.lng;
     const endLat = end.lat;
@@ -1357,11 +1335,7 @@ async function fetchDrivingDistanceMiles(
                 if (adjustedSegments.length > numSegmentsNeeded) {
                   adjustedSegments.splice(numSegmentsNeeded);
                 }
-                const transportMode = resolveTransportModeForRoute(
-                  start,
-                  end,
-                  formData.transportMode,
-                );
+                const transportMode = formData.transportMode;
                 const routePayload: Route = {
                   id,
                   name: formData.name.trim(),
